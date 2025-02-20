@@ -1,5 +1,5 @@
-import { Navbar, NavbarBrand, NavbarContent } from "@heroui/navbar";
-import {Link} from "@heroui/link";
+"use client"
+import { Link, Navbar, NavbarBrand, NavbarContent } from "@heroui/react";
 
 const Header = () => {
     return ( 
