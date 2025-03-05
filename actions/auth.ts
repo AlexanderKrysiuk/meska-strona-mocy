@@ -2,8 +2,10 @@
 
 import { sendVerificationEmail } from "@/lib/nodemailer";
 import { prisma } from "@/lib/prisma";
-import { RegisterSchema } from "@/schema/user";
+import { NewPasswordSchema, RegisterSchema } from "@/schema/user";
+import { VerificationToken } from "@prisma/client";
 import { z } from "zod";
+import bcrypt from "bcryptjs"
 
 export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
     let existingUser;
@@ -29,6 +31,30 @@ export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
         await sendVerificationEmail(verificationToken)
     } catch (error) {
         throw new Error("Nie udało się wysłać e-maila weryfikacyjnego.")
+    }
+}
+
+export const SetNewPassword = async (data: z.infer<typeof NewPasswordSchema>, token: VerificationToken) => {
+    try {
+        await prisma.verificationToken.delete({
+            where: { id: token.id }
+        }) 
+    } catch (error) {
+        throw new Error("Podano nieprawidłowy token")
+    }
+
+    const hashedPassword = await bcrypt.hash(data.newPassword, parseInt(process.env.BCRYPT_SALT_ROUNDS!))
+
+    try {
+        await prisma.user.update({
+            where: { email: token.email },
+            data: {
+                password: hashedPassword,
+                emailVerified: new Date()
+            }
+        })
+    } catch (error) {
+        throw new Error("Aktualizacja hasła nieudana")
     }
 }
 
