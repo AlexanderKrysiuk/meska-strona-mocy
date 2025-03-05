@@ -1,6 +1,6 @@
 "use client"; // Kliencki komponent, bo używa useContext
 
-import { HeroUIProvider } from "@heroui/react";
+import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider } from "next-themes"; // Przykładowy provider dla trybu ciemnego
 import { ReactNode, useEffect, useState } from "react";
 
@@ -28,6 +28,9 @@ export default function RootWrapper({
                 disableTransitionOnChange
             >
                 {children}
+                <ToastProvider
+                    placement="top-center"
+                />
             </ThemeProvider>
         </HeroUIProvider>
     );

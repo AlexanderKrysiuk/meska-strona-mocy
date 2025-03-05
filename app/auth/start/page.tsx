@@ -5,7 +5,7 @@ import { Card, CardBody, Tab, Tabs } from "@heroui/react";
 
 const StartPage = () => {
     return ( 
-        <main className="absolute flex w-full justify-center mt-64">
+        <main className="absolute flex w-full justify-center mt-40">
             <Card className="m-4 w-full max-w-xs">
                 <CardBody>
                     <Tabs fullWidth>
