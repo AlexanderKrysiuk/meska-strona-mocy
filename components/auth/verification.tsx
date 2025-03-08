@@ -70,7 +70,7 @@ export const NewPasswordCard = (token: VerificationToken) => {
             <Card className="m-4 w-full max-w-xs">
                 <CardHeader className="flex items-center justify-center">
                     <FontAwesomeIcon icon={faLock} className="mr-2 text-xl text-primary"/>
-                    <h2 className="text-lg font-semibold">Werifikacja</h2>
+                    <h2 className="text-lg font-semibold">Nowe hasło</h2>
                 </CardHeader>
                 <CardBody>
                     <Form onSubmit={handleSubmit(submit)}>
