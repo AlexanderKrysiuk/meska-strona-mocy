@@ -1,4 +1,5 @@
 import { Link } from "@heroui/link";
+import { Divider } from "@heroui/react";
 
 const Regulations = () => {
     return ( 
@@ -91,6 +92,46 @@ const Regulations = () => {
                     <li>Dokument obowiązuje od dnia 04-03-2025.</li>
                 </ul>
             </section>
+            <Divider className="my-6"/>
+            <h1 className="text-3xl font-bold text-center mb-6">
+                Zasady uczestnictwa w Męskim Kręgu
+            </h1>        
+                <p>Przychodząc na spotkania męskiego kręgu, akceptujesz regulamin zawarty poniżej.</p>
+                <h3 className="text-2xl font-semibold mb-4">1. Zasady organizacyjne</h3>
+                <ul className="list-disc list-inside">
+                    <li>Docelowy rozmiar grupy: 15 osób</li>
+                    <li>Czas trwania: 2,5 - 3 godziny</li>
+                    <li>Częstotliwość spotkań: Co 3-4 tygodnie (informacja o kolejnych datach będzie podawana na spotkaniach)</li>
+                    <li>Opłata: Spotkania są płatne – 150 zł za spotkanie</li>
+                    <li>Płatność: Za 3 spotkania z góry po podjęciu decyzji. Nieobecność stanowi odpowiedzialność uczestnika.</li>
+                    <li>Chat: Wszystkie informacje będą podawane za pośrednictwem Discord.</li>
+                    <li>Punktualność: Szanujemy czas – nie spóźniamy się.</li>
+                    <li>Lokalizacja: Spotkania odbywają się na ul. Grunwaldzkiej 102 w salach 35 lub 41 w Gdańsku.</li>
+                </ul>
+        
+                <h3 className="text-2xl font-semibold mb-4">2. Zasady uczestnictwa w kręgu</h3>
+                <ul className="list-disc list-inside">
+                    <li>Inkluzywność: Zapraszamy wszystkie osoby, które identyfikują się jako mężczyźni i którym ufamy.</li>
+                    <li>Mówienie od siebie: Mówimy zawsze o sobie, używając formy „ja”. Dzielimy się własnymi doświadczeniami, nie opiniami innych.</li>
+                    <li>Skupienie na nas: Koncentrujemy się na naszej grupie, unikamy mówienia o przekonaniach, „prawdach objawionych” czy innych osobach.</li>
+                    <li>Brak używek: Uczestnicy nie przychodzą na spotkania pod wpływem używek. Leki przepisane przez psychologa lub psychiatrę są akceptowane, ale zioła na receptę nie.</li>
+                    <li>Poufność: Zachowujemy adekwatną poufność, nie dzielimy się szczegółami spotkania poza kręgiem. Jeśli chcemy opowiedzieć historię komuś spoza grupy, anonimizujemy ją.</li>
+                    <li>Uważność: Maksymalizujemy uważność. Telefony wyciszamy i chowamy, aby nic nie zakłócało naszej obecności.</li>
+                    <li>Wzajemny szacunek: Nie przerywamy sobie, szanujemy przestrzeń do wypowiedzi. Można milczeć – to też jest forma komunikacji.</li>
+                    <li>Odpowiedzialność: Każdy uczestnik samodzielnie odpowiada za to, co wynosi z kręgu.</li>
+                    <li>Struktura spotkania:
+                        <ul className="list-disc list-inside ml-4">
+                            <li>Rundka otwierająca</li>
+                            <li>Tematy przyniesione przez uczestników</li>
+                            <li>Temat zaplanowany na spotkanie</li>
+                            <li>Rundka zamykająca</li>
+                        </ul>
+                    </li>
+                    <li>Priorytet tematów: Temat przyniesiony przez uczestników ma pierwszeństwo przed tematem przygotowanym przez organizatora.</li>
+                    <li>Prawdziwość: Uczestniczymy w spotkaniach w „prawdziwości” – nie nagrywamy ani nie transmitujemy spotkań.</li>
+                    <li>Pożegnanie: W przypadku decyzji o rezygnacji z kręgu, uczestnik ma obowiązek poinformować resztę grupy o swojej decyzji przed jej podjęciem.</li>
+                    <li>Brak przemocy: Nie tolerujemy żadnej formy przemocy fizycznej pod żadnym pozorem.</li>
+                </ul>
         </main>
     );
 }
