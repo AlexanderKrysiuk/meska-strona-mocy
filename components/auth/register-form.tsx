@@ -4,7 +4,7 @@ import { RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Alert, Button, Form, Input, addToast } from "@heroui/react";
+import { Alert, Button, CardFooter, Form, Input, Link, addToast } from "@heroui/react";
 import { RegisterNewUser } from "@/actions/auth";
 
 type FormFields = z.infer<typeof RegisterSchema>
@@ -73,6 +73,15 @@ const RegisterForm = () => {
             >
                 {isSubmitting ? "Przetwarzanie..." : "Załóż konto"}
             </Button>
+            <div>
+                {`Zakładając konto, akceptujesz wszystkie `} 
+                <Link
+                    href="/regulaminy"
+                    className="inline"
+                >
+                    regulaminy.
+                </Link>
+            </div>
         </Form>
     )
 }
