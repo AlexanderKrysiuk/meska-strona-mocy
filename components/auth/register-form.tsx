@@ -4,7 +4,8 @@ import { RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Alert, Button, Form, Input } from "@heroui/react";
+import { Alert, Button, Form, Input, Link, addToast } from "@heroui/react";
+import { RegisterNewUser } from "@/actions/auth";
 
 type FormFields = z.infer<typeof RegisterSchema>
 
@@ -14,8 +15,16 @@ const RegisterForm = () => {
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        console.log(data)
-        setError("root", { message: "raz" })
+        try {
+            await RegisterNewUser(data)
+            addToast({
+                title: "Utworzono nowe konto, wysłano e-mail weryfikujący",
+                color: "success",
+                variant: "bordered"
+            })
+        } catch (error) {
+            setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
+        }
     }
 
     return (
@@ -45,13 +54,15 @@ const RegisterForm = () => {
                 isInvalid={!!errors.email || !!errors.root}
                 errorMessage={errors.email?.message}
             />
-            {errors.root && (
+            {errors.root && 
                 <Alert
                     title={errors.root.message}
                     variant="bordered"
                     color="danger"
-                />
-            )}
+                >
+                
+                </Alert>
+            }
             <Button
                 type="submit"
                 color="primary"
@@ -62,6 +73,15 @@ const RegisterForm = () => {
             >
                 {isSubmitting ? "Przetwarzanie..." : "Załóż konto"}
             </Button>
+            <div>
+                {`Zakładając konto, akceptujesz wszystkie `} 
+                <Link
+                    href="/regulaminy"
+                    className="inline"
+                >
+                    regulaminy.
+                </Link>
+            </div>
         </Form>
     )
 }
