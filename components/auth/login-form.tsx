@@ -23,8 +23,13 @@ const LoginForm = () => {
     })
 
     const submit: SubmitHandler<FormFields> = async (data) => {
-        try {
-            await signIn("credentials", {...data, redirect: false })
+        const result = await signIn("credentials", { ...data, redirect:false });
+        if (result?.error) {
+            setError("root", { 
+                message: result?.error === "CredentialsSignin" && result?.code === "credentials"
+                ? "Nieprawidłowe dane logowania. Sprawdź swój email lub hasło."
+                : "Wystąpił nieznany błąd. Spróbuj ponownie później."})
+        } else {
             addToast({
                 title: "Zalogowano pomyślnie",
                 description: "Następuje przekierowanie",
@@ -32,8 +37,6 @@ const LoginForm = () => {
                 variant: "bordered"
             })
             router.refresh()
-        } catch(error) {
-            setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
         }
     }
 
