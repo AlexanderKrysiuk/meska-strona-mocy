@@ -72,7 +72,6 @@ export async function sendVerificationEmail(token: VerificationToken) {
       </head>
       <body>
         <div class="container">
-          <img class="logo" src="https://menskamoc.pl/logo.svg" alt="Męska Strona Mocy"/>
           <h1>Witaj na Męskiej Stronie Mocy</h1>
           <p>To moment, w którym zaczynasz działać. Potwierdź swój e-mail i wejdź na ścieżkę rozwoju.</p>
           <a href="${domain}/auth/verification?token=${token.id}" class="button">Aktywuj Konto</a>
@@ -141,10 +140,9 @@ export async function sendResetPasswordEmail(token: VerificationToken) {
       </head>
       <body>
         <div class="container">
-          <img class="logo" src="https://menskamoc.pl/logo.svg" alt="Męska Strona Mocy"/>
           <h1>Reset hasła</h1>
           <p>Otrzymaliśmy prośbę o zresetowanie Twojego hasła. Jeśli to Ty, kliknij w przycisk poniżej, aby ustawić nowe hasło.</p>
-          <a href="${domain}/auth/password-reset?token=${token.id}" class="button">Zresetuj hasło</a>
+          <a href="${domain}/auth/verification?token=${token.id}" class="button">Zresetuj hasło</a>
           <p>Jeśli nie prosiłeś o reset, zignoruj tę wiadomość.</p>
         </div>
       </body>
