@@ -58,7 +58,7 @@ const LoginForm = () => {
             <div className="w-full">
                 <Link
                     className="absolute right-4 text-xs"
-                    href="/auth/password-reset"
+                    href="/auth/reset"
                 >
                     Nie pamiętasz hasła?
                 </Link>

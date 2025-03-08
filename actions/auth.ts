@@ -1,8 +1,8 @@
 "use server"
 
-import { sendVerificationEmail } from "@/lib/nodemailer";
+import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/nodemailer";
 import { prisma } from "@/lib/prisma";
-import { NewPasswordSchema, RegisterSchema } from "@/schema/user";
+import { NewPasswordSchema, RegisterSchema, ResetPasswordSchema } from "@/schema/user";
 import { VerificationToken } from "@prisma/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs"
@@ -55,6 +55,20 @@ export const SetNewPassword = async (data: z.infer<typeof NewPasswordSchema>, to
         })
     } catch (error) {
         throw new Error("Aktualizacja hasła nieudana")
+    }
+}
+
+export const ResetPassword = async (data: z.infer<typeof ResetPasswordSchema>) => {
+    try {
+        const existingUser = await prisma.user.findUnique({ where: { email: data.email}})
+        if (!existingUser) return 
+
+        await prisma.verificationToken.deleteMany({ where: { email: data.email }})
+
+        const verificationToken = await GenerateVerificationToken(data.email)
+        await sendResetPasswordEmail(verificationToken) 
+    } catch(error) {
+        throw new Error("Błąd połączenia z bazą danych.");
     }
 }
 
