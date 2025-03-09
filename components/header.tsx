@@ -121,6 +121,7 @@ const Header = () => {
                                     color={pathname.startsWith(item.href) ? "primary" : "foreground"}
                                     className="flex gap-2 hover:primary transition-colors duration-400"
                                 >
+                                    {item.icon} {item.title}
                                 </Link>
                             </NavbarMenuItem>
                         ))}
