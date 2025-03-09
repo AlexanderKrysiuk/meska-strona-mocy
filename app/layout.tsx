@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/header";
 import RootWrapper from "@/components/root-wraper";
 import Footer from "@/components/footer";
+import { SessionProvider } from "next-auth/react";
+import { auth } from "@/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,22 +22,25 @@ export const metadata: Metadata = {
   description: "Meska Strona Mocy",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth()
   return (
-    <html lang="en">
-      <RootWrapper>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
-          <main className="flex-grow">
-            <Header/>
-            {children}
-          </main>
-          <Footer/>
-        </body>
-      </RootWrapper>
-    </html>
+    <SessionProvider session={session}>
+      <html lang="en">
+        <RootWrapper>
+          <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+            <main className="flex-grow">
+              <Header/>
+              {children}
+            </main>
+            <Footer/>
+          </body>
+        </RootWrapper>
+      </html>
+    </SessionProvider>
   );
 }
