@@ -59,9 +59,7 @@ const RegisterForm = () => {
                     title={errors.root.message}
                     variant="bordered"
                     color="danger"
-                >
-                
-                </Alert>
+                />
             }
             <Button
                 type="submit"

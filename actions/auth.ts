@@ -6,6 +6,7 @@ import { NewPasswordSchema, RegisterSchema, ResetPasswordSchema } from "@/schema
 import { VerificationToken } from "@prisma/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs"
+import { auth } from "@/auth";
 
 export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
     let existingUser;
@@ -77,4 +78,21 @@ export async function GenerateVerificationToken(email:string) {
     return await prisma.verificationToken.create({
         data: { email, expires }
     })
+}
+
+export const GetUserByID = async () => {
+    const session = await auth()
+
+    if (!session?.user.id) throw new Error("Nie jesteś zalogowany")
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: {id: session.user.id}
+        })
+
+        if (!user) throw new Error("Użytkownik nie istnieje.")
+        return user
+    } catch(error) {
+        throw new Error("Błąd połączenia z bazą danych")
+    }
 }
