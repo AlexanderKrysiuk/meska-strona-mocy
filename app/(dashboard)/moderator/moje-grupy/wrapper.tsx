@@ -1,7 +1,8 @@
 "use client"
 
 import CreateGroupModal from "@/components/moderator/create-group-modal";
-import { Card, CardBody, CardHeader, Divider } from "@heroui/react";
+import CreateMeetingModal from "@/components/moderator/create-meeting-modal";
+import { Card, CardBody, CardHeader, Divider, Link } from "@heroui/react";
 import { Group } from "@prisma/client";
 
 const MyGroupsWrapper = ({
@@ -11,9 +12,11 @@ const MyGroupsWrapper = ({
 }) => {
     return ( 
         <main className="p-4 space-y-4">
-            <CreateGroupModal/>
+            <div className="flex space-x-4">
+                <CreateGroupModal/>
+            </div>
             <div>
-                Grupy
+                Kręgi
                 <Divider/>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
@@ -22,6 +25,8 @@ const MyGroupsWrapper = ({
                         key={group.id}
                         isHoverable
                         isPressable
+                        as={Link}
+                        href={`moje-grupy/${group.id}`}
                     >
                         <CardHeader>
                             {group.name}    
