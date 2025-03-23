@@ -1,7 +1,6 @@
 "use client"
 
 import CreateGroupModal from "@/components/moderator/create-group-modal";
-import CreateMeetingModal from "@/components/moderator/create-meeting-modal";
 import { Card, CardBody, CardHeader, Divider, Link } from "@heroui/react";
 import { Group } from "@prisma/client";
 
