@@ -4,13 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import MyGroupWrapper from "./wrapper";
 
-const MyGroupPage = async ({
-    params
-} : {
-    params: {
-        id: string
+const MyGroupPage = async (
+    props: {
+        params: Promise<{
+            id: string
+        }>
     }
-}) => {
+) => {
+    const params = await props.params;
 
     await params
     const group = await prisma.group.findUnique({
