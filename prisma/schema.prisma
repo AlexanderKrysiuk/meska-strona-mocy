@@ -27,6 +27,7 @@ model User {
   Authenticator Authenticator[]
 
   groups        Group[]
+  moderatedGroups Group[] @relation("Moderator") // Użytkownik może moderować wiele grup
   meetings      GroupMeeting[]
  
   createdAt DateTime @default(now())
@@ -96,13 +97,16 @@ model Authenticator {
 model Group {
   id          String @id @default(uuid())
   name        String
+
   moderatorId String
+  moderator   User @relation("Moderator", fields: [moderatorId], references: [id]) // Dodajemy relację do moderatora
+  
   maxMembers  Int
 
   street      String?
   city        String?
 
-  price       Decimal?
+  price       Float?
 
   members     User[]
   meetings    GroupMeeting[]
@@ -120,7 +124,7 @@ model GroupMeeting {
   street    String
   city      String
   number    Int
-  price     Decimal
+  price     Float
 
   groupId   String
   group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)

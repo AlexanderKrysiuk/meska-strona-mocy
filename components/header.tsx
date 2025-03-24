@@ -4,7 +4,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { useCurrentUser } from "@/hooks/user";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { ModeratorItems } from "./user-menu";
+import { AllItems, ModeratorItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
@@ -28,8 +28,17 @@ const Header = () => {
                     </Link>
                 </NavbarBrand>
             </NavbarContent>
-            <NavbarContent className="lg:hidden">
-
+            <NavbarContent className="hidden lg:flex items-center">
+                {AllItems.map((item)=>(
+                <NavbarItem isActive={pathname.startsWith(item.href)}>
+                        <Link
+                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            href={item.href}
+                        >
+                            {item.title}
+                        </Link>
+                </NavbarItem>
+                ))}
             </NavbarContent>
             <NavbarContent justify="end">
                 <NavbarItem>
