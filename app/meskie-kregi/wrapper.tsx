@@ -1,10 +1,13 @@
 "use client"
 
-import Footer from "@/components/footer";
-import { faCalendar, faUserTie } from "@fortawesome/free-solid-svg-icons";
+import { formatDate } from "@/lib/format";
+import { RegisterToMeetingSchema } from "@/schema/meeting";
+import { faCalendar, faCity, faPeopleGroup, faRoad, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Button, Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
-import { group } from "console";
+import { Avatar, Button, Card, CardBody, CardFooter, CardHeader, Form, Input } from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
 
 type Meeting = {
     id: string;
@@ -14,16 +17,32 @@ type Meeting = {
     price: number;
     group: {
         name: string;
+        maxMembers: number;
         _count: { members: number };
         moderator: { name: string | null; image: string | null };
     };
 };
+
+type FormFields = z.infer<typeof RegisterToMeetingSchema>
 
 const MensCircleWrapper = ({
     meetings
 } : {
     meetings: Meeting[]
 }) => {
+    const { register, handleSubmit, setError, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+        resolver: zodResolver(RegisterToMeetingSchema)
+    })
+
+    const submit: SubmitHandler<FormFields> = async(data) => {
+        try {
+            console.log(data)
+        } catch(error) {
+            setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
+        }
+    }
+
+
     return ( 
         <main className="p-4 mx-auto max-w-2xl">
             {meetings.length > 0 ? (
@@ -40,7 +59,7 @@ const MensCircleWrapper = ({
                                     className="absolute right-4 top-4 lg:w-20 lg:h-20"
                                     size="lg"
                                     showFallback
-                                    src={meeting.group.moderator.image}
+                                    src={meeting.group.moderator.image!}
                                     isBordered
                             />
                             }
@@ -53,15 +72,51 @@ const MensCircleWrapper = ({
                                 Prowadzący: {meeting.group.moderator.name}
                             </div>
                             <div className="flex justify-start items-center">
-
-                            <FontAwesomeIcon icon={faCalendar} className="mr-2"/>
-                            Data: {meeting.startTime.toUTCString()}
+                                <FontAwesomeIcon icon={faCalendar} className="mr-2"/>
+                                Data: {formatDate(meeting.startTime)}
+                            </div>
+                            <div>
+                                <FontAwesomeIcon icon={faRoad} className="mr-2"/>
+                                Adres: {meeting.street}
+                            </div>
+                            <div>
+                                <FontAwesomeIcon icon={faCity} className="mr-2"/>
+                                Miasto: {meeting.city}
+                            </div>
+                            <div>
+                                <FontAwesomeIcon icon={faPeopleGroup} className="mr-2"/>
+                                <span className={meeting.group.maxMembers - meeting.group._count.members < 5 ? "text-danger" : ""}>
+                                    Wolne miejsca: {meeting.group.maxMembers - meeting.group._count.members}
+                                </span>
                             </div>
                         </CardBody>
                         <CardFooter>
-                            <Button>
-                                Zapisuję się
-                            </Button>
+                            <Form onSubmit={handleSubmit(submit)}
+                                className="w-full lg:flex lg:flex-row items-end"
+                            >
+
+                                <Input {...register("email")}
+                                    label="Email"
+                                    labelPlacement="outside"
+                                    type="email"
+                                    autoComplete="email"
+                                    placeholder="jack.sparrow@piratebay.co.uk"
+                                    variant="bordered"
+                                    isClearable
+                                    isRequired
+                                    isDisabled={isSubmitting}
+                                    isInvalid={!!errors.email || !!errors.root}
+                                    errorMessage={errors.email?.message || errors.root?.message}
+                                />
+                                <Button
+                                    type="submit"
+                                    color="primary"
+                                    className="w-full lg:w-auto"
+                                    isDisabled={isSubmitting || !watch("email")}
+                                >
+                                    {isSubmitting ? "Przetwarzanie..." : "Dołączam"}
+                                </Button>
+                            </Form>
                         </CardFooter>
                     </Card>
                 )

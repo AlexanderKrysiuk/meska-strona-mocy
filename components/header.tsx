@@ -30,7 +30,10 @@ const Header = () => {
             </NavbarContent>
             <NavbarContent className="hidden lg:flex items-center">
                 {AllItems.map((item)=>(
-                <NavbarItem isActive={pathname.startsWith(item.href)}>
+                <NavbarItem 
+                    isActive={pathname.startsWith(item.href)}
+                    key={item.title}
+                >
                         <Link
                             color={pathname.startsWith(item.href) ? "primary" : "foreground"}
                             href={item.href}

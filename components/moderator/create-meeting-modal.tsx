@@ -28,7 +28,7 @@ const CreateMeetingModal = ({
     const  { register, handleSubmit, setError, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         defaultValues: {
-            id: group.id,
+            groupId: group.id,
             startTime: new Date()
         }
     })
@@ -67,7 +67,7 @@ const CreateMeetingModal = ({
                     <ModalHeader>Nowe Spotkanie dla grupy {group.name}</ModalHeader>
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
-                            <input type="hidden" {...register("id")}/>
+                            <input type="hidden" {...register("groupId")}/>
                             {/*}
                             <Select
                                 label="Grupa"

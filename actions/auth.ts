@@ -96,3 +96,15 @@ export const GetUserByID = async () => {
         throw new Error("Błąd połączenia z bazą danych")
     }
 }
+
+export const GetUserByEmail = async (email:string) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {email}
+        })
+        if (!user) throw new Error("Użytkownik nie istnieje.")
+        return user
+    } catch(error) {
+        throw new Error("Błąd połączenia z bazą danych")
+    }
+}
