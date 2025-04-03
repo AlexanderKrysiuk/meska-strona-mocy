@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import MensCircleWrapper from "./wrapper";
+import { GroupMembershipStatus } from "@prisma/client";
 
 const MensCirclePage = async () => {
     const meetings = await prisma.groupMeeting.findMany({
@@ -17,7 +18,13 @@ const MensCirclePage = async () => {
                     maxMembers: true,
                     _count: {
                         select: {
-                            members: true, // Liczba członków
+                            members: {
+                                where: {
+                                    status: {
+                                        in: [GroupMembershipStatus.Candidate, GroupMembershipStatus.Member]
+                                    }
+                                } 
+                            }
                         },
                     },
                     moderator: {

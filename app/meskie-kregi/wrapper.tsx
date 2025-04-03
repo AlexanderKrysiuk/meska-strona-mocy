@@ -2,9 +2,9 @@
 
 import { formatDate } from "@/lib/format";
 import { RegisterToMeetingSchema } from "@/schema/meeting";
-import { faCalendar, faCity, faPeopleGroup, faRoad, faUserTie } from "@fortawesome/free-solid-svg-icons";
+import { faCalendar, faCity, faMoneyBill, faPeopleGroup, faRoad, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Button, Card, CardBody, CardFooter, CardHeader, Form, Input } from "@heroui/react";
+import { Avatar, Button, Card, CardBody, CardFooter, CardHeader, Divider, Form, Input, Link } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -84,6 +84,10 @@ const MensCircleWrapper = ({
                                 Miasto: {meeting.city}
                             </div>
                             <div>
+                                <FontAwesomeIcon icon={faMoneyBill} className="mr-2"/>
+                                Cena: {meeting.price}
+                            </div>
+                            <div>
                                 <FontAwesomeIcon icon={faPeopleGroup} className="mr-2"/>
                                 <span className={meeting.group.maxMembers - meeting.group._count.members < 5 ? "text-danger" : ""}>
                                     Wolne miejsca: {meeting.group.maxMembers - meeting.group._count.members}
@@ -91,6 +95,18 @@ const MensCircleWrapper = ({
                             </div>
                         </CardBody>
                         <CardFooter>
+                            <Button
+                                as={Link}
+                                href={`meskie-kregi/${meeting.id}`}
+                                variant="light"
+                                size="lg"
+                                fullWidth
+                                color="success"
+                            >
+                                Zarezerwuj miejsce
+                            </Button>
+
+                            {/*
                             <Form onSubmit={handleSubmit(submit)}
                                 className="w-full lg:flex lg:flex-row items-end"
                             >
@@ -117,6 +133,7 @@ const MensCircleWrapper = ({
                                     {isSubmitting ? "Przetwarzanie..." : "Dołączam"}
                                 </Button>
                             </Form>
+                            */}
                         </CardFooter>
                     </Card>
                 )
