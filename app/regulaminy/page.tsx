@@ -1,139 +1,187 @@
+"use client"
+
 import { Link } from "@heroui/link";
-import { Divider } from "@heroui/react";
+import { Divider, Tab, Tabs } from "@heroui/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const Regulations = () => {
-    return ( 
-        <main className="max-w-3xl mx-auto p-6">
-            <h1 className="text-3xl font-bold text-center mb-6">
-                Polityka Prywatności i Regulamin korzystania z Męska Strona Mocy
-            </h1>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">1. Postanowienia ogólne</h2>
-                <ul className="list-disc list-inside">
-                    <li>Niniejszy dokument określa zasady korzystania ze strony internetowej Męska Strona Mocy dostępnej pod adresem <Link href="/">www.meska-strona-mocy.pl</Link></li>
-                    <li>Właścicielem i administratorem strony jest Alexander Krysiuk, działający jako osoba prywatna.</li>
-                    <li>Dokument obowiązuje wszystkich użytkowników korzystających ze strony, zarówno niezarejestrowanych, jak i posiadających konto.</li>
-                    <li>Korzystanie ze strony oznacza akceptację niniejszego regulaminu.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">2. Rejestracja i konto użytkownika</h2>
-                <ul className="list-disc list-inside">
-                    <li>Rejestracja na stronie jest dobrowolna i bezpłatna.</li>
-                    <li>W celu założenia konta użytkownik podaje: imię, nazwisko oraz adres e-mail.</li>
-                    <li>Użytkownik zobowiązuje się do podawania prawdziwych danych i niezakładania konta w imieniu innych osób.</li>
-                    <li>Administrator strony ma prawo do usunięcia konta użytkownika w przypadku naruszenia regulaminu.</li>
-                </ul>
-            </section>
-  
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">3. Zasady korzystania ze strony</h2>
-                <ul className="list-disc list-inside">
-                    <li>Użytkownicy mogą korzystać z treści publikowanych na stronie zgodnie z ich przeznaczeniem.</li>
-                    <li>Zabrania się podejmowania działań naruszających stabilność działania strony, jej bezpieczeństwo oraz praw osób trzecich.</li>
-                    <li>Administrator strony może wprowadzać zmiany w funkcjonalności oraz treściach dostępnych dla użytkowników.</li>
-                    <li>Strona może zawierać reklamy i linki do stron trzecich. Administrator nie ponosi odpowiedzialności za treści zewnętrzne.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">4. Ochrona danych osobowych</h2>
-                <ul className="list-disc list-inside">
-                    <li>Administrator przetwarza dane osobowe użytkowników zgodnie z obowiązującymi przepisami prawa.</li>
-                    <li>Dane użytkowników są wykorzystywane wyłącznie do celów związanych z funkcjonowaniem strony.</li>
-                    <li>Użytkownik ma prawo do dostępu do swoich danych, ich poprawiania oraz usunięcia.</li>
-                    <li>Administrator zobowiązuje się do ochrony danych osobowych i nieudostępniania ich podmiotom trzecim bez zgody użytkownika, chyba że wymagają tego przepisy prawa.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">5. Newsletter</h2>
-                <ul className="list-disc list-inside">
-                    <li>Użytkownicy mogą zapisać się do newslettera, podając swój adres e-mail.</li>
-                    <li>Subskrypcja jest dobrowolna i może być w każdej chwili anulowana poprzez link w wiadomości e-mail.</li>
-                    <li>Adresy e-mail podane do subskrypcji newslettera nie będą udostępniane podmiotom trzecim.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">6. Komentarze i treści użytkowników</h2>
-                <ul className="list-disc list-inside">
-                    <li>Użytkownicy mogą zamieszczać komentarze i treści zgodnie z zasadami kultury i dobrych obyczajów.</li>
-                    <li>Administrator ma prawo do moderowania i usuwania treści naruszających regulamin.</li>
-                    <li>Zabronione jest publikowanie treści obraźliwych, wulgarnych, reklamowych oraz niezgodnych z prawem.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">7. Odpowiedzialność</h2>
-                <ul className="list-disc list-inside">
-                    <li>Administrator strony nie ponosi odpowiedzialności za sposób, w jaki użytkownicy korzystają z publikowanych treści.</li>
-                    <li>Administrator zastrzega sobie prawo do modyfikacji strony, usuwania treści oraz czasowego zawieszenia działania strony.</li>
-                    <li>Administrator nie ponosi odpowiedzialności za przerwy techniczne ani ewentualne straty wynikające z korzystania ze strony.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">8. Zmiany regulaminu</h2>
-                <ul className="list-disc list-inside">
-                    <li>Administrator ma prawo do zmiany niniejszego dokumentu w dowolnym czasie.</li>
-                    <li>Użytkownicy zostaną poinformowani o zmianach poprzez ogłoszenie na stronie lub drogą mailową.</li>
-                    <li>Korzystanie ze strony po zmianie regulaminu oznacza jego akceptację.</li>
-                </ul>
-            </section>
-        
-            <section className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">9. Postanowienia końcowe</h2>
-                <ul className="list-disc list-inside">
-                    <li>W sprawach nieuregulowanych niniejszym dokumentem obowiązują przepisy prawa polskiego.</li>
-                    <li>Wszelkie spory związane z korzystaniem ze strony będą rozstrzygane przez sąd właściwy dla miejsca zamieszkania administratora.</li>
-                    <li>Dokument obowiązuje od dnia 04-03-2025.</li>
-                </ul>
-            </section>
-            <Divider className="my-6"/>
-            <h1 className="text-3xl font-bold text-center mb-6">
-                Zasady uczestnictwa w Męskim Kręgu
-            </h1>        
-                <p>Przychodząc na spotkania męskiego kręgu, akceptujesz regulamin zawarty poniżej.</p>
-                <h3 className="text-2xl font-semibold mb-4">1. Zasady organizacyjne</h3>
-                <ul className="list-disc list-inside">
-                    <li>Docelowy rozmiar grupy: 15 osób</li>
-                    <li>Czas trwania: 2,5 - 3 godziny</li>
-                    <li>Częstotliwość spotkań: Co 3-4 tygodnie (informacja o kolejnych datach będzie podawana na spotkaniach)</li>
-                    <li>Opłata: Spotkania są płatne – 150 zł za spotkanie</li>
-                    <li>Płatność: Za 3 spotkania z góry po podjęciu decyzji. Nieobecność stanowi odpowiedzialność uczestnika.</li>
-                    <li>Chat: Wszystkie informacje będą podawane za pośrednictwem Discord.</li>
-                    <li>Punktualność: Szanujemy czas – nie spóźniamy się.</li>
-                    <li>Lokalizacja: Spotkania odbywają się na ul. Grunwaldzkiej 102 w salach 35 lub 41 w Gdańsku.</li>
-                </ul>
-        
-                <h3 className="text-2xl font-semibold mb-4">2. Zasady uczestnictwa w kręgu</h3>
-                <ul className="list-disc list-inside">
-                    <li>Inkluzywność: Zapraszamy wszystkie osoby, które identyfikują się jako mężczyźni i którym ufamy.</li>
-                    <li>Mówienie od siebie: Mówimy zawsze o sobie, używając formy „ja”. Dzielimy się własnymi doświadczeniami, nie opiniami innych.</li>
-                    <li>Skupienie na nas: Koncentrujemy się na naszej grupie, unikamy mówienia o przekonaniach, „prawdach objawionych” czy innych osobach.</li>
-                    <li>Brak używek: Uczestnicy nie przychodzą na spotkania pod wpływem używek. Leki przepisane przez psychologa lub psychiatrę są akceptowane, ale zioła na receptę nie.</li>
-                    <li>Poufność: Zachowujemy adekwatną poufność, nie dzielimy się szczegółami spotkania poza kręgiem. Jeśli chcemy opowiedzieć historię komuś spoza grupy, anonimizujemy ją.</li>
-                    <li>Uważność: Maksymalizujemy uważność. Telefony wyciszamy i chowamy, aby nic nie zakłócało naszej obecności.</li>
-                    <li>Wzajemny szacunek: Nie przerywamy sobie, szanujemy przestrzeń do wypowiedzi. Można milczeć – to też jest forma komunikacji.</li>
-                    <li>Odpowiedzialność: Każdy uczestnik samodzielnie odpowiada za to, co wynosi z kręgu.</li>
-                    <li>Struktura spotkania:
-                        <ul className="list-disc list-inside ml-4">
-                            <li>Rundka otwierająca</li>
-                            <li>Tematy przyniesione przez uczestników</li>
-                            <li>Temat zaplanowany na spotkanie</li>
-                            <li>Rundka zamykająca</li>
-                        </ul>
-                    </li>
-                    <li>Priorytet tematów: Temat przyniesiony przez uczestników ma pierwszeństwo przed tematem przygotowanym przez organizatora.</li>
-                    <li>Prawdziwość: Uczestniczymy w spotkaniach w „prawdziwości” – nie nagrywamy ani nie transmitujemy spotkań.</li>
-                    <li>Pożegnanie: W przypadku decyzji o rezygnacji z kręgu, uczestnik ma obowiązek poinformować resztę grupy o swojej decyzji przed jej podjęciem.</li>
-                    <li>Brak przemocy: Nie tolerujemy żadnej formy przemocy fizycznej pod żadnym pozorem.</li>
-                </ul>
-        </main>
+    return (
+        <Suspense>
+            <TabsContent/>
+        </Suspense>
     );
 }
  
 export default Regulations;
+
+const TabsContent = () => {
+    const params = useSearchParams()
+    const router = useRouter()
+
+    return (
+        <main className="max-w-3xl mx-auto p-6">
+            <Tabs
+                variant="underlined"
+                fullWidth
+                color="primary"
+                defaultSelectedKey={
+                    params.has("meski-krag")
+                    ? "meski-krag"
+                    : params.has("glowny")
+                    ? "glowny"
+                    : params.has("polityka-prywatnosci")
+                    ? "polityka-prywatnosci" 
+                    : ""
+                }
+                onSelectionChange={(key)=>{router.replace(`/regulaminy?${key}`)}}
+            >
+                <Tab key="" title="Wszystko">
+                    <div className="space-y-4">
+                        <Circle/>
+                        <Divider/>
+                        <Regulation/>
+                        <Divider/>
+                        <PrivacyPolicy/>
+                    </div>
+                </Tab>
+                <Tab key="meski-krag" title="Męski krąg">
+                    <Circle/>
+                </Tab>
+                <Tab key="glowny" title="Regulamin">
+                    <Regulation/>
+                </Tab>
+                <Tab key="polityka-prywatnosci" title="Polityka Prywatności">
+                    <PrivacyPolicy/>
+                </Tab>
+            </Tabs>
+        </main>
+    );
+}
+
+const Circle = () => {
+    return (
+        <main className="space-y-4">
+            <h5 className="text-center">
+                Zasady uczestnictwa w kręgu
+            </h5>
+            <p className="text-center">Przychodząc na spotkania męskiego kręgu, akceptujesz zasady zawarte poniżej.</p>
+            <ol className="list-decimal list-outside space-y-4 text-lg">
+                <li><span className="font-bold">Poufność i anonimizacja – </span>To, co jest mówione w kręgu, zostaje w kręgu. Jeśli chcesz podzielić się czyjąś historią na zewnątrz, robisz to w sposób uniemożliwiający identyfikację osoby, której dotyczyła – nie używamy imion, nazwisk, zawodów ani żadnych informacji wskazujących, że dana osoba była uczestnikiem kręgu. Możesz powiedzieć np. “znam kogoś, kto miał podobne doświadczenie”.</li>
+                <li><span className="font-bold">Płatność – </span>Po pierwszym spotkaniu podejmujesz decyzję, czy zostajesz w kręgu. Jeśli tak, spotkania są płatne z góry za trzy spotkania. Rozliczenia odbywają się poprzez moderatora kręgu.</li>
+                <li><span className="font-bold">Brak nagrań, zdjęć i telefonów – </span>Nie nagrywamy, nie transmitujemy, nie robimy zdjęć ani selfie. Jeśli musisz być pod telefonem (np. ze względu na rodzinę), informujesz o tym przed spotkaniem. W innym wypadku telefony pozostają wyłączone. Tworzymy przestrzeń autentyczności i zaufania.</li>
+                <li><span className="font-bold">Słuchamy, nie oceniamy, mówimy od siebie – </span>Słuchamy z uważnością, nie przerywamy, nie oceniamy. Dzielimy się własnym doświadczeniem, mówiąc w pierwszej osobie. Każdy ma też prawo milczeć – można być uczestnikiem spotkania, nie wypowiadając się ani razu.</li>
+                <li><span className="font-bold">Brak przemocy – </span>Nie stosujemy przemocy w żadnej formie – werbalnej, emocjonalnej ani fizycznej. Tworzymy przestrzeń bezpieczeństwa, zaufania i wzajemnego szacunku.</li>
+                <li><span className="font-bold">Stan obecności – </span>Przychodzimy trzeźwi i w pełni świadomi. Substancje zmieniające świadomość (w tym marihuana) nie są akceptowane przed ani w trakcie spotkania. Wyjątkiem są leki przepisane przez lekarza.</li>
+                <li><span className="font-bold">Wsparcie zamiast narzucania rad – </span>Możemy dzielić się swoimi doświadczeniami, ale nie narzucamy innym rad. Jeśli ktoś chce usłyszeć radę, wyraźnie o nią prosi.</li>
+                <li><span className="font-bold">Unikamy trzech tematów – </span>Religia, polityka i wojna płci to tematy, których nie poruszamy, chyba że w ramach ciekawości lub potrzeby wentylacji emocji przez uczestnika.</li>
+                <li><span className="font-bold">Tematy spotkań – </span>Tematy przyniesione przez uczestników mają pierwszeństwo przed zaplanowanymi. Spotkanie kończymy refleksją, wdzięcznością lub krótkim podsumowaniem.</li>
+                <li><span className="font-bold">Indywidualna odpowiedzialność – </span>Każdy uczestnik bierze odpowiedzialność za to, co wynosi z kręgu, jak również za to, co wnosi.</li>
+                <li><span className="font-bold">Dobrowolność i intencja – </span>Udział w kręgu jest dobrowolny. Przychodzimy z intencją szczerości, rozwoju i wsparcia siebie nawzajem. Obecność i uważność są równie ważne, jak dzielenie się słowem. Jeśli zdecydujesz się zakończyć udział w kręgu – poinformuj o tym. Informacje organizacyjne są przekazywane przez komunikator grupowy – najczęściej WhatsApp.</li>
+            </ol>
+        </main>
+    )
+}
+
+const Regulation = () => {
+    return (
+        <main className="space-y-4">
+            <h5 className="text-center">
+                Regulamin korzystania ze strony Męska Strona Mocy
+            </h5>
+            <ol className="list-decimal list-outside space-y-4 text-lg">
+                <li><span className="font-bold">Postanowienia ogólne</span>
+                    <ul className="list-outside space-y-2">
+                        <li>Niniejszy regulamin określa zasady korzystania ze strony internetowej Męska Strona Mocy dostępnej pod adresem <Link size="lg" href="/">www.meska-strona-mocy.pl</Link></li>
+                        <li>Właścicielem i administratorem strony jest Alexander Krysiuk, działający jako osoba prywatna.</li>
+                        <li>Regulamin obowiązuje wszystkich użytkowników korzystających ze strony, zarówno niezarejestrowanych, jak i posiadających konto.</li>
+                        <li>Korzystanie ze strony oznacza akceptację niniejszego regulaminu.</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Rejestracja i konto użytkownika</span>
+                    <ul className="list-outside space-y-2">
+                        <li>Rejestracja na stronie jest dobrowolna i bezpłatna.</li>
+                        <li>W celu założenia konta użytkownik podaje: adres e-mail</li>
+                        <li>Użytkownik zobowiązuje się do podania prawdziwych danych i nieudostępniania swojego konta osobom trzecim.</li>
+                        <li>Administrator zastrzega sobie prawo do usunięcia konta w przypadku naruszenia regulaminu.</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Zasady korzystania ze strony</span>
+                    <ul className="list-outside space-y-2">
+                        <li>Użytkownik zobowiązuje się do korzystania ze strony w sposób zgodny z prawem i dobrymi obyczajami.</li>
+                        <li>Zabronione jest dostarczanie treści o charakterze bezprawnym, obraźliwym lub wulgarnym.</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Odpowiedzialność</span>
+                    <ul className="list-outside space-y-2">
+                        <li>Administrator nie ponosi odpowiedzialności za treści publikowane przez użytkowników.</li>
+                        <li>Administrator zastrzega sobie prawo do czasowego lub stałego zablokowania dostępu do strony w przypadku naruszeń.</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Postanowienia końcowe</span>
+                    <ul className="list-outside space-y-2">
+                        <li>Administrator zastrzega sobie prawo do wprowadzania zmian w regulaminie.</li>
+                        <li>Zmiany wchodzą w życie z chwilą opublikowania na stronie.</li>
+                    </ul>
+                </li>
+            </ol>
+        </main>
+    )
+}
+
+const PrivacyPolicy = () => {
+    return (
+        <main className="space-y-4">
+            <h5 className="text-center">
+                Poltyka Prywatności Męskiej Strony Mocy
+            </h5>
+            <ol className="list-decimal list-outside space-y-4 text-lg">
+                <li><span className="font-bold">Administrator danych - </span>Administratorem danych osobowych użytkowników strony jest Alexander Krysiuk, osoba prywatna.
+                    <ul className="list-outside space-y-2">
+                        <li>Kontakt: <Link size="lg" href="mailto:kontakt@meska-strona-mocy.pl">kontakt@meska-strona-mocy.pl</Link></li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Zakres przetwarzanych danych - </span>Przetwarzamy dane, które użytkownik sam podaje podczas:
+                    <ul className="list-outside space-y-2">
+                        <li>Rejestracji na stronie (np. imię, adres e-mail)</li>
+                        <li>Zakupu usług lub produktów (dane do realizacji płatności)</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Cele przetwarzania danych - </span>Dane przetwarzamy w celu:
+                    <ul className="list-outside space-y-2">
+                        <li>Obsługi konta użytkownika</li>
+                        <li>Realizacji zamówienia i płatności</li>
+                        <li>Kontaktowania się z użytkownikiem w sprawach związanych z obsługą serwisu</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Podstawa prawna - </span>Dane przetwarzamy na podstawie:
+                    <ul className="list-outside space-y-2">
+                        <li>Zgody użytkownika (art. 6 ust. 1 lit. a RODO)</li>
+                        <li>Wykonania umowy (art. 6 ust. 1 lit. b RODO)</li>
+                        <li>Obowiązków prawnych (art. 6 ust. 1 lit. c RODO)</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Podmioty, którym powierzamy dane - </span>W celu realizacji płatności online, dane użytkownika mogą być przekazywane do Stripe (Stripe Payments Europe Ltd.).</li>
+                <li><span className="font-bold">Okres przechowywania danych - </span>Dane przechowujemy tak długo, jak jest to niezbędne do:
+                    <ul className="list-outside space-y-2">
+                        <li>Realizacji usług</li>
+                        <li>Wypełnienia obowiązków prawnych</li>
+                        <li>Do momentu wycofania zgody przez użytkownika</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Prawa użytkownika - </span>Użytkownik ma prawo do:
+                    <ul className="list-outside space-y-2">
+                        <li>Dostępu do swoich danych</li>
+                        <li>Sprostowania danych</li>
+                        <li>Usunięcia danych</li>
+                        <li>Ograniczenia przetwarzania danych</li>
+                        <li>Wniesienia sprzeciwu wobec przetwarzania danych</li>
+                        <li>Przeniesienia danych</li>
+                        <li>Złożenia skargi do Prezesa UODO (organ nadzorczy)</li>
+                    </ul>
+                </li>
+                <li><span className="font-bold">Dobrowolność podania danych - </span>Podanie danych jest dobrowolne, ale niezbędne do rejestracji i/lub dokonania zakupu.</li>
+            </ol>
+        </main>
+    )
+}

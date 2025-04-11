@@ -27,3 +27,82 @@ body {
 input:-webkit-autofill {
   -webkit-text-fill-color: var(--foreground) !important;
 }
+
+/* Domyślne style dla nagłówków */
+h1 {
+  font-size: 2rem; /* Domyślnie dla urządzeń mobilnych */
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: 1.75rem;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+h4 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1.5;
+}
+
+h5 {
+  font-size: 1.125rem;
+  font-weight: bold;
+  line-height: 1.6;
+}
+
+h6 {
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1.7;
+}
+
+/* Dostosowanie dla tabletów */
+@media (min-width: 768px) {
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.75rem; }
+  h4 { font-size: 1.5rem; }
+  h5 { font-size: 1.375rem; }
+  h6 { font-size: 1.125rem; }
+}
+
+/* Dostosowanie dla monitorów komputerów */
+@media (min-width: 1024px) {
+  h1 { font-size: 3rem; }
+  h2 { font-size: 2.5rem; }
+  h3 { font-size: 2rem; }
+  h4 { font-size: 1.75rem; }
+  h5 { font-size: 1.5rem; }
+  h6 { font-size: 1.25rem; }
+}
+
+/* Domyślne style dla paragrafów */
+p {
+  font-size: 1rem; /* Domyślnie dla urządzeń mobilnych */
+  line-height: 1.6;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+}
+
+/* Dostosowanie dla tabletów */
+@media (min-width: 768px) {
+  p {
+    font-size: 1.125rem;
+  }
+}
+
+/* Dostosowanie dla monitorów komputerów */
+@media (min-width: 1024px) {
+  p {
+    font-size: 1.25rem;
+  }
+}
