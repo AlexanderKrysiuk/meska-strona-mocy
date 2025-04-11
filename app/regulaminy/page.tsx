@@ -133,7 +133,7 @@ const PrivacyPolicy = () => {
     return (
         <main className="space-y-4 px-4">
             <h5 className="text-center">
-                Poltyka Prywatności Męskiej Strony Mocy
+                Polityka Prywatności Męskiej Strony Mocy
             </h5>
             <ol className="list-decimal list-outside space-y-4 text-lg">
                 <li><span className="font-bold">Administrator danych - </span>Administratorem danych osobowych użytkowników strony jest Alexander Krysiuk, osoba prywatna.
