@@ -20,7 +20,7 @@ const TabsContent = () => {
     const router = useRouter()
 
     return (
-        <main className="max-w-3xl mx-auto p-6">
+        <main className="max-w-3xl mx-auto p-4">
             <Tabs
                 variant="underlined"
                 fullWidth
@@ -61,7 +61,7 @@ const TabsContent = () => {
 
 const Circle = () => {
     return (
-        <main className="space-y-4">
+        <main className="space-y-4 px-4">
             <h5 className="text-center">
                 Zasady uczestnictwa w kręgu
             </h5>
@@ -85,7 +85,7 @@ const Circle = () => {
 
 const Regulation = () => {
     return (
-        <main className="space-y-4">
+        <main className="space-y-4 px-4">
             <h5 className="text-center">
                 Regulamin korzystania ze strony Męska Strona Mocy
             </h5>
@@ -131,7 +131,7 @@ const Regulation = () => {
 
 const PrivacyPolicy = () => {
     return (
-        <main className="space-y-4">
+        <main className="space-y-4 px-4">
             <h5 className="text-center">
                 Poltyka Prywatności Męskiej Strony Mocy
             </h5>
