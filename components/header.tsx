@@ -8,6 +8,7 @@ import { AllItems, ModeratorItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
+import { it } from "node:test";
 
 const Header = () => {
     const user = useCurrentUser()
@@ -140,6 +141,19 @@ const Header = () => {
                         <Divider/>
                     </div>
                 }
+                {AllItems.map((item)=>(
+                    <NavbarMenuItem
+                        isActive={pathname.startsWith(item.href)}
+                        key={item.title}
+                    >
+                        <Link
+                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            href={item.href}
+                        >
+                            {item.title}
+                        </Link>
+                    </NavbarMenuItem>
+                ))}
                 <NavbarMenuItem>
                     {user ? 
                         <Link
