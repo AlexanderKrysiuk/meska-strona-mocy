@@ -3,7 +3,7 @@
 import { RegisterSchema } from "@/schema/user";
 import { fa1, fa2, fa3 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Checkbox, Form, Input, Link } from "@heroui/react";
+import { Avatar, Button, Checkbox, Form, Input, Link } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -125,6 +125,16 @@ const MeetingReservationWrapper = ({
                     isInvalid={!!errors.email || !!errors.root}
                     errorMessage={errors.email?.message}
                 />
+                <Button
+                    type="submit"
+                    color="primary"
+                    fullWidth
+                    isDisabled={isSubmitting || !watch("name") || !watch("email")}
+                    isLoading={isSubmitting}
+                    className="text-white"
+                >
+                    {isSubmitting ? "Prztwarzanie..." : "Rezerwuj miejsce"}
+                </Button>
             </Form>
         <pre>
             {JSON.stringify(meeting, null,2)}
