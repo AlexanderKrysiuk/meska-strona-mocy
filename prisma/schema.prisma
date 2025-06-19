@@ -97,6 +97,7 @@ model Authenticator {
 model Group {
   id   String @id @default(uuid())
   name String
+  slug String @unique
 
   moderatorId String
   moderator   User   @relation("Moderator", fields: [moderatorId], references: [id]) // Dodajemy relację do moderatora

@@ -1,7 +1,8 @@
 "use client"
 
 import { CreateGroup } from "@/actions/group";
-import { CreateGroupSchema } from "@/schema/group";
+import { GroupSchema } from "@/schema/group";
+import { finalSlugify, liveSlugify } from "@/utils/slug";
 import { faSquarePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Alert, Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, addToast, useDisclosure } from "@heroui/react";
@@ -14,14 +15,15 @@ const CreateGroupModal = () => {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const router = useRouter()
     
-    type FormFields = z.infer<typeof CreateGroupSchema>
+    type FormFields = z.infer<typeof GroupSchema>
 
-    const { register, handleSubmit, setError, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
-        resolver: zodResolver(CreateGroupSchema)
+    const { register, handleSubmit, setError, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+        resolver: zodResolver(GroupSchema)
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
         try {
+            console.log(data)
             await CreateGroup(data)
             addToast({
                 title: "Utworzono nową grupę",
@@ -75,6 +77,21 @@ const CreateGroupModal = () => {
                                 isInvalid={!!errors.maxMembers || !!errors.root}
                                 errorMessage={errors.maxMembers?.message} 
                             />
+                            <Input {...register("slug")}
+                                label="Unikalny Odnośnik"
+                                labelPlacement="outside"
+                                type="text"
+                                placeholder="zaloga-czarnej-perly"
+                                description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
+                                variant="bordered"
+                                value={watch("slug")}
+                                onValueChange={(value) => setValue("slug", liveSlugify(value))}
+                                onBlur={(event) => {setValue("slug", finalSlugify(event.target.value))}}
+                                isClearable
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.slug || !!errors.root}
+                                errorMessage={errors.slug?.message}
+                            />
                             {errors.root && 
                                 <Alert
                                     title={errors.root.message}
@@ -87,7 +104,7 @@ const CreateGroupModal = () => {
                             <Button
                                 type="submit"
                                 color="primary"
-                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers")}
+                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || !watch("slug")}
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Utwórz nową grupę"}
                             </Button>

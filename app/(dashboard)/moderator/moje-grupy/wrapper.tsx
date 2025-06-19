@@ -31,7 +31,10 @@ const MyGroupsWrapper = ({
                             {group.name}    
                         </CardHeader>
                         <CardBody>
-                        <p className="text-sm text-gray-600">Max: {group.maxMembers} członków</p>
+                        <p className="text-sm text-gray-600">
+                            Max: {group.maxMembers} członków <br/>
+                            Unikalny odnośnik: {group.slug}
+                        </p>
                         </CardBody>
                     </Card>
                 ))}
