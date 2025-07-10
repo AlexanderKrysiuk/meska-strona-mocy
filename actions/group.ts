@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { GroupSchema } from "@/schema/group"
-import { z } from "zod"
+import { ZodError, ZodIssueCode, z } from "zod"
 import { GetUserByID } from "./auth"
 import { Role } from "@prisma/client"
 
@@ -13,12 +13,11 @@ export const CreateGroup = async (data: z.infer<typeof GroupSchema>) => {
 
     const existingGroup = await GetGroupBySlug(data.slug)
 
-    //if (existingGroup) throw new Error("Dany odnośnik jest już zajęty")
-    if (existingGroup) throw {
+    if (existingGroup) return {
+        success: false,
         field: "slug",
         message: "Dany odnośnik jest już zajęty"
     }
-
 
     try {
         await prisma.group.create({
@@ -30,7 +29,15 @@ export const CreateGroup = async (data: z.infer<typeof GroupSchema>) => {
             }
         })
     } catch (error) {
-        throw new Error("Błąd połączenia z bazą danych")
+        return {
+            success: false,
+            message: "Błąd połączenia z bazą danych"
+        }
+    }
+
+    return {
+        success: true,
+        message: "Pomyślnie dodano nową grupę"
     }
 }
 

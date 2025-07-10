@@ -4,9 +4,9 @@ import { formatDate } from "@/lib/format";
 import { RegisterToMeetingSchema } from "@/schema/meeting";
 import { faCalendar, faCity, faMoneyBill, faPeopleGroup, faRoad, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Button, Card, CardBody, CardFooter, CardHeader, Divider, Form, Input, Link } from "@heroui/react";
+import { Avatar, Button, Card, CardBody, CardFooter, CardHeader, Link } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 type Meeting = {
@@ -30,17 +30,17 @@ const MensCircleWrapper = ({
 } : {
     meetings: Meeting[]
 }) => {
-    const { register, handleSubmit, setError, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+    const { formState: { } } = useForm<FormFields>({
         resolver: zodResolver(RegisterToMeetingSchema)
     })
 
-    const submit: SubmitHandler<FormFields> = async(data) => {
-        try {
-            console.log(data)
-        } catch(error) {
-            setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
-        }
-    }
+    //const submit: SubmitHandler<FormFields> = async(data) => {
+    //    try {
+    //        console.log(data)
+    //    } catch(error) {
+    //        setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
+    //    }
+    //}
 
 
     return ( 

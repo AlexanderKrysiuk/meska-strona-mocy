@@ -23,17 +23,25 @@ const CreateGroupModal = () => {
 
     const submit: SubmitHandler<FormFields> = async(data) => {
         try {
-            console.log(data)
-            await CreateGroup(data)
+            const result = await CreateGroup(data)
+
+            if (result.field) {
+                setError(result.field as keyof FormFields, {message: result.message})
+            } else {
+                addToast({
+                    title: result.message,
+                    color: result.success ? "success" : "danger",
+                    variant: "bordered"
+                })
+                router.refresh()
+                onClose()
+            }
+        } catch {
             addToast({
-                title: "Utworzono nową grupę",
-                color: "success",
+                title: "Wystąpił nieznany błąd",
+                color: "danger",
                 variant: "bordered"
             })
-            router.refresh()
-            onClose()
-        } catch(error) {
-            setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
         }
     }
 
@@ -104,7 +112,7 @@ const CreateGroupModal = () => {
                             <Button
                                 type="submit"
                                 color="primary"
-                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || !watch("slug")}
+                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || !watch("slug") || Object.keys(errors).length > 0}
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Utwórz nową grupę"}
                             </Button>

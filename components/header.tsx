@@ -8,7 +8,6 @@ import { AllItems, ModeratorItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
-import { it } from "node:test";
 
 const Header = () => {
     const user = useCurrentUser()

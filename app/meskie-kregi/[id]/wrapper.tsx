@@ -29,7 +29,7 @@ const MeetingReservationWrapper = ({
 } : {
     meeting: Meeting
 }) => {
-    const { register, handleSubmit, setError, watch, formState: { errors, isSubmitting }} = useForm<FormFields>({
+    const { register, handleSubmit, watch, formState: { errors, isSubmitting }} = useForm<FormFields>({
         resolver: zodResolver(RegisterSchema)
     })
 
