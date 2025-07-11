@@ -1,8 +1,8 @@
 "use client"
 
 import { CreateGroup } from "@/actions/group";
-import { GroupSchema } from "@/schema/group";
-import { finalSlugify, liveSlugify } from "@/utils/slug";
+import { CreateGroupSchema } from "@/schema/group";
+//import { finalSlugify, liveSlugify } from "@/utils/slug";
 import { faSquarePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Alert, Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, addToast, useDisclosure } from "@heroui/react";
@@ -15,27 +15,27 @@ const CreateGroupModal = () => {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const router = useRouter()
     
-    type FormFields = z.infer<typeof GroupSchema>
+    type FormFields = z.infer<typeof CreateGroupSchema>
 
-    const { register, handleSubmit, setError, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
-        resolver: zodResolver(GroupSchema)
+    const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+        resolver: zodResolver(CreateGroupSchema)
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
         try {
             const result = await CreateGroup(data)
 
-            if (result.field) {
-                setError(result.field as keyof FormFields, {message: result.message})
-            } else {
-                addToast({
-                    title: result.message,
-                    color: result.success ? "success" : "danger",
-                    variant: "bordered"
-                })
-                router.refresh()
-                onClose()
-            }
+            //if (result.field) {
+            //    setError(result.field as keyof FormFields, {message: result.message})
+            //} else {
+            addToast({
+                title: result.message,
+                color: result.success ? "success" : "danger",
+                variant: "bordered"
+            })
+            router.refresh()
+            onClose()
+            //}
         } catch {
             addToast({
                 title: "Wystąpił nieznany błąd",
@@ -85,7 +85,7 @@ const CreateGroupModal = () => {
                                 isInvalid={!!errors.maxMembers || !!errors.root}
                                 errorMessage={errors.maxMembers?.message} 
                             />
-                            <Input {...register("slug")}
+                            {/*<Input {...register("slug")}
                                 label="Unikalny Odnośnik"
                                 labelPlacement="outside"
                                 type="text"
@@ -99,7 +99,7 @@ const CreateGroupModal = () => {
                                 isDisabled={isSubmitting}
                                 isInvalid={!!errors.slug || !!errors.root}
                                 errorMessage={errors.slug?.message}
-                            />
+                            />*/}
                             {errors.root && 
                                 <Alert
                                     title={errors.root.message}
@@ -112,7 +112,7 @@ const CreateGroupModal = () => {
                             <Button
                                 type="submit"
                                 color="primary"
-                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || !watch("slug") || Object.keys(errors).length > 0}
+                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || Object.keys(errors).length > 0}
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Utwórz nową grupę"}
                             </Button>

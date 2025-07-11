@@ -18,8 +18,11 @@ const slug = z.string()
   //  }
   //)
 
-export const GroupSchema = z.object({
+export const CreateGroupSchema = z.object({
     name,
     maxMembers,
-    slug
+})
+
+export const EditGroupSlugSchema = z.object({
+  slug
 })
