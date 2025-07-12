@@ -1,6 +1,7 @@
 "use client"
 
 import CreateMeetingModal from "@/components/moderator/create-meeting-modal";
+import EditGroupForm from "@/components/moderator/moje-grupy/edit-group-form";
 import { faCalendar, faGears } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Card, CardBody, CardFooter, CardHeader, Divider } from "@heroui/react";
@@ -15,11 +16,18 @@ const MyGroupWrapper = ({
 }) => {
     return ( 
         <main className="p-4 space-y-4">
-            <Card>
+            <Card
+
+            >
                 <CardHeader>
                     <FontAwesomeIcon icon={faGears} className="mr-2"/> Ustawienia 
                 </CardHeader>
-            {JSON.stringify(group,null,2)}
+                <Divider/>
+                <CardBody>
+                    <EditGroupForm group={group}/>
+                </CardBody>
+                <Divider/>
+                {JSON.stringify(group,null,2)}
             </Card>
             <Card>
                 <CardHeader>

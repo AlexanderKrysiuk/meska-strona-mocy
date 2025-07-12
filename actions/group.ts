@@ -1,8 +1,8 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { CreateGroupSchema } from "@/schema/group"
-import { ZodError, ZodIssueCode, z } from "zod"
+import { CreateGroupSchema, EditGroupSchema } from "@/schema/group"
+import { z } from "zod"
 import { GetUserByID } from "./auth"
 import { Role } from "@prisma/client"
 
@@ -39,6 +39,42 @@ export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
         message: "Pomyślnie dodano nową grupę"
     }
 }
+
+export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupSchema>) => {
+    console.log("PASS")
+    const user = await GetUserByID()
+    const group = await prisma.group.findUnique({
+        where: {id: groupId}
+    })
+
+    if (!group) return {
+        success: false,
+        message: "Nie znaleziono grupy"
+    }
+
+    if (user.role !== Role.Admin && user.role !== Role.Moderator && user.id !== group.moderatorId) return {
+        success: false,
+        message: "Brak uprawnień do edycji grupy"
+    }
+
+    try {
+        await prisma.group.update({
+            where: {id: groupId},
+            data
+        })
+    } catch {
+        return {
+            success: false,
+            message: "Błąd połączenia z bazą danych"
+        }
+    }
+
+    return {
+        success: true,
+        message: "Pomyślnie zaktualizowano dane"
+    }
+}
+
 
 const GetGroupBySlug = async (slug: string) => {
     try {

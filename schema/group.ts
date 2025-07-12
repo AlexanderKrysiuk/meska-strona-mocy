@@ -23,6 +23,10 @@ export const CreateGroupSchema = z.object({
     maxMembers,
 })
 
+export const EditGroupSchema = z.object({
+  name
+})
+
 export const EditGroupSlugSchema = z.object({
   slug
 })

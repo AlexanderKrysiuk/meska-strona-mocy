@@ -113,6 +113,7 @@ const CreateGroupModal = () => {
                                 type="submit"
                                 color="primary"
                                 isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || Object.keys(errors).length > 0}
+                                isLoading={isSubmitting}
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Utwórz nową grupę"}
                             </Button>
