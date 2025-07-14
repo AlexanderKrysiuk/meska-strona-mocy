@@ -2,10 +2,12 @@
 
 import { prisma } from "@/lib/prisma"
 import { CreateGroupSchema, EditGroupSchema } from "@/schema/group"
-import { TypeOf, z } from "zod"
+import { TypeOf, object, z } from "zod"
 import { GetUserByID } from "./auth"
 import { Role } from "@prisma/client"
 import { ActionStatus } from "@/types/enums"
+import { parse } from "path"
+import { ValidationErrors, addError } from "@/utils/action"
 
 export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
     const user = await GetUserByID()
@@ -57,49 +59,55 @@ export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupS
         message: "Brak uprawnień do edycji grupy"
     }
 
-    const errors: { field: keyof typeof data; message: string }[] = []
-    const dataToUpdate: Partial<typeof data> = {}
-
-    if (data.name && data.name !== group.name) {
-        dataToUpdate.name = data.name
+    const errors: ValidationErrors = {}
+    const parseResult = EditGroupSchema.safeParse(data)
+        
+    if (!parseResult.success) {
+        const flattened = parseResult.error.flatten()
+        
+        Object.entries(flattened.fieldErrors).forEach(([field, messages]) => {
+            messages.forEach(message => addError(errors, field, message))
+        })
+        
+        flattened.formErrors.forEach(message => addError(errors, "root", message))
     }
-
-    if (data.slug && data.slug !== group.slug) {
+            
+    if (!errors["slug"]) {
         const existingSlug = await prisma.group.findUnique({
             where: {slug: data.slug}
         })
-        
-        if (existingSlug) {
-            errors.push({
-                field: "slug",
-                message: "Podany odnośnik jest już zajęty"
-            })
-        } else {
-            dataToUpdate.slug = data.slug
-        }
 
+        if (existingSlug && existingSlug.id !== group.id) {
+            addError(errors, "slug", "Podany odnośnik jest już zajęty")
+        }
     }
+
+    const dataToUpdate = Object.fromEntries(
+        Object.entries(data).filter(([key, value]) =>
+            !errors[key] && value !== group[key as keyof typeof group]
+        )
+    )
 
     // Jeśli nie ma co aktualizować:
     if (Object.keys(dataToUpdate).length === 0) {
         return {
-            status: errors.length === 0 ? ActionStatus.Error : ActionStatus.Partial,
-            message: errors.length === 0
-                ? "Brak zmian do zapisania"
+            status: Object.keys(errors).length === 0 ? ActionStatus.Error : ActionStatus.Partial,
+            message: Object.keys(errors).length === 0
+                ? "Nie udało się zaktualizować danych"
                 : "Niektórych danych nie udało się zaktualizować",
             errors
+        }
     }
-  }
 
     try {
         await prisma.group.update({
             where: {id: groupId},
-            data
+            data: dataToUpdate
         })
 
         return {
-            status: errors.length === 0 ? ActionStatus.Success : ActionStatus.Partial,
-            message: errors.length === 0
+            status: Object.keys(errors).length === 0 ? ActionStatus.Success : ActionStatus.Partial,
+            message: Object.keys(errors).length === 0
               ? "Pomyślnie zaktualizowano dane"
               : "Niektórych danych nie udało się zaktualizować",
             errors
@@ -111,7 +119,6 @@ export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupS
         }
     }
 }
-
 
 const GetGroupBySlug = async (slug: string) => {
     try {

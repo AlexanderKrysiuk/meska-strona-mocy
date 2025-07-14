@@ -2,6 +2,7 @@
 
 import { EditGroup } from "@/actions/group"
 import { EditGroupSchema } from "@/schema/group"
+import { ActionStatus } from "@/types/enums"
 import { finalSlugify, liveSlugify } from "@/utils/slug"
 import { Button, Form, Input, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -23,19 +24,19 @@ const EditGroupForm = ({
         resolver: zodResolver(EditGroupSchema),
         defaultValues: {
             name: group.name,
-            slug: group.slug ?? undefined
+            slug: group.slug ?? undefined,
+            maxMembers: group.maxMembers
         }
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        //console.log(data)
         try {
             const result = await EditGroup(group.id, data)
 
             if (result.errors) {
-                result.errors.forEach((error: { field: keyof FormFields; message: string}) => {
-                    setError(error.field, { message: error.message })
-                })
+                for (const [field, messages] of Object.entries(result.errors)) {
+                    setError(field as keyof FormFields, {message: messages.join(", ")})
+                }
             }
 
             addToast({
@@ -44,8 +45,10 @@ const EditGroupForm = ({
                 variant: "bordered"
             })
 
-            reset(data)
-            router.refresh()
+            if (result.status === ActionStatus.Success) {
+                reset(data)
+                router.refresh()
+            }
             
         } catch {
             addToast({
@@ -85,6 +88,17 @@ const EditGroupForm = ({
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
+                />
+                <Input {...register("maxMembers", {valueAsNumber: true})}
+                    label="Maksymalna liczba uczestników"
+                    labelPlacement="outside"
+                    type="number"
+                    placeholder="11"
+                    variant="bordered"
+                    min={1}
+                    isDisabled={isSubmitting}
+                    isInvalid={!!errors.maxMembers}
+                    errorMessage={errors.maxMembers?.message}
                 />
                 <Button
                     type="submit"
