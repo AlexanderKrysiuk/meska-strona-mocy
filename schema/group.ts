@@ -1,10 +1,15 @@
 import * as z from 'zod'
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 const name = z.string().min(1, "Grupa musi posiadać nazwę")
 const maxMembers = z.number().min(1, "Grupa musi mieć przynajmniej jedną osobę")
 const slug = z.string()
   .min(1, "Unikalny odnośnik nie może być pusty")
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Unikalny odnośnik może zawierać tylko małe litery, cyfry i myślniki")
+  .refine((val) => !uuidRegex.test(val), {
+    message: "Slug nie może wyglądać jak identyfikator systemowy (UUID)"
+  })
   //.refine(
   //  (value) => /^[a-z0-9-]+$/.test(value),
   //  {
@@ -24,7 +29,8 @@ export const CreateGroupSchema = z.object({
 })
 
 export const EditGroupSchema = z.object({
-  name
+  name,
+  slug
 })
 
 export const EditGroupSlugSchema = z.object({

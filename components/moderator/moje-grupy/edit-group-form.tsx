@@ -2,6 +2,7 @@
 
 import { EditGroup } from "@/actions/group"
 import { EditGroupSchema } from "@/schema/group"
+import { finalSlugify, liveSlugify } from "@/utils/slug"
 import { Button, Form, Input, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Group } from "@prisma/client"
@@ -18,9 +19,12 @@ const EditGroupForm = ({
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
-    const { register, watch, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormFields>({
+    const { register, reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty } } = useForm<FormFields>({
         resolver: zodResolver(EditGroupSchema),
-        defaultValues: group
+        defaultValues: {
+            name: group.name,
+            slug: group.slug ?? undefined
+        }
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
@@ -28,12 +32,21 @@ const EditGroupForm = ({
         try {
             const result = await EditGroup(group.id, data)
 
+            if (result.errors) {
+                result.errors.forEach((error: { field: keyof FormFields; message: string}) => {
+                    setError(error.field, { message: error.message })
+                })
+            }
+
             addToast({
                 title: result.message,
-                color: result.success ? "success" : "danger",
+                color: result.status,
                 variant: "bordered"
             })
+
+            reset(data)
             router.refresh()
+            
         } catch {
             addToast({
                 title: "Wystąpił nieznany błąd",
@@ -52,19 +65,36 @@ const EditGroupForm = ({
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
+                    onValueChange={(value)=> setValue("slug", liveSlugify(value))}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
                 />
+                <Input {...register("slug")}
+                    label="Unikalny odnośnik"
+                    labelPlacement="outside"
+                    type="text"
+                    placeholder="zaloga-czarnej-perly"
+                    description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
+                    variant="bordered"
+                    value={watch("slug")}
+                    onValueChange={(value) => setValue("slug", liveSlugify(value))}
+                    onBlur={(event) => {setValue("slug", finalSlugify(event.target.value))}}
+                    isClearable
+                    isDisabled={isSubmitting}
+                    isInvalid={!!errors.slug}
+                    errorMessage={errors.slug?.message}
+                />
                 <Button
                     type="submit"
                     color="primary"
-                    isDisabled={isSubmitting || watch("name") === group.name || !watch("name")}
+                    isDisabled={isSubmitting || !isDirty || Object.keys(errors).length > 0}
                     isLoading={isSubmitting}
                 >
                     {isSubmitting ? "Przetwarzanie..." : "Zmień dane grupy"}
                 </Button>
+            
             </Form>
         </main>
     )
