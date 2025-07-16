@@ -35,10 +35,17 @@ const MyGroupPage = async (
             startTime: "asc"
         }
     })
+
+    const countries = await prisma.country.findMany()
+    const regions = await prisma.region.findMany()
+    const cities = await prisma.city.findMany()
     
     return <MyGroupWrapper 
         group={group}
         meetings={meetings}
+        countries={countries}
+        regions={regions}
+        cities={cities}
     />
 }
  

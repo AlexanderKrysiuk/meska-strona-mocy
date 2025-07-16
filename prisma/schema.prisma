@@ -105,7 +105,9 @@ model Group {
   maxMembers Int
 
   street String?
-  city   String?
+
+  cityId String?
+  city   City? @relation(fields: [cityId], references: [id])
 
   price Float?
 
@@ -122,7 +124,10 @@ model GroupMeeting {
   endTime   DateTime?
 
   street String
-  city   String
+  
+  cityId String
+  city City @relation(fields: [cityId], references: [id])
+
   number Int
   price  Float
 
@@ -154,4 +159,31 @@ model GroupMembership {
 enum GroupMembershipStatus {
   Candidate
   Member
+}
+
+model Country {
+  id String @id @default(uuid())
+  name String @unique
+  code String?
+
+  regions Region[]
+}
+
+model Region {
+  id String @id @default(uuid())
+  name String
+  countryId String
+  country Country @relation(fields: [countryId], references: [id])
+
+  cities City[]
+}
+
+model City {
+  id String @id @default(uuid())
+  name String
+  regionId String
+  region Region @relation(fields: [regionId], references: [id])
+
+  groups Group[]
+  groupMeetings GroupMeeting[]
 }

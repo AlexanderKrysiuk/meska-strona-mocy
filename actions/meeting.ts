@@ -6,6 +6,7 @@ import { GenerateVerificationToken, GetUserByID } from "./auth"
 import { Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { sendVerificationEmail } from "@/lib/nodemailer"
+import { randomUUID } from "crypto"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
     const user = await GetUserByID()
@@ -15,16 +16,16 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
     try {
         const meetingCount = await RefreshMeetingsNumbering(data.groupId)
 
-        await prisma.groupMeeting.create({
-            data: {
-                groupId: data.groupId,
-                startTime: data.startTime,
-                street: data.street,
-                city: data.city,
-                number: meetingCount + 1,
-                price: data.price
-            }
-        })
+        //await prisma.groupMeeting.create({
+        //    data: {
+        //        groupId: data.groupId,
+        //        startTime: data.startTime,
+        //        street: data.street,
+        //        cityid: randomUUID(),
+        //        number: meetingCount + 1,
+        //        price: data.price
+        //    }
+        //})
     } catch(error) {
         throw new Error("Błąd połączenia z bazą danych")
     }

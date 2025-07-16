@@ -99,6 +99,8 @@ export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupS
         }
     }
 
+    //console.log(dataToUpdate)
+
     try {
         await prisma.group.update({
             where: {id: groupId},

@@ -24,6 +24,7 @@ const slug = z.string()
   //  }
   //)
 const street = z.string().trim().max(255, "Adres jest zbyt długi").optional()
+const cityId = z.string().uuid().optional()
 
 export const CreateGroupSchema = z.object({
     name,
@@ -34,7 +35,8 @@ export const EditGroupSchema = z.object({
   name,
   slug,
   maxMembers,
-  street
+  street,
+  cityId
 })
 
 export const EditGroupSlugSchema = z.object({

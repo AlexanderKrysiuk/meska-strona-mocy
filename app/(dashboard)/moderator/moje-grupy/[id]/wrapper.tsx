@@ -5,26 +5,35 @@ import EditGroupForm from "@/components/moderator/moje-grupy/edit-group-form";
 import { faCalendar, faGears } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Card, CardBody, CardFooter, CardHeader, Divider } from "@heroui/react";
-import { Group, GroupMeeting } from "@prisma/client";
+import { City, Country, Group, GroupMeeting, Region } from "@prisma/client";
 
 const MyGroupWrapper = ({
     group,
-    meetings
+    meetings,
+    countries,
+    regions,
+    cities
 } : {
     group: Group
     meetings: GroupMeeting[]
+    countries: Country[]
+    regions: Region[]
+    cities: City[]
 }) => {
     return ( 
         <main className="p-4 space-y-4">
-            <Card
-
-            >
+            <Card>
                 <CardHeader>
                     <FontAwesomeIcon icon={faGears} className="mr-2"/> Ustawienia 
                 </CardHeader>
                 <Divider/>
                 <CardBody>
-                    <EditGroupForm group={group}/>
+                    <EditGroupForm 
+                        group={group}
+                        countries={countries}
+                        regions={regions}
+                        cities={cities}
+                    />
                 </CardBody>
                 <Divider/>
                 {JSON.stringify(group,null,2)}

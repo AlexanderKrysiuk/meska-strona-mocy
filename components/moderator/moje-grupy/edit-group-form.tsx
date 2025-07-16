@@ -4,19 +4,56 @@ import { EditGroup } from "@/actions/group"
 import { EditGroupSchema } from "@/schema/group"
 import { ActionStatus } from "@/types/enums"
 import { finalSlugify, liveSlugify } from "@/utils/slug"
-import { Button, Form, Input, addToast } from "@heroui/react"
+import { Button, Form, Input, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Group } from "@prisma/client"
+import { City, Country, Group, Region } from "@prisma/client"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
 const EditGroupForm = ({
-    group
+    group,
+    countries,
+    regions,
+    cities
 } : {
     group: Group
+    countries: Country[]
+    regions: Region[]
+    cities: City[]
 }) => {
     const router = useRouter()
+
+    const city = cities.find(city => city.id === group.cityId)
+    const region = regions.find(region => region.id === city?.regionId)
+    const country = countries.find(country => country.id === region?.countryId)
+
+    const [cityId, setCityId] = useState(city?.id || "")
+    const [regionId, setRegionId] = useState(region?.id || "")
+    const [countryId, setCountryId] = useState(country?.id || "")
+
+    // const [cityId, setCityId] = useState(() => {
+    //     if (!group.cityId) return "";
+    //     const city = cities.find(c => c.id === group.cityId);
+    //     return city?.id ?? "";
+    // });
+    
+    // const [regionId, setRegionId] = useState(() => {
+    //     if (!group.cityId) return "";
+    //     const city = cities.find(c => c.id === group.cityId);
+    //     const region = regions.find(r => r.id === city?.regionId);
+    //     return region?.id ?? "";
+    // });
+    
+    // const [countryId, setCountryId] = useState(() => {
+    //     if (!group.cityId) return "";
+    //     const city = cities.find(c => c.id === group.cityId);
+    //     const region = regions.find(r => r.id === city?.regionId);
+    //     const country = countries.find(c => c.id === region?.countryId);
+    //     return country?.id ?? "";
+    // });
+    
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
@@ -25,7 +62,9 @@ const EditGroupForm = ({
         defaultValues: {
             name: group.name,
             slug: group.slug ?? undefined,
-            maxMembers: group.maxMembers
+            maxMembers: group.maxMembers,
+            street: group.street ?? undefined,
+            cityId: group.cityId ?? undefined
         }
     })
 
@@ -110,6 +149,56 @@ const EditGroupForm = ({
                     isInvalid={!!errors.street}
                     errorMessage={errors.street?.message}
                 />
+                <Select                    
+                    label="Kraj"
+                    labelPlacement="outside"
+                    placeholder="Ameryka Północna"
+                    variant="bordered"
+                    selectedKeys={[countryId]}
+                    onChange={(event) => {
+                        setCountryId(event.target.value)
+                        setRegionId("")
+                        setCityId("")
+                        setValue("cityId", undefined)
+                    }}
+                    isDisabled={isSubmitting}
+                    items={countries}
+                >
+                    {(countries) => <SelectItem key={countries.id}>{countries.name}</SelectItem>}
+                </Select>
+                <Select
+                    label="Województwo"
+                    labelPlacement="outside"
+                    placeholder="Karaiby"
+                    variant="bordered"
+                    selectedKeys={[regionId]}
+                    onChange={(event) => {
+                        setRegionId(event.target.value)
+
+                        
+                        setCityId("")
+                        setValue("cityId", undefined)
+                    }}
+                    isDisabled={isSubmitting || !countryId}
+                    items={regions.filter(region => region.countryId === countryId)}
+                >
+                    {(regions) => <SelectItem>{regions.name}</SelectItem>}
+                </Select>
+                <Select {...register("cityId")}
+                    label="Miasto"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    placeholder="Tortuga"
+                    selectedKeys={[cityId]}
+                    onChange={(event)=>{
+                        setCityId(event.target.value)
+                        setValue("cityId", event.target.value)
+                    }}
+                    isDisabled={isSubmitting || !countryId || !regionId}
+                    items={cities.filter(city => city.regionId === regionId)}
+                >
+                    {(cities) => <SelectItem>{cities.name}</SelectItem>}
+                </Select>
                 <Button
                     type="submit"
                     color="primary"
@@ -118,7 +207,6 @@ const EditGroupForm = ({
                 >
                     {isSubmitting ? "Przetwarzanie..." : "Zmień dane grupy"}
                 </Button>
-            
             </Form>
         </main>
     )
