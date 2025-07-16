@@ -10,6 +10,7 @@ const slug = z.string()
   .refine((val) => !uuidRegex.test(val), {
     message: "Slug nie może wyglądać jak identyfikator systemowy (UUID)"
   })
+
   //.refine(
   //  (value) => /^[a-z0-9-]+$/.test(value),
   //  {
@@ -22,6 +23,7 @@ const slug = z.string()
   //    message: "Unikalny odnośnik nie może zaczynać się ani kończyć myślnikiem"
   //  }
   //)
+const street = z.string().trim().max(255, "Adres jest zbyt długi").optional()
 
 export const CreateGroupSchema = z.object({
     name,
@@ -31,7 +33,8 @@ export const CreateGroupSchema = z.object({
 export const EditGroupSchema = z.object({
   name,
   slug,
-  maxMembers
+  maxMembers,
+  street
 })
 
 export const EditGroupSlugSchema = z.object({

@@ -100,6 +100,16 @@ const EditGroupForm = ({
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
+                <Input {...register("street")}
+                    label="Adres (ulica, numer domu / lokalu)"
+                    labelPlacement="outside"
+                    type="text"
+                    placeholder="Tortuga 13/7"
+                    variant="bordered"
+                    isDisabled={isSubmitting}
+                    isInvalid={!!errors.street}
+                    errorMessage={errors.street?.message}
+                />
                 <Button
                     type="submit"
                     color="primary"

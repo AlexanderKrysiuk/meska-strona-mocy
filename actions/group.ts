@@ -72,7 +72,7 @@ export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupS
         flattened.formErrors.forEach(message => addError(errors, "root", message))
     }
             
-    if (!errors["slug"]) {
+    if (!errors["slug"] && data.slug !== group.slug) {
         const existingSlug = await prisma.group.findUnique({
             where: {slug: data.slug}
         })
