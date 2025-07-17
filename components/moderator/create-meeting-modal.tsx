@@ -3,33 +3,51 @@
 import { CreateMeetingSchema } from "@/schema/meeting";
 import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Button, DatePicker, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, addToast, useDisclosure } from "@heroui/react";
+import { Button, DatePicker, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Group } from "@prisma/client";
+import { City, Country, Group, Region } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from 'zod'
-import {I18nProvider} from "@react-aria/i18n";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { CreateMeeting } from "@/actions/meeting";
-
-
+import { useState } from "react";
+import { combineDateAndTime } from "@/utils/date";
 
 const CreateMeetingModal = ({
-    group
+    group,
+    countries,
+    regions,
+    cities
 } : {
     group: Group
+    countries: Country[]
+    regions: Region[]
+    cities: City[]
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const router = useRouter()
 
+    const city = cities.find(city => city.id === group.cityId)
+    const region = regions.find(region => region.id === city?.regionId)
+    const country = countries.find(country => country.id === region?.countryId)
+
+    const [cityId, setCityId] = useState(city?.id || "")
+    const [regionId, setRegionId] = useState(region?.id || "")
+    const [countryId, setCountryId] = useState(country?.id || "")
+
+    const [date, setDate] = useState<DateValue | null>()
+    const [startHour, setStartHour] = useState<TimeInputValue | null>()
+    const [endHour, setEndHour] = useState<TimeInputValue | null>()
+
     type FormFields = z.infer<typeof CreateMeetingSchema>
     
-    const  { register, handleSubmit, setError, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+    const  { register, handleSubmit, setError, setValue, trigger, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         defaultValues: {
-            groupId: group.id,
-            startTime: new Date()
+            street: group.street ?? undefined,
+            cityId: group.cityId ?? undefined,
+            price: group.price ?? undefined,
         }
     })
 
@@ -67,7 +85,6 @@ const CreateMeetingModal = ({
                     <ModalHeader>Nowe Spotkanie dla grupy {group.name}</ModalHeader>
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
-                            <input type="hidden" {...register("groupId")}/>
                             {/*}
                             <Select
                                 label="Grupa"
@@ -80,68 +97,188 @@ const CreateMeetingModal = ({
                             >
                                 {(group) => <SelectItem>{group.name}</SelectItem>}
                             </Select>
-                            */}
                             <I18nProvider locale="pl-PL">
-                                <DatePicker
+                                <DatePicker {...register("startTime")}
                                     label="Data rozpoczęcia spotkania"
                                     labelPlacement="outside"
                                     variant="bordered"
                                     granularity="minute"
+                                    value={watch("startTime")}
                                     minValue={today(getLocalTimeZone()).add({days: 1})}
                                     isRequired
                                     isDisabled={isSubmitting}
-                                    isInvalid={!!errors.startTime || !!errors.root}
+                                    isInvalid={!!errors.startTime}
                                     errorMessage={errors.startTime?.message}
                                     onChange={(date) => {
                                         if (date) setValue("startTime", date.toDate("Europe/Warsaw"));
                                     }}
                                 />
                             </I18nProvider>
-                            <Input {...register("street")} 
-                                label="Adres"
+                                */}
+                            <DatePicker
+                                label="Data spotkania"
                                 labelPlacement="outside"
                                 variant="bordered"
+                                minValue={today(getLocalTimeZone()).add({days: 1})}
+                                value={date}
+                                onChange={setDate}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.startTime}
+                                errorMessage={errors.startTime?.message}
+                            />
+                            <div className="flex space-x-4">
+                                <TimeInput
+                                    label="Godzina Rozpoczęcia"
+                                    labelPlacement="outside"
+                                    variant="bordered"
+                                    hourCycle={24}
+                                    value={startHour}
+                                    onChange={(time) => {
+                                        if (date && time) {
+                                            setStartHour(time)
+                                            setValue("startTime", combineDateAndTime(date, time))
+                                            trigger("startTime")
+                                        }
+                                    }}
+                                    isRequired
+                                    isDisabled={isSubmitting || !date}
+                                    isInvalid={!!errors.startTime}
+                                    errorMessage={errors.startTime?.message}
+                                />
+                                <TimeInput
+                                    label="Godzina Zakończenia"
+                                    labelPlacement="outside"
+                                    variant="bordered"
+                                    hourCycle={24}
+                                    value={endHour}
+                                    onChange={(time) => {
+                                        if (date && startHour && time) {
+                                            setEndHour(time)
+                                            setValue("endTime", combineDateAndTime(date, time))
+                                            trigger("endTime")
+                                        }
+                                    }}    
+                                    isRequired
+                                    isDisabled={isSubmitting || !date || !startHour}
+                                    isInvalid={!!errors.endTime}
+                                    errorMessage={errors.endTime?.message}
+                                />
+                            </div>
+                            {/*
+                            <DatePicker
+                                label="Data zakończenia spotkania"
+                                labelPlacement="outside"
+                                variant="bordered"
+                                //minValue={
+                                //    watch("startTime")
+                                //        ? parseDateTime(watch("startTime").toISOString())
+                                //        : undefined
+                                //}
+                                onChange={(date) => {
+                                    if (date) setValue("endTime", date.toDate("Europe/Warsaw"))
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting || !watch("startTime")}
+                                isInvalid={!!errors.startTime}
+                                errorMessage={errors.startTime?.message}
+                            {JSON.stringify(date,null,2)}<br/>
+                            {JSON.stringify(startHour,null,2)}<br/>
+                            {JSON.stringify(watch(),null,2)}<br/>
+                            {JSON.stringify(isDirty,null,2)}<br/>
+                            {JSON.stringify(isValid,null,2)}<br/>
+                            {JSON.stringify(errors,null,2)}
+                            />*/}
+                            <Input {...register("street")} 
+                                label="Adres (ulica, numer domu / lokalu)"
+                                labelPlacement="outside"
                                 type="text"
+                                placeholder="Tortuga 13/7"
+                                variant="bordered"
                                 isRequired
                                 isClearable
                                 isDisabled={isSubmitting}
-                                isInvalid={!!errors.street || !!errors.root}
+                                isInvalid={!!errors.street}
                                 errorMessage={errors.street?.message}
                             />
-                            <Select {...register("city")} 
+                            <Select
+                                label="Kraj"
+                                labelPlacement="outside"
+                                placeholder="Karaiby"
+                                variant="bordered"
+                                selectedKeys={[countryId]}
+                                onChange={(event) => {
+                                    setCountryId(event.target.value)
+                                    setRegionId("")
+                                    setCityId("")
+                                    setValue("cityId", "")
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                items={countries}
+                            >
+                                {(countries) => <SelectItem key={countries.id}>{countries.name}</SelectItem>}
+                            </Select>
+                            <Select
+                                label="Województwo"
+                                labelPlacement="outside"
+                                placeholder="Archipelag Czarnej Perły"
+                                variant="bordered"
+                                selectedKeys={[regionId]}
+                                onChange={(event) => {
+                                    setRegionId(event.target.value)
+                                    setCityId("")
+                                    setValue("cityId", "")
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting || !countryId}
+                                items={regions.filter(region => region.countryId === countryId)}
+                            >
+                                {(regions) => <SelectItem>{regions.name}</SelectItem>}
+                            </Select>
+                            <Select {...register("cityId")} 
                                 label="Miasto"
                                 labelPlacement="outside"
                                 variant="bordered"
+                                placeholder="Isla de Muerta"
+                                selectedKeys={[cityId]}
+                                onChange={(event)=>{
+                                    setCityId(event.target.value)
+                                    setValue("cityId", event.target.value)
+                                }}
                                 isRequired
-                                isDisabled={isSubmitting}
-                                isInvalid={!!errors.city || !!errors.root}
-                                errorMessage={errors.city?.message}
+                                isDisabled={isSubmitting || !countryId || !regionId}
+                                isInvalid={!!errors.cityId}
+                                errorMessage={errors.cityId?.message}
+                                items={cities.filter(city => city.regionId === regionId)}
                             >
-                                <SelectItem key="Gdańsk">Gdańsk</SelectItem>
+                                {(cities) => <SelectItem>{cities.name}</SelectItem>}
                             </Select>
-                            <Input  {...register("price")}
+                            <Input {...register("price", {valueAsNumber: true})}
                                 label="Cena spotkania"
                                 labelPlacement="outside"
                                 variant="bordered"
                                 type="number"
+                                min={0}
+                                placeholder="150"
+                                endContent={
+                                    <div className="text-foreground-500 text-sm">
+                                        PLN
+                                    </div>
+                                }
                                 isRequired
                                 isClearable
                                 isDisabled={isSubmitting}
-                                min={0}
-                                isInvalid={!!errors.price || !!errors.root}
+                                isInvalid={!!errors.price}
                                 errorMessage={errors.price?.message}
                             />
-                            {errors.root && <Alert
-                                color="danger"
-                                variant="bordered"
-                                title={errors.root.message}
-                            />}
                         </ModalBody>
                         <ModalFooter>
                             <Button
                                 type="submit"
                                 color="primary"
-                                isDisabled={isSubmitting || !watch("startTime") || !watch("street") || !watch("city") || !watch("price")}
+                                isLoading={isSubmitting}
+                                isDisabled={isSubmitting || !isValid}
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Dodaj nowe spotkanie"}
                             </Button>

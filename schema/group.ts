@@ -25,7 +25,12 @@ const slug = z.string()
   //)
 const street = z.string().trim().max(255, "Adres jest zbyt długi").optional()
 const cityId = z.string().uuid().optional()
-
+const price = z.number()
+  .refine((val) => val === 0 || val >= 10, {
+    message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
+  })
+  .optional()
+  
 export const CreateGroupSchema = z.object({
     name,
     maxMembers,
@@ -36,7 +41,8 @@ export const EditGroupSchema = z.object({
   slug,
   maxMembers,
   street,
-  cityId
+  cityId,
+  price
 })
 
 export const EditGroupSlugSchema = z.object({

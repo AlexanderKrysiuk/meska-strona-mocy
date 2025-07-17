@@ -36,7 +36,6 @@ const MyGroupWrapper = ({
                     />
                 </CardBody>
                 <Divider/>
-                {JSON.stringify(group,null,2)}
             </Card>
             <Card>
                 <CardHeader>
@@ -60,6 +59,9 @@ const MyGroupWrapper = ({
                 <CardFooter>
                     <CreateMeetingModal
                         group={group}
+                        countries={countries}
+                        regions={regions}
+                        cities={cities}
                     />
                 </CardFooter>
             </Card>

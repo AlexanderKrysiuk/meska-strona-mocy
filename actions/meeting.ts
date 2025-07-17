@@ -14,7 +14,7 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
     if (user.role !== Role.Admin && user.role !== Role.Moderator) throw new Error("Brak uprawnień do tworzenia spotkania")
     
     try {
-        const meetingCount = await RefreshMeetingsNumbering(data.groupId)
+        //const meetingCount = await RefreshMeetingsNumbering(data.groupId)
 
         //await prisma.groupMeeting.create({
         //    data: {

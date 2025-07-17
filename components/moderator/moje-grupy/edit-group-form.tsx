@@ -57,14 +57,15 @@ const EditGroupForm = ({
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
-    const { register, reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty } } = useForm<FormFields>({
+    const { register, reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid } } = useForm<FormFields>({
         resolver: zodResolver(EditGroupSchema),
         defaultValues: {
             name: group.name,
             slug: group.slug ?? undefined,
             maxMembers: group.maxMembers,
             street: group.street ?? undefined,
-            cityId: group.cityId ?? undefined
+            cityId: group.cityId ?? undefined,
+            price: group.price ?? undefined
         }
     })
 
@@ -145,6 +146,7 @@ const EditGroupForm = ({
                     type="text"
                     placeholder="Tortuga 13/7"
                     variant="bordered"
+                    isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.street}
                     errorMessage={errors.street?.message}
@@ -152,7 +154,7 @@ const EditGroupForm = ({
                 <Select                    
                     label="Kraj"
                     labelPlacement="outside"
-                    placeholder="Ameryka Północna"
+                    placeholder="Karaiby"
                     variant="bordered"
                     selectedKeys={[countryId]}
                     onChange={(event) => {
@@ -169,13 +171,11 @@ const EditGroupForm = ({
                 <Select
                     label="Województwo"
                     labelPlacement="outside"
-                    placeholder="Karaiby"
+                    placeholder="Archipelag Czarnej Perły"
                     variant="bordered"
                     selectedKeys={[regionId]}
                     onChange={(event) => {
                         setRegionId(event.target.value)
-
-                        
                         setCityId("")
                         setValue("cityId", undefined)
                     }}
@@ -188,21 +188,40 @@ const EditGroupForm = ({
                     label="Miasto"
                     labelPlacement="outside"
                     variant="bordered"
-                    placeholder="Tortuga"
+                    placeholder="Isla de Muerta"
                     selectedKeys={[cityId]}
                     onChange={(event)=>{
                         setCityId(event.target.value)
                         setValue("cityId", event.target.value)
                     }}
                     isDisabled={isSubmitting || !countryId || !regionId}
+                    isInvalid={!!errors.cityId}
+                    errorMessage={errors.cityId?.message}
                     items={cities.filter(city => city.regionId === regionId)}
                 >
                     {(cities) => <SelectItem>{cities.name}</SelectItem>}
                 </Select>
+                <Input {...register("price", {valueAsNumber: true})}
+                    label="Cena"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    type="number"
+                    min={0}
+                    placeholder="150"
+                    endContent={
+                        <div className="text-foreground-500 text-sm">
+                            PLN
+                        </div>
+                    }
+                    isClearable
+                    isDisabled={isSubmitting}
+                    isInvalid={!!errors.price}
+                    errorMessage={errors.price?.message}
+                />
                 <Button
                     type="submit"
                     color="primary"
-                    isDisabled={isSubmitting || !isDirty || Object.keys(errors).length > 0}
+                    isDisabled={isSubmitting || !isDirty || !isValid}
                     isLoading={isSubmitting}
                 >
                     {isSubmitting ? "Przetwarzanie..." : "Zmień dane grupy"}
