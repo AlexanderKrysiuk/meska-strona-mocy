@@ -13,3 +13,13 @@ export function liveSlugify(text: string): string {
 export function finalSlugify(text: string): string {
     return liveSlugify(text).replace(/-+$/, ""); // dodaj usuwanie z końca    
 }
+
+export function liveNameify(text: string): string {
+    return text
+        .trimStart()
+        .replace(/\s{2,}/g, " ")               // zamienia wielokrotne spacje na jedną
+}
+
+export function finalNameify(text: string): string {
+    return liveNameify(text).trimEnd()
+}

@@ -3,7 +3,7 @@
 import { EditGroup } from "@/actions/group"
 import { EditGroupSchema } from "@/schema/group"
 import { ActionStatus } from "@/types/enums"
-import { finalSlugify, liveSlugify } from "@/utils/slug"
+import { finalNameify, finalSlugify, liveNameify, liveSlugify } from "@/utils/slug"
 import { Button, Form, Input, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { City, Country, Group, Region } from "@prisma/client"
@@ -57,15 +57,15 @@ const EditGroupForm = ({
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
-    const { register, reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid } } = useForm<FormFields>({
+    const { register, reset, trigger, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid } } = useForm<FormFields>({
         resolver: zodResolver(EditGroupSchema),
         defaultValues: {
             name: group.name,
-            slug: group.slug ?? undefined,
+            slug: group.slug,
             maxMembers: group.maxMembers,
-            street: group.street ?? undefined,
-            cityId: group.cityId ?? undefined,
-            price: group.price ?? undefined
+            street: group.street ?? null,
+            cityId: group.cityId ?? null,
+            price: group.price ?? null
         }
     })
 
@@ -102,13 +102,28 @@ const EditGroupForm = ({
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
+                {JSON.stringify(watch(),null,2)}
+                <div>Valid: {JSON.stringify(isValid,null,2)}</div>
+                <div>Dirty: {JSON.stringify(isDirty,null,2)}</div>
                 <Input {...register("name")}
                     label="Nazwa grupy"
                     labelPlacement="outside"
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
-                    onValueChange={(value)=> setValue("slug", liveSlugify(value))}
+                    value={watch("name")}
+                    onChange={(event) => {
+                        setValue("name", liveNameify(event.target.value), {shouldDirty: true})
+                        trigger("name")
+                        setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
+                        trigger("slug")
+                    }}
+                    onBlur={(event) => {
+                        setValue("name", finalNameify(event.target.value), {shouldDirty: true})
+                        trigger("name")
+                        setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
+                        trigger("slug")
+                    }}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.name}
@@ -122,30 +137,45 @@ const EditGroupForm = ({
                     description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
                     variant="bordered"
                     value={watch("slug")}
-                    onValueChange={(value) => setValue("slug", liveSlugify(value))}
-                    onBlur={(event) => {setValue("slug", finalSlugify(event.target.value))}}
+                    onChange={(event) => {
+                        setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
+                        trigger("slug")
+                    }}
+                    onBlur={(event) => {
+                        setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
+                        trigger("slug")
+                    }}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
                 />
-                <Input {...register("maxMembers", {valueAsNumber: true})}
+                <Input {...register("maxMembers", { //valueAsNumber: true })}
+                    setValueAs: (value) => value === "" ? null : parseFloat(value),
+                    })}
                     label="Maksymalna liczba uczestników"
                     labelPlacement="outside"
-                    type="number"
-                    placeholder="11"
                     variant="bordered"
+                    type="number"
                     min={1}
+                    placeholder="11"
+                    // onChange={(event) => {
+                    //      const inputValue = event.target.value;
+                    //      const parsed = parseInt(inputValue);
+                    //      setValue("maxMembers", parsed, {shouldDirty: true})
+                    //      trigger("maxMembers")
+                    // }}
+                    isRequired
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
-                <Input {...register("street")}
+                <Input
                     label="Adres (ulica, numer domu / lokalu)"
                     labelPlacement="outside"
-                    type="text"
                     placeholder="Tortuga 13/7"
                     variant="bordered"
+                    onValueChange={(value) => setValue("street", value)}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.street}
@@ -160,8 +190,8 @@ const EditGroupForm = ({
                     onChange={(event) => {
                         setCountryId(event.target.value)
                         setRegionId("")
-                        setCityId("")
-                        setValue("cityId", undefined)
+                        //setCityId("")
+                        setValue("cityId", null)
                     }}
                     isDisabled={isSubmitting}
                     items={countries}
@@ -176,8 +206,8 @@ const EditGroupForm = ({
                     selectedKeys={[regionId]}
                     onChange={(event) => {
                         setRegionId(event.target.value)
-                        setCityId("")
-                        setValue("cityId", undefined)
+                        //setCityId("")
+                        setValue("cityId", null)
                     }}
                     isDisabled={isSubmitting || !countryId}
                     items={regions.filter(region => region.countryId === countryId)}
@@ -192,7 +222,7 @@ const EditGroupForm = ({
                     selectedKeys={[cityId]}
                     onChange={(event)=>{
                         setCityId(event.target.value)
-                        setValue("cityId", event.target.value)
+                        setValue("cityId", event.target.value || null, {shouldDirty:true})
                     }}
                     isDisabled={isSubmitting || !countryId || !regionId}
                     isInvalid={!!errors.cityId}
@@ -201,7 +231,9 @@ const EditGroupForm = ({
                 >
                     {(cities) => <SelectItem>{cities.name}</SelectItem>}
                 </Select>
-                <Input {...register("price", {valueAsNumber: true})}
+                <Input {...register("price", {
+                        setValueAs: (value) => value === "" ? null : parseFloat(value)
+                    })}
                     label="Cena"
                     labelPlacement="outside"
                     variant="bordered"

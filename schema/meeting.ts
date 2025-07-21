@@ -14,7 +14,7 @@ const price = z.coerce.number().refine(price => price === 0 || price >= 10, {
 //const startTime = z.string().datetime({message: "Nieprawidłowy format daty i godziny"})
 //    .refine((startTime) => new Date(startTime) > new Date(), { message: "Czas rozpoczęcia nie może być w przeszłości" })
 const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
-const endTime = z.coerce.date()
+const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
 export const CreateMeetingSchema = z.object({
     startTime,

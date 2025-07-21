@@ -138,7 +138,9 @@ const CreateMeetingModal = ({
                                         if (date && time) {
                                             setStartHour(time)
                                             setValue("startTime", combineDateAndTime(date, time))
-                                            trigger("startTime")
+                                            if (endHour) {
+                                                trigger("endTime")
+                                            }
                                         }
                                     }}
                                     isRequired

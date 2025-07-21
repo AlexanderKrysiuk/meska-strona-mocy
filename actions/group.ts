@@ -8,6 +8,8 @@ import { Role } from "@prisma/client"
 import { ActionStatus } from "@/types/enums"
 import { parse } from "path"
 import { ValidationErrors, addError } from "@/utils/action"
+import { customAlphabet } from 'nanoid'
+import { finalSlugify, liveSlugify } from "@/utils/slug"
 
 export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
     const user = await GetUserByID()
@@ -21,11 +23,25 @@ export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
     //    field: "slug",
     //    message: "Dany odnośnik jest już zajęty"
     //}
+    let counter = 1
+    let slug = finalSlugify(data.name)
+    
+    while (true) {
+        const exist = await prisma.group.findUnique({
+            where: { slug }
+        })
+
+        if (!exist) break
+
+        slug = `${slug}-${counter}`
+        counter++
+    }
 
     try {
         await prisma.group.create({
             data: {
                 name: data.name,
+                slug: slug,
                 moderatorId: user.id,
                 maxMembers: data.maxMembers
             }
@@ -71,8 +87,11 @@ export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupS
         
         flattened.formErrors.forEach(message => addError(errors, "root", message))
     }
+    console.log(data.slug)
+    console.log(errors)
+
             
-    if (!errors["slug"] && data.slug !== group.slug) {
+    if (data.slug && !errors["slug"] && data.slug !== group.slug) {
         const existingSlug = await prisma.group.findUnique({
             where: {slug: data.slug}
         })

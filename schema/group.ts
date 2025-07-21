@@ -3,7 +3,14 @@ import * as z from 'zod'
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const name = z.string().min(1, "Grupa musi posiadać nazwę")
-const maxMembers = z.number().min(1, "Grupa musi mieć przynajmniej jedną osobę")
+
+
+const maxMembers = z.number()
+  .min(1, "Grupa musi mieć przynajmniej jedną osobę")
+  .refine((val) => val !== null, {
+    message: "dsadsa"
+  })
+
 const slug = z.string()
   .min(1, "Unikalny odnośnik nie może być pusty")
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Unikalny odnośnik może zawierać tylko małe litery, cyfry i myślniki")
@@ -23,14 +30,23 @@ const slug = z.string()
   //    message: "Unikalny odnośnik nie może zaczynać się ani kończyć myślnikiem"
   //  }
   //)
-const street = z.string().trim().max(255, "Adres jest zbyt długi").optional()
-const cityId = z.string().uuid().optional()
+const street = z.string().trim().max(255, "Adres jest zbyt długi").nullable()
+
+const cityId = z.string().uuid().nullable()
+
+// const price = z.union([
+//   z.number().refine(val => val === 0 || val >= 10, {
+//     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
+//   }),
+//   z.null()
+// ]).optional()
+
 const price = z.number()
   .refine((val) => val === 0 || val >= 10, {
     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
   })
-  .optional()
-  
+  .nullable()
+    
 export const CreateGroupSchema = z.object({
     name,
     maxMembers,
