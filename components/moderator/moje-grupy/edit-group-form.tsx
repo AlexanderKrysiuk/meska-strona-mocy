@@ -81,9 +81,6 @@ const EditGroupForm = ({
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
-                {JSON.stringify(watch(),null,2)}
-                <div>Valid: {JSON.stringify(isValid,null,2)}</div>
-                <div>Dirty: {JSON.stringify(isDirty,null,2)}</div>
                 <Input {...register("name", {
                     setValueAs(value) {
                         return liveNameify(value)
@@ -120,7 +117,6 @@ const EditGroupForm = ({
                     description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
                     variant="bordered"
                     value={watch("slug")}
-                    isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
