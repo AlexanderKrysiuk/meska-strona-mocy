@@ -60,6 +60,8 @@ export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
 }
 
 export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupSchema>) => {
+    //console.log("DATA:", data)
+    
     const user = await GetUserByID()
     const group = await prisma.group.findUnique({
         where: {id: groupId}
@@ -87,8 +89,8 @@ export const EditGroup = async (groupId: string, data: z.infer<typeof EditGroupS
         
         flattened.formErrors.forEach(message => addError(errors, "root", message))
     }
-    console.log(data.slug)
-    console.log(errors)
+    //console.log(data.slug)
+    //console.log(errors)
 
             
     if (data.slug && !errors["slug"] && data.slug !== group.slug) {

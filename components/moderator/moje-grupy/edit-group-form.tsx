@@ -3,7 +3,7 @@
 import { EditGroup } from "@/actions/group"
 import { EditGroupSchema } from "@/schema/group"
 import { ActionStatus } from "@/types/enums"
-import { finalNameify, finalSlugify, liveNameify, liveSlugify } from "@/utils/slug"
+import { finalNameify, finalSlugify, liveNameify, liveSlugify, numberify } from "@/utils/slug"
 import { Button, Form, Input, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { City, Country, Group, Region } from "@prisma/client"
@@ -32,28 +32,6 @@ const EditGroupForm = ({
     const [cityId, setCityId] = useState(city?.id || "")
     const [regionId, setRegionId] = useState(region?.id || "")
     const [countryId, setCountryId] = useState(country?.id || "")
-
-    // const [cityId, setCityId] = useState(() => {
-    //     if (!group.cityId) return "";
-    //     const city = cities.find(c => c.id === group.cityId);
-    //     return city?.id ?? "";
-    // });
-    
-    // const [regionId, setRegionId] = useState(() => {
-    //     if (!group.cityId) return "";
-    //     const city = cities.find(c => c.id === group.cityId);
-    //     const region = regions.find(r => r.id === city?.regionId);
-    //     return region?.id ?? "";
-    // });
-    
-    // const [countryId, setCountryId] = useState(() => {
-    //     if (!group.cityId) return "";
-    //     const city = cities.find(c => c.id === group.cityId);
-    //     const region = regions.find(r => r.id === city?.regionId);
-    //     const country = countries.find(c => c.id === region?.countryId);
-    //     return country?.id ?? "";
-    // });
-    
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
@@ -123,7 +101,7 @@ const EditGroupForm = ({
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
-                    value={watch("name")}
+                    //value={watch("name")}
                     // onChange={(event) => {
                     //     setValue("name", liveNameify(event.target.value), {shouldDirty: true})
                     //     trigger("name")
@@ -136,7 +114,7 @@ const EditGroupForm = ({
                     //     setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
                     //     trigger("slug")
                     // }}
-                    isClearable
+                    
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
@@ -200,12 +178,13 @@ const EditGroupForm = ({
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
-                <Input
+                <Input {...register("street", {
+                    setValueAs: (value) => value === "" ? null : value
+                })}
                     label="Adres (ulica, numer domu / lokalu)"
                     labelPlacement="outside"
                     placeholder="Tortuga 13/7"
                     variant="bordered"
-                    onValueChange={(value) => setValue("street", value)}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.street}
@@ -262,12 +241,12 @@ const EditGroupForm = ({
                     {(cities) => <SelectItem>{cities.name}</SelectItem>}
                 </Select>
                 <Input {...register("price", {
-                        setValueAs: (value) => value === "" ? null : parseFloat(value)
+                        setValueAs: numberify,
                     })}
+                    value={watch("price")?.toString() || ""}
                     label="Cena"
                     labelPlacement="outside"
                     variant="bordered"
-                    type="number"
                     min={0}
                     placeholder="150"
                     endContent={

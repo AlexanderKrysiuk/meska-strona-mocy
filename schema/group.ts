@@ -41,12 +41,38 @@ const cityId = z.string().uuid().nullable()
 //   z.null()
 // ]).optional()
 
+// const price = z.number()
+//   .transform((val) => (isNaN(val) ? null : val))
+//   .refine((val) => val === 0 || val >= 10, {
+//     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
+//   })
+//   .nullable()
+
+// const price = z.preprocess(
+//   (val) => {
+//     if (typeof val === "number") {
+//       return isNaN(val) ? null : val;
+//     }
+//     if (typeof val === "string") {
+//       const num = Number(val);
+//       return isNaN(num) ? null : num;
+//     }
+//     return val;
+//   },
+//   z
+//     .number()
+//     .nullable()
+//     .refine((val) => val === null || val === 0 || val >= 10, {
+//       message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
+//     })
+// );
+
 const price = z.number()
-  .refine((val) => val === 0 || val >= 10, {
-    message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
-  })
   .nullable()
-    
+  .refine((val) => val === null || val === 0 || val >= 10, {
+    message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
+  })    
+
 export const CreateGroupSchema = z.object({
     name,
     maxMembers,

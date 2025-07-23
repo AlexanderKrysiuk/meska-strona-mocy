@@ -23,3 +23,11 @@ export function liveNameify(text: string): string {
 export function finalNameify(text: string): string {
     return liveNameify(text).trimEnd()
 }
+
+export function numberify(value: unknown): number | null {
+    if (value === "") return null;
+  
+    const cleaned = String(value).replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    return cleaned === "" ? null : parseInt(cleaned, 10);
+}
+  
