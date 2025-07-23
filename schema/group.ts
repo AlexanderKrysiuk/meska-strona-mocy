@@ -5,11 +5,11 @@ const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 const name = z.string().min(1, "Grupa musi posiadać nazwę")
 
 
-const maxMembers = z.number()
-  .min(1, "Grupa musi mieć przynajmniej jedną osobę")
-  .refine((val) => val !== null, {
-    message: "dsadsa"
+const maxMembers = z.number({
+  required_error: "Pole nie może być puste",
+  invalid_type_error: "Pole nie moze być puste"
   })
+  .min(1, "Grupa musi mieć przynajmniej jedną osobę")
 
 const slug = z.string()
   .min(1, "Unikalny odnośnik nie może być pusty")

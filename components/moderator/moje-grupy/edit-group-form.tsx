@@ -57,8 +57,9 @@ const EditGroupForm = ({
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
-    const { register, reset, trigger, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid } } = useForm<FormFields>({
+    const { register, reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid } } = useForm<FormFields>({
         resolver: zodResolver(EditGroupSchema),
+        mode: "all",
         defaultValues: {
             name: group.name,
             slug: group.slug,
@@ -105,31 +106,49 @@ const EditGroupForm = ({
                 {JSON.stringify(watch(),null,2)}
                 <div>Valid: {JSON.stringify(isValid,null,2)}</div>
                 <div>Dirty: {JSON.stringify(isDirty,null,2)}</div>
-                <Input {...register("name")}
+                <Input {...register("name", {
+                    setValueAs(value) {
+                        return liveNameify(value)
+                    },
+                    onChange(event) {
+                        setValue("slug", liveSlugify(event.target.value), {shouldValidate: true})
+                    },
+                    onBlur(event) {
+                        setValue("name", finalNameify(event.target.value), {shouldValidate: true})
+                        setValue("slug", finalNameify(event.target.value), {shouldValidate: true})
+                    },
+                })}
                     label="Nazwa grupy"
                     labelPlacement="outside"
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
                     value={watch("name")}
-                    onChange={(event) => {
-                        setValue("name", liveNameify(event.target.value), {shouldDirty: true})
-                        trigger("name")
-                        setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
-                        trigger("slug")
-                    }}
-                    onBlur={(event) => {
-                        setValue("name", finalNameify(event.target.value), {shouldDirty: true})
-                        trigger("name")
-                        setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
-                        trigger("slug")
-                    }}
+                    // onChange={(event) => {
+                    //     setValue("name", liveNameify(event.target.value), {shouldDirty: true})
+                    //     trigger("name")
+                    //     setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
+                    //     trigger("slug")
+                    // }}
+                    // onBlur={(event) => {
+                    //     setValue("name", finalNameify(event.target.value), {shouldDirty: true})
+                    //     trigger("name")
+                    //     setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
+                    //     trigger("slug")
+                    // }}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
                 />
-                <Input {...register("slug")}
+                <Input {...register("slug", {
+                    setValueAs(value) {
+                        return liveSlugify(value)
+                    },
+                    onBlur(event) {
+                        setValue("slug", finalSlugify(event.target.value), {shouldValidate: true})
+                    },
+                })}
                     label="Unikalny odnośnik"
                     labelPlacement="outside"
                     type="text"
@@ -137,34 +156,45 @@ const EditGroupForm = ({
                     description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
                     variant="bordered"
                     value={watch("slug")}
-                    onChange={(event) => {
-                        setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
-                        trigger("slug")
-                    }}
-                    onBlur={(event) => {
-                        setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
-                        trigger("slug")
-                    }}
+                    // onChange={(event) => {
+                    //     setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
+                    //     trigger("slug")
+                    // }}
+                    // onBlur={(event) => {
+                    //     setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
+                    //     trigger("slug")
+                    // }}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
                 />
-                <Input {...register("maxMembers", { //valueAsNumber: true })}
-                    setValueAs: (value) => value === "" ? null : parseFloat(value),
+                <Input {...register("maxMembers",{ valueAsNumber: true,
+                    
                     })}
+                    //{ valueAsNumber: true })}
+                    // { 
+                    //     setValueAs: (value) => value === "" ? null : parseFloat(value),
+                    //     onChange(event) {
+                    //         trigger("maxMembers")
+                    //     },
+                    // })}
                     label="Maksymalna liczba uczestników"
                     labelPlacement="outside"
                     variant="bordered"
-                    type="number"
                     min={1}
                     placeholder="11"
+                    type="number"
+                    value={watch("maxMembers").toString()}
                     // onChange={(event) => {
-                    //      const inputValue = event.target.value;
-                    //      const parsed = parseInt(inputValue);
-                    //      setValue("maxMembers", parsed, {shouldDirty: true})
-                    //      trigger("maxMembers")
+                    //     setValue("maxMembers", Numbify(event.target.value), {shouldValidate: true})
                     // }}
+                    //onChange={(event) => {
+                          //const inputValue = event.target.value;
+                          //const parsed = parseInt(inputValue);
+                    //      setValue("maxMembers", event.target.value === "" ? 0 : parseInt(event.target.value), {shouldDirty: true})
+                    //      trigger("maxMembers")
+                    //}}
                     isRequired
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.maxMembers}
