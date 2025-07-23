@@ -101,20 +101,6 @@ const EditGroupForm = ({
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
-                    //value={watch("name")}
-                    // onChange={(event) => {
-                    //     setValue("name", liveNameify(event.target.value), {shouldDirty: true})
-                    //     trigger("name")
-                    //     setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
-                    //     trigger("slug")
-                    // }}
-                    // onBlur={(event) => {
-                    //     setValue("name", finalNameify(event.target.value), {shouldDirty: true})
-                    //     trigger("name")
-                    //     setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
-                    //     trigger("slug")
-                    // }}
-                    
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
@@ -134,57 +120,37 @@ const EditGroupForm = ({
                     description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
                     variant="bordered"
                     value={watch("slug")}
-                    // onChange={(event) => {
-                    //     setValue("slug", liveSlugify(event.target.value), {shouldDirty: true})
-                    //     trigger("slug")
-                    // }}
-                    // onBlur={(event) => {
-                    //     setValue("slug", finalSlugify(event.target.value), {shouldDirty: true})
-                    //     trigger("slug")
-                    // }}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
                 />
-                <Input {...register("maxMembers",{ valueAsNumber: true,
-                    
+                <Input {...register("maxMembers",{ 
+                        setValueAs: numberify
                     })}
-                    //{ valueAsNumber: true })}
-                    // { 
-                    //     setValueAs: (value) => value === "" ? null : parseFloat(value),
-                    //     onChange(event) {
-                    //         trigger("maxMembers")
-                    //     },
-                    // })}
                     label="Maksymalna liczba uczestników"
                     labelPlacement="outside"
                     variant="bordered"
                     min={1}
                     placeholder="11"
-                    type="number"
-                    value={watch("maxMembers").toString()}
-                    // onChange={(event) => {
-                    //     setValue("maxMembers", Numbify(event.target.value), {shouldValidate: true})
-                    // }}
-                    //onChange={(event) => {
-                          //const inputValue = event.target.value;
-                          //const parsed = parseInt(inputValue);
-                    //      setValue("maxMembers", event.target.value === "" ? 0 : parseInt(event.target.value), {shouldDirty: true})
-                    //      trigger("maxMembers")
-                    //}}
+                    value={watch("maxMembers")?.toString() || ""}
                     isRequired
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
                 <Input {...register("street", {
-                    setValueAs: (value) => value === "" ? null : value
+                    setValueAs: (value) => {
+                        if (value == null || value === " " || value === "") return null;
+                        return liveNameify(value);
+                      }                      
                 })}
                     label="Adres (ulica, numer domu / lokalu)"
                     labelPlacement="outside"
                     placeholder="Tortuga 13/7"
                     variant="bordered"
+                    type="text"
+                    value={watch("street")?.toString() || ""}
                     isClearable
                     isDisabled={isSubmitting}
                     isInvalid={!!errors.street}
@@ -199,7 +165,6 @@ const EditGroupForm = ({
                     onChange={(event) => {
                         setCountryId(event.target.value)
                         setRegionId("")
-                        //setCityId("")
                         setValue("cityId", null)
                     }}
                     isDisabled={isSubmitting}
@@ -215,7 +180,6 @@ const EditGroupForm = ({
                     selectedKeys={[regionId]}
                     onChange={(event) => {
                         setRegionId(event.target.value)
-                        //setCityId("")
                         setValue("cityId", null)
                     }}
                     isDisabled={isSubmitting || !countryId}
