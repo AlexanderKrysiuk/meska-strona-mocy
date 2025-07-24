@@ -3,8 +3,8 @@ import * as z from 'zod'
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const meetingId = z.string().uuid()
 const groupId = z.string().uuid()
-const street = z.string().min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki");
-const cityId = z.string().uuid()
+const street = z.string().min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi");
+const cityId = z.string().min(1, "Wybierz miasto")
 
 
 const price = z.coerce.number().refine(price => price === 0 || price >= 10, {

@@ -11,8 +11,9 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from 'zod'
 import { DateValue, getLocalTimeZone, today } from "@internationalized/date";
 import { CreateMeeting } from "@/actions/meeting";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { combineDateAndTime } from "@/utils/date";
+import { liveNameify } from "@/utils/slug";
 
 const CreateMeetingModal = ({
     group,
@@ -28,6 +29,7 @@ const CreateMeetingModal = ({
     const {isOpen, onOpen, onClose} = useDisclosure()
     const router = useRouter()
 
+    
     const city = cities.find(city => city.id === group.cityId)
     const region = regions.find(region => region.id === city?.regionId)
     const country = countries.find(country => country.id === region?.countryId)
@@ -35,21 +37,29 @@ const CreateMeetingModal = ({
     const [cityId, setCityId] = useState(city?.id || "")
     const [regionId, setRegionId] = useState(region?.id || "")
     const [countryId, setCountryId] = useState(country?.id || "")
-
+    
     const [date, setDate] = useState<DateValue | null>()
     const [startHour, setStartHour] = useState<TimeInputValue | null>()
     const [endHour, setEndHour] = useState<TimeInputValue | null>()
-
+    
     type FormFields = z.infer<typeof CreateMeetingSchema>
     
-    const  { register, handleSubmit, setError, setValue, trigger, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
+    const  { register, handleSubmit, watch, reset, setError, setValue, trigger, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
+        mode: "all",
         defaultValues: {
             street: group.street ?? undefined,
             cityId: group.cityId ?? undefined,
             price: group.price ?? undefined,
         }
     })
+    
+    useEffect(()=>{
+        reset()
+        setDate(null)
+        setStartHour(null)
+        setEndHour(null)
+    }, [isOpen])
 
     const submit: SubmitHandler<FormFields> = async (data) => {
         try {
@@ -85,36 +95,6 @@ const CreateMeetingModal = ({
                     <ModalHeader>Nowe Spotkanie dla grupy {group.name}</ModalHeader>
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
-                            {/*}
-                            <Select
-                                label="Grupa"
-                                labelPlacement="outside"
-                                placeholder="Wybierz grupę"
-                                variant="bordered"
-                                items={Array.isArray(groups) ? groups : [groups]}
-                                isDisabled={!Array.isArray(groups) || groups.length === 1}
-                                value={groups.length === 1 ? groups[0].id : undefined}  // Jeśli tylko jedna grupa, ustawiamy id jako wartość
-                            >
-                                {(group) => <SelectItem>{group.name}</SelectItem>}
-                            </Select>
-                            <I18nProvider locale="pl-PL">
-                                <DatePicker {...register("startTime")}
-                                    label="Data rozpoczęcia spotkania"
-                                    labelPlacement="outside"
-                                    variant="bordered"
-                                    granularity="minute"
-                                    value={watch("startTime")}
-                                    minValue={today(getLocalTimeZone()).add({days: 1})}
-                                    isRequired
-                                    isDisabled={isSubmitting}
-                                    isInvalid={!!errors.startTime}
-                                    errorMessage={errors.startTime?.message}
-                                    onChange={(date) => {
-                                        if (date) setValue("startTime", date.toDate("Europe/Warsaw"));
-                                    }}
-                                />
-                            </I18nProvider>
-                                */}
                             <DatePicker
                                 label="Data spotkania"
                                 labelPlacement="outside"
@@ -157,8 +137,7 @@ const CreateMeetingModal = ({
                                     onChange={(time) => {
                                         if (date && startHour && time) {
                                             setEndHour(time)
-                                            setValue("endTime", combineDateAndTime(date, time))
-                                            trigger("endTime")
+                                            setValue("endTime", combineDateAndTime(date, time), {shouldValidate: true})
                                         }
                                     }}    
                                     isRequired
@@ -166,39 +145,20 @@ const CreateMeetingModal = ({
                                     isInvalid={!!errors.endTime}
                                     errorMessage={errors.endTime?.message}
                                 />
-                            </div>
-                            {/*
-                            <DatePicker
-                                label="Data zakończenia spotkania"
-                                labelPlacement="outside"
-                                variant="bordered"
-                                //minValue={
-                                //    watch("startTime")
-                                //        ? parseDateTime(watch("startTime").toISOString())
-                                //        : undefined
-                                //}
-                                onChange={(date) => {
-                                    if (date) setValue("endTime", date.toDate("Europe/Warsaw"))
-                                }}
-                                isRequired
-                                isDisabled={isSubmitting || !watch("startTime")}
-                                isInvalid={!!errors.startTime}
-                                errorMessage={errors.startTime?.message}
-                            {JSON.stringify(date,null,2)}<br/>
-                            {JSON.stringify(startHour,null,2)}<br/>
-                            {JSON.stringify(watch(),null,2)}<br/>
-                            {JSON.stringify(isDirty,null,2)}<br/>
-                            {JSON.stringify(isValid,null,2)}<br/>
-                            {JSON.stringify(errors,null,2)}
-                            />*/}
-                            <Input {...register("street")} 
+                            </div> 
+                            <Input {...register("street", {
+                                setValueAs: (value) => {
+                                    if (value == null || value === " " || value === "") return null;
+                                    return liveNameify(value);
+                                }  
+                            })} 
                                 label="Adres (ulica, numer domu / lokalu)"
                                 labelPlacement="outside"
                                 type="text"
                                 placeholder="Tortuga 13/7"
                                 variant="bordered"
+                                value={watch("street")?.toString() || ""}
                                 isRequired
-                                isClearable
                                 isDisabled={isSubmitting}
                                 isInvalid={!!errors.street}
                                 errorMessage={errors.street?.message}
@@ -212,8 +172,7 @@ const CreateMeetingModal = ({
                                 onChange={(event) => {
                                     setCountryId(event.target.value)
                                     setRegionId("")
-                                    setCityId("")
-                                    setValue("cityId", "")
+                                    setValue("cityId", "", {shouldValidate: true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting}
@@ -230,7 +189,7 @@ const CreateMeetingModal = ({
                                 onChange={(event) => {
                                     setRegionId(event.target.value)
                                     setCityId("")
-                                    setValue("cityId", "")
+                                    setValue("cityId", "", {shouldValidate: true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting || !countryId}
@@ -246,7 +205,7 @@ const CreateMeetingModal = ({
                                 selectedKeys={[cityId]}
                                 onChange={(event)=>{
                                     setCityId(event.target.value)
-                                    setValue("cityId", event.target.value)
+                                    setValue("cityId", event.target.value || "", {shouldValidate: true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting || !countryId || !regionId}

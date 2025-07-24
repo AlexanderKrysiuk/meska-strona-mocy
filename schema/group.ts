@@ -18,7 +18,7 @@ const slug = z.string()
     message: "Slug nie może wyglądać jak identyfikator systemowy (UUID)"
   })
 
-const street = z.string().trim().max(255, "Adres jest zbyt długi").nullable()
+const street = z.string().min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi").nullable()
 
 const cityId = z.string().uuid().nullable()
 

@@ -161,7 +161,7 @@ const EditGroupForm = ({
                     onChange={(event) => {
                         setCountryId(event.target.value)
                         setRegionId("")
-                        setValue("cityId", null)
+                        setValue("cityId", null, {shouldDirty: true})
                     }}
                     isDisabled={isSubmitting}
                     items={countries}
@@ -176,7 +176,7 @@ const EditGroupForm = ({
                     selectedKeys={[regionId]}
                     onChange={(event) => {
                         setRegionId(event.target.value)
-                        setValue("cityId", null)
+                        setValue("cityId", null, {shouldDirty: true})
                     }}
                     isDisabled={isSubmitting || !countryId}
                     items={regions.filter(region => region.countryId === countryId)}
@@ -191,7 +191,7 @@ const EditGroupForm = ({
                     selectedKeys={[cityId]}
                     onChange={(event)=>{
                         setCityId(event.target.value)
-                        setValue("cityId", event.target.value || null, {shouldDirty:true})
+                        setValue("cityId", event.target.value || null, {shouldDirty: true})
                     }}
                     isDisabled={isSubmitting || !countryId || !regionId}
                     isInvalid={!!errors.cityId}
