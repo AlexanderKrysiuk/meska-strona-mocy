@@ -119,27 +119,29 @@ const Header = () => {
                         <Divider/>
                     </NavbarMenuItem>
                 )}
-                {user?.role === Role.Moderator || user?.role === Role.Admin && 
+                {[Role.Admin, Role.Moderator].includes(user?.role as Role) && (
                     <div>
                         <span className="text-sm text-foreground-500">
                             Moderator
                         </span>
-                        {ModeratorItems.map((item)=>(
-                            <NavbarMenuItem
-                                key={item.title}
-                            >
-                                <Link
-                                    href={item.href}
-                                    color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                                    className="flex gap-2 hover:primary transition-colors duration-400"
+                        <div className="space-y-4">
+                            {ModeratorItems.map((item)=>(
+                                <NavbarMenuItem
+                                    key={item.title}
                                 >
-                                    {item.icon} {item.title}
-                                </Link>
-                            </NavbarMenuItem>
-                        ))}
+                                    <Link
+                                        href={item.href}
+                                        color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                                        className="flex gap-2 hover:primary transition-colors duration-400"
+                                    >
+                                        {item.icon} {item.title}
+                                    </Link>
+                                </NavbarMenuItem>
+                            ))}
+                        </div>
                         <Divider/>
                     </div>
-                }
+                )}
                 {AllItems.map((item)=>(
                     <NavbarMenuItem
                         isActive={pathname.startsWith(item.href)}

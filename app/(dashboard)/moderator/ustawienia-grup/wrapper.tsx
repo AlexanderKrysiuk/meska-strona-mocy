@@ -1,5 +1,6 @@
 "use client"
 
+import CreateGroupModal from "@/components/moderator/create-group-modal"
 import EditGroupForm from "@/components/moderator/moje-grupy/edit-group-form"
 import { faGears } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -25,36 +26,36 @@ const GroupSettingsWrapper = ({
 
     return (
         <main className="p-4 space-y-4">
-            <Select
-                label="Grupa"
-                items={groups}
-                placeholder="Wybierz grupę"
-                variant="bordered"
-                selectedKeys={groupId}
-                onSelectionChange={(keys) => {
-                    // typ keys: Selection → domyślnie Set<string>
-                    setGroupId(new Set(keys as Set<string>))
-                }}
-            >
-                {(group) => <SelectItem key={group.id}>{group.name}</SelectItem>}
-            </Select>
-
-            {selectedGroup && (
-                <Card>
-                    <CardHeader>
-                        <FontAwesomeIcon icon={faGears} className="mr-2"/> Ustawienia Grupy: {selectedGroup.name}
-                    </CardHeader>
-                    <CardBody>
-                        <EditGroupForm
-                            key={selectedGroup.id}
-                            group={selectedGroup}
-                            countries={countries}
-                            regions={regions}
-                            cities={cities}
-                        />
-                    </CardBody>
-                </Card>
-            )}
+            <div className="flex space-x-4 items-center">
+                <Select
+                    label="Grupa"
+                    items={groups}
+                    placeholder="Wybierz grupę"
+                    variant="bordered"
+                    selectedKeys={groupId}
+                    onSelectionChange={(keys) => {
+                        // typ keys: Selection → domyślnie Set<string>
+                        setGroupId(new Set(keys as Set<string>))
+                    }}
+                >
+                    {(group) => <SelectItem key={group.id}>{group.name}</SelectItem>}
+                </Select>
+                <CreateGroupModal/>
+            </div>
+            <Card>
+                <CardHeader>
+                    <FontAwesomeIcon icon={faGears} className="mr-2"/> Ustawienia Grupy: {selectedGroup?.name}
+                </CardHeader>
+                <CardBody>
+                    <EditGroupForm
+                        key={selectedGroup?.id}
+                        group={selectedGroup}
+                        countries={countries}
+                        regions={regions}
+                        cities={cities}
+                    />
+                </CardBody>
+            </Card>
         </main>
     )
 }

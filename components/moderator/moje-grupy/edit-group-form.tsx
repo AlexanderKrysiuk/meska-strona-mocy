@@ -12,49 +12,59 @@ import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
-const EditGroupForm = ({
+const EditGroupForm2 = ({
     group,
     countries,
     regions,
     cities
-} : {
-    group: Group
+}: {
+    group?: Group
     countries: Country[]
     regions: Region[]
     cities: City[]
 }) => {
     const router = useRouter()
 
-    const city = cities.find(city => city.id === group.cityId)
+    const city = cities.find(city => city.id === group?.cityId)
     const region = regions.find(region => region.id === city?.regionId)
     const country = countries.find(country => country.id === region?.countryId)
 
-    const [cityId, setCityId] = useState(city?.id || "")
+    const [cityId, setCityId] = useState(group?.cityId || "")
     const [regionId, setRegionId] = useState(region?.id || "")
     const [countryId, setCountryId] = useState(country?.id || "")
 
     type FormFields = z.infer<typeof EditGroupSchema>
 
-    const { register, reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid } } = useForm<FormFields>({
+    const {
+        register,
+        reset,
+        watch,
+        setValue,
+        setError,
+        handleSubmit,
+        formState: { errors, isSubmitting, isDirty, isValid }
+    } = useForm<FormFields>({
         resolver: zodResolver(EditGroupSchema),
         mode: "all",
         defaultValues: {
-            name: group.name,
-            slug: group.slug,
-            maxMembers: group.maxMembers,
-            street: group.street ?? null,
-            cityId: group.cityId ?? null,
-            price: group.price ?? null
+            name: group?.name || "",
+            slug: group?.slug || "",
+            maxMembers: group?.maxMembers || undefined,
+            street: group?.street ?? null,
+            cityId: group?.cityId ?? null,
+            price: group?.price ?? null
         }
     })
 
-    const submit: SubmitHandler<FormFields> = async(data) => {
+    const submit: SubmitHandler<FormFields> = async (data) => {
+        if (!group) return
+
         try {
             const result = await EditGroup(group.id, data)
 
             if (result.errors) {
                 for (const [field, messages] of Object.entries(result.errors)) {
-                    setError(field as keyof FormFields, {message: messages.join(", ")})
+                    setError(field as keyof FormFields, { message: messages.join(", ") })
                 }
             }
 
@@ -68,7 +78,7 @@ const EditGroupForm = ({
                 reset(data)
                 router.refresh()
             }
-            
+
         } catch {
             addToast({
                 title: "Wystąpił nieznany błąd",
@@ -81,49 +91,52 @@ const EditGroupForm = ({
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
-                <Input {...register("name", {
-                    setValueAs(value) {
-                        return liveNameify(value)
-                    },
-                    onChange(event) {
-                        setValue("slug", liveSlugify(event.target.value), {shouldValidate: true})
-                    },
-                    onBlur(event) {
-                        setValue("name", finalNameify(event.target.value), {shouldValidate: true})
-                        setValue("slug", finalNameify(event.target.value), {shouldValidate: true})
-                    },
-                })}
+                <Input
+                    {...register("name", {
+                        setValueAs(value) {
+                            return liveNameify(value)
+                        },
+                        onChange(event) {
+                            setValue("slug", liveSlugify(event.target.value), { shouldValidate: true })
+                        },
+                        onBlur(event) {
+                            setValue("name", finalNameify(event.target.value), { shouldValidate: true })
+                            setValue("slug", finalNameify(event.target.value), { shouldValidate: true })
+                        }
+                    })}
                     label="Nazwa grupy"
                     labelPlacement="outside"
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
-                    isDisabled={isSubmitting}
+                    isDisabled={!group || isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
                 />
-                <Input {...register("slug", {
-                    setValueAs(value) {
-                        return liveSlugify(value)
-                    },
-                    onBlur(event) {
-                        setValue("slug", finalSlugify(event.target.value), {shouldValidate: true})
-                    },
-                })}
+
+                <Input
+                    {...register("slug", {
+                        setValueAs(value) {
+                            return liveSlugify(value)
+                        },
+                        onBlur(event) {
+                            setValue("slug", finalSlugify(event.target.value), { shouldValidate: true })
+                        }
+                    })}
                     label="Unikalny odnośnik"
                     labelPlacement="outside"
                     type="text"
                     placeholder="zaloga-czarnej-perly"
-                    description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
+                    description="Ten odnośnik będzie częścią adresu URL Twojej grupy."
                     variant="bordered"
                     value={watch("slug")}
-                    isDisabled={isSubmitting}
+                    isDisabled={!group || isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
                 />
-                <Input {...register("maxMembers",{ 
-                        setValueAs: numberify
-                    })}
+
+                <Input
+                    {...register("maxMembers", { setValueAs: numberify })}
                     label="Maksymalna liczba uczestników"
                     labelPlacement="outside"
                     variant="bordered"
@@ -131,28 +144,30 @@ const EditGroupForm = ({
                     placeholder="11"
                     value={watch("maxMembers")?.toString() || ""}
                     isRequired
-                    isDisabled={isSubmitting}
+                    isDisabled={!group || isSubmitting}
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
-                <Input {...register("street", {
-                    setValueAs: (value) => {
-                        if (value == null || value === " " || value === "") return null;
-                        return liveNameify(value);
-                      }                      
-                })}
-                    label="Adres (ulica, numer domu / lokalu)"
+
+                <Input
+                    {...register("street", {
+                        setValueAs: (value) => {
+                            if (value == null || value.trim() === "") return null
+                            return liveNameify(value)
+                        }
+                    })}
+                    label="Adres (ulica, numer)"
                     labelPlacement="outside"
                     placeholder="Tortuga 13/7"
                     variant="bordered"
                     type="text"
                     value={watch("street")?.toString() || ""}
-                    isClearable
-                    isDisabled={isSubmitting}
+                    isDisabled={!group || isSubmitting}
                     isInvalid={!!errors.street}
                     errorMessage={errors.street?.message}
                 />
-                <Select                    
+
+                <Select
                     label="Kraj"
                     labelPlacement="outside"
                     placeholder="Karaiby"
@@ -161,68 +176,67 @@ const EditGroupForm = ({
                     onChange={(event) => {
                         setCountryId(event.target.value)
                         setRegionId("")
-                        setValue("cityId", null, {shouldDirty: true})
+                        setValue("cityId", null, { shouldDirty: true })
                     }}
-                    isDisabled={isSubmitting}
+                    isDisabled={!group || isSubmitting}
                     items={countries}
                 >
-                    {(countries) => <SelectItem key={countries.id}>{countries.name}</SelectItem>}
+                    {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
                 </Select>
+
                 <Select
                     label="Województwo"
                     labelPlacement="outside"
-                    placeholder="Archipelag Czarnej Perły"
+                    placeholder="Archipelag"
                     variant="bordered"
                     selectedKeys={[regionId]}
                     onChange={(event) => {
                         setRegionId(event.target.value)
-                        setValue("cityId", null, {shouldDirty: true})
+                        setValue("cityId", null, { shouldDirty: true })
                     }}
-                    isDisabled={isSubmitting || !countryId}
+                    isDisabled={!group || isSubmitting || !countryId}
                     items={regions.filter(region => region.countryId === countryId)}
                 >
-                    {(regions) => <SelectItem>{regions.name}</SelectItem>}
+                    {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
                 </Select>
-                <Select {...register("cityId")}
+
+                <Select
+                    {...register("cityId")}
                     label="Miasto"
                     labelPlacement="outside"
                     variant="bordered"
                     placeholder="Isla de Muerta"
                     selectedKeys={[cityId]}
-                    onChange={(event)=>{
+                    onChange={(event) => {
                         setCityId(event.target.value)
-                        setValue("cityId", event.target.value || null, {shouldDirty: true})
+                        setValue("cityId", event.target.value || null, { shouldDirty: true })
                     }}
-                    isDisabled={isSubmitting || !countryId || !regionId}
+                    isDisabled={!group || isSubmitting || !countryId || !regionId}
                     isInvalid={!!errors.cityId}
                     errorMessage={errors.cityId?.message}
                     items={cities.filter(city => city.regionId === regionId)}
                 >
-                    {(cities) => <SelectItem>{cities.name}</SelectItem>}
+                    {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                 </Select>
-                <Input {...register("price", {
-                        setValueAs: numberify,
-                    })}
+
+                <Input
+                    {...register("price", { setValueAs: numberify })}
                     value={watch("price")?.toString() || ""}
                     label="Cena"
                     labelPlacement="outside"
                     variant="bordered"
                     min={0}
                     placeholder="150"
-                    endContent={
-                        <div className="text-foreground-500 text-sm">
-                            PLN
-                        </div>
-                    }
+                    endContent={<div className="text-foreground-500 text-sm">PLN</div>}
                     isClearable
-                    isDisabled={isSubmitting}
+                    isDisabled={!group || isSubmitting}
                     isInvalid={!!errors.price}
                     errorMessage={errors.price?.message}
                 />
                 <Button
                     type="submit"
                     color="primary"
-                    isDisabled={isSubmitting || !isDirty || !isValid}
+                    isDisabled={!group || isSubmitting || !isDirty || !isValid}
                     isLoading={isSubmitting}
                 >
                     {isSubmitting ? "Przetwarzanie..." : "Zmień dane grupy"}
@@ -232,4 +246,4 @@ const EditGroupForm = ({
     )
 }
 
-export default EditGroupForm
+export default EditGroupForm2

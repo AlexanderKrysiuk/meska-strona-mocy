@@ -58,6 +58,7 @@ const CreateGroupModal = () => {
             <Modal
                 isOpen={isOpen}
                 onClose={onClose}
+                placement="center"
             >
                 <ModalContent>
                     <ModalHeader>Nowa grupa</ModalHeader>
