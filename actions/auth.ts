@@ -7,6 +7,7 @@ import { VerificationToken } from "@prisma/client";
 import { z } from "zod";
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
     let existingUser;
@@ -107,4 +108,12 @@ export const GetUserByEmail = async (email:string) => {
     } catch(error) {
         throw new Error("Błąd połączenia z bazą danych")
     }
+}
+
+export const CheckLoginOrRedirect = async () => {
+    const session = await auth()
+
+    if (!session?.user.id) return redirect("/auth/start")
+
+    return session.user
 }
