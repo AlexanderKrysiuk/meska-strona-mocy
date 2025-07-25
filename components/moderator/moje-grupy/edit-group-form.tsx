@@ -187,7 +187,7 @@ const EditGroupForm2 = ({
                 <Select
                     label="Województwo"
                     labelPlacement="outside"
-                    placeholder="Archipelag"
+                    placeholder="Archipelag Czarnej Perły"
                     variant="bordered"
                     selectedKeys={[regionId]}
                     onChange={(event) => {

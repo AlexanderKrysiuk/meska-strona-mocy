@@ -5,21 +5,26 @@ import { combineDateAndTime } from "@/utils/date";
 import { liveNameify } from "@/utils/slug";
 import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, DatePicker, DateValue, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, TimeInput, TimeInputValue, useDisclosure } from "@heroui/react";
+import { Button, DatePicker, DateValue, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, TimeInput, TimeInputValue, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { getLocalTimeZone, today } from "@internationalized/date";
-//import { City, Country, Group, Region } from "@prisma/client";
-import { Group } from "@prisma/client";
+import { City, Country, Group, Region } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
 const CreateMeetingModal = ({
     groups,
-    selectedGroup
+    selectedGroup,
+    countries,
+    regions,
+    cities
 } : {
     groups: Group[]
     selectedGroup?: Group
+    countries: Country[]
+    regions: Region[]
+    cities: City[]
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
@@ -32,10 +37,20 @@ const CreateMeetingModal = ({
     const [startHour, setStartHour] = useState<TimeInputValue | null>()
     const [endHour, setEndHour] = useState<TimeInputValue | null>()
 
-    const { register, handleSubmit, setValue, getValues, watch, reset, formState: { isSubmitting, errors } } = useForm<FormFields>({
+    const city = cities.find(city => city.id === selectedGroup?.cityId)
+    const region = regions.find(region => region.id === city?.regionId)
+    const country = countries.find(country => country.id === region?.id)
+    
+    const { register, handleSubmit, setValue, getValues, watch, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         mode: "all",
     })
+
+    //const [cityId, setCityId] = useState(city?.id)
+    const cityId = watch("cityId")
+    const [regionId, setRegionId] = useState<string | undefined>(region?.id)
+    const [countryId, setCountryId] = useState<string | undefined>(country?.id)
+
 
     const submit: SubmitHandler<FormFields> = async (data) => {
         console.log(data)
@@ -51,7 +66,19 @@ const CreateMeetingModal = ({
             price: selectedGroup.price || undefined,
           })
         }
-      }, [isOpen, selectedGroup, reset, getValues])
+    }, [isOpen, selectedGroup, reset, getValues])
+
+    useEffect(() => {
+        if (!cityId) return
+      
+        const selectedCity = cities.find(city => city.id === cityId)
+        const selectedRegion = regions.find(region => region.id === selectedCity?.regionId)
+        const selectedCountry = countries.find(country => country.id === selectedRegion?.countryId)
+      
+        setRegionId(selectedRegion?.id)
+        setCountryId(selectedCountry?.id)
+    }, [cityId, cities, regions, countries])
+      
       
 
     return (
@@ -142,24 +169,87 @@ const CreateMeetingModal = ({
                                 />
                             </div>
                             <Input {...register("street", {
-                                setValueAs: liveNameify
-                            })}
-                                label="Adres (ulica, numer"
+                                    setValueAs: liveNameify
+                                })}
+                                label="Adres (ulica, numer)"
                                 labelPlacement="outside"
                                 placeholder="Tortuga 13/7"
                                 variant="bordered"
                                 type="text"
                                 value={watch("street")}
+                                isRequired
                                 isDisabled={isSubmitting}
                                 isInvalid={!!errors.street}
                                 errorMessage={errors.street?.message}
                             />
+                            <Select
+                                label="Kraj"
+                                labelPlacement="outside"
+                                placeholder="Karaiby"
+                                variant="bordered"
+                                selectedKeys={countryId ? [countryId] : []}
+                                onChange={(event)=>{
+                                    setCountryId(event.target.value)
+                                    setRegionId(undefined)
+                                    setValue("cityId", "")
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                items={countries}
+                            >
+                                {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
+                            </Select>
+                            <Select
+                                label="Województwo"
+                                labelPlacement="outside"
+                                placeholder="Archipelag Czarnej Perły"
+                                variant="bordered"
+                                selectedKeys={regionId ? [regionId] : []}
+                                onChange={(event)=>{
+                                    setRegionId(event.target.value)
+                                    setValue("cityId", "")
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting || !countryId}
+                                items={regions.filter(region => region.countryId === countryId)}
+                            >
+                                {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
+                            </Select>
+                            <Select {...register("cityId")}
+                                label="Miasto"
+                                labelPlacement="outside"
+                                variant="bordered"
+                                placeholder="Isla de Muerta"
+                                selectedKeys={[cityId]}
+                                onChange={(event) => {
+                                    setValue("cityId", event.target.value)
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting || !countryId || !regionId}
+                                items={cities.filter(city => city.regionId === regionId)}
+                            >
+                                {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
+                            </Select>
                         </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                type="submit"
+                                color="primary"
+                                isLoading={isSubmitting}
+                                isDisabled={isSubmitting || !isValid}
+                            >
+                                {isSubmitting ? "Przetwarzanie..." : "Dodaj nowe spotkanie"}
+                            </Button>
+                        </ModalFooter>
                     </Form>
                     <Divider/>
                     <pre>WATCH: {JSON.stringify(watch(),null,2)}</pre>
                     <Divider/>
                     <ModalBody>
+
+                        <div> ContryId: {JSON.stringify(countryId)} </div>
+                        <div> RegionId: {JSON.stringify(regionId)} </div>
+                        <Divider/>
                         <div>SelectedGroup</div>
                         <pre>{JSON.stringify(selectedGroup,null,2)}</pre>
                         <Divider/>

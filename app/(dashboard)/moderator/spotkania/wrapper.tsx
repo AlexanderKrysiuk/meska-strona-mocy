@@ -44,6 +44,9 @@ const MeetingsWrapper = ({
                 <CreateMeetingModal
                     groups={groups}
                     selectedGroup={selectedGroup}
+                    countries={countries}
+                    regions={regions}
+                    cities={cities}
                 />
                 {JSON.stringify(meetings,null,2)}
                 {JSON.stringify(countries,null,2)}
