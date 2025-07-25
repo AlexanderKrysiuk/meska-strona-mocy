@@ -17,6 +17,7 @@ const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny
 const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
 export const CreateMeetingSchema = z.object({
+    groupId,
     startTime,
     endTime,
     street,

@@ -152,7 +152,7 @@ const EditGroupForm2 = ({
                 <Input
                     {...register("street", {
                         setValueAs: (value) => {
-                            if (value == null || value.trim() === "") return null
+                            if (value === null || value.trim() === "") return null
                             return liveNameify(value)
                         }
                     })}

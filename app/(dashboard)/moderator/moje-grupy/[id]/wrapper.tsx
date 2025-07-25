@@ -1,6 +1,5 @@
 "use client"
 
-import CreateMeetingModal from "@/components/moderator/create-meeting-modal";
 import EditGroupForm from "@/components/moderator/moje-grupy/edit-group-form";
 import { faCalendar, faGears } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -57,12 +56,7 @@ const MyGroupWrapper = ({
                     )}
                 </CardBody>
                 <CardFooter>
-                    <CreateMeetingModal
-                        group={group}
-                        countries={countries}
-                        regions={regions}
-                        cities={cities}
-                    />
+                    
                 </CardFooter>
             </Card>
         </main>
