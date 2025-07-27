@@ -117,3 +117,8 @@ export const CheckLoginOrRedirect = async () => {
 
     return session.user
 }
+
+export const CheckLoginReturnUser = async () => {
+    const session = await auth()
+    return session?.user
+}

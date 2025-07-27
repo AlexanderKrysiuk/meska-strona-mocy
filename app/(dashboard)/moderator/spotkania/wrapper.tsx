@@ -43,6 +43,7 @@ const MeetingsWrapper = ({
                 <CreateGroupModal/>
                 <CreateMeetingModal
                     groups={groups}
+                    meetings={meetings}
                     selectedGroup={selectedGroup}
                     countries={countries}
                     regions={regions}

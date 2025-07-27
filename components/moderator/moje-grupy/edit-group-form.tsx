@@ -12,7 +12,7 @@ import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
-const EditGroupForm2 = ({
+const EditGroupForm = ({
     group,
     countries,
     regions,
@@ -246,4 +246,4 @@ const EditGroupForm2 = ({
     )
 }
 
-export default EditGroupForm2
+export default EditGroupForm

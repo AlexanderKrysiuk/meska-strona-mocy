@@ -150,3 +150,12 @@ const GetGroupBySlug = async (slug: string) => {
         throw new Error("Błąd połączenia z bazą danych")
     }
 }
+
+export const GetGroupById = async (id: string) => {
+    try {
+        return await prisma.group.findUnique({ where: {id}})
+    } catch(error) {
+        console.error("Błąd podczas pobierania grupy:", error)
+        return null
+    }
+}

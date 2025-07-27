@@ -27,11 +27,14 @@ model User {
   Authenticator Authenticator[]
 
   moderatedGroups Group[]        @relation("Moderator") // Użytkownik może moderować wiele grup
-  meetings        GroupMeeting[]
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  
   groupMembership GroupMembership[]
+
+  meetings        GroupMeeting[]
+  moderatedMeetings GroupMeeting[] @relation("Moderator")
 }
 
 enum Role {
@@ -133,6 +136,9 @@ model GroupMeeting {
 
   groupId      String
   group        Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  moderatorId String
+  moderator User @relation("Moderator", fields: [moderatorId], references: [id])
 
   participants User[]
 

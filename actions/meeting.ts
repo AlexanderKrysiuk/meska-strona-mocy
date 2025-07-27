@@ -2,32 +2,68 @@
 
 import { CreateMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
-import { GenerateVerificationToken, GetUserByID } from "./auth"
+import { CheckLoginReturnUser, GenerateVerificationToken, GetUserByID } from "./auth"
 import { Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { sendVerificationEmail } from "@/lib/nodemailer"
 import { randomUUID } from "crypto"
+import { GetGroupById } from "./group"
+import { Result } from "postcss"
+import { ActionStatus } from "@/types/enums"
 
-export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
-    const user = await GetUserByID()
+export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
+    const user = await CheckLoginReturnUser()
 
-    if (user.role !== Role.Admin && user.role !== Role.Moderator) throw new Error("Brak uprawnień do tworzenia spotkania")
-    
+    if (!user) return {
+        status: ActionStatus.Error,
+        message: "Musisz być zalogowanym by utworzyć spotkanie"
+    }
+
+    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+        status: ActionStatus.Error,
+        message: "Brak uprawnień do dodania spotkania"
+    }
+
+    const group = await GetGroupById(data.groupId)
+
+    if (!group) return {
+        status: ActionStatus.Error,
+        message: "Dana grupa nie istnieje"
+    }
+
+    if (user.role === Role.Moderator && user.id !== group.moderatorId) return {
+        status: ActionStatus.Error,
+        message: "Brak uprawień do dodania spotkania"
+    }
+
     try {
-        //const meetingCount = await RefreshMeetingsNumbering(data.groupId)
+        // Policz ile spotkań już było w tej grupie
+        const existingMeetings = await prisma.groupMeeting.count({
+            where: { groupId: data.groupId },
+        })
+        
+        await prisma.groupMeeting.create({
+            data: {
+                startTime: data.startTime,
+                endTime: data.endTime,
+                street: data.street,
+                cityId: data.cityId,
+                price: data.price,
+                groupId: data.groupId,
+                moderatorId: user.id,
+                number: existingMeetings + 1,
+            }
+        })
+    } catch {
+        return {
+            status: ActionStatus.Error,
+            message: "Błąd połączenia z bazą danych"
+        }
+    }
 
-        //await prisma.groupMeeting.create({
-        //    data: {
-        //        groupId: data.groupId,
-        //        startTime: data.startTime,
-        //        street: data.street,
-        //        cityid: randomUUID(),
-        //        number: meetingCount + 1,
-        //        price: data.price
-        //    }
-        //})
-    } catch(error) {
-        throw new Error("Błąd połączenia z bazą danych")
+    return {
+        status: ActionStatus.Success,
+        message: "Pomyślnie dodano nowe spotkanie"
     }
 }
 
