@@ -2,7 +2,7 @@
 
 import { CreateMeetingSchema } from "@/schema/meeting";
 import { combineDateAndTime } from "@/utils/date";
-import { liveNameify } from "@/utils/slug";
+import { liveNameify, numberify } from "@/utils/slug";
 import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, DatePicker, DateValue, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, TimeInput, TimeInputValue, useDisclosure } from "@heroui/react";
@@ -12,6 +12,8 @@ import { City, Country, Group, Region } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
+
+
 
 const CreateMeetingModal = ({
     groups,
@@ -26,60 +28,51 @@ const CreateMeetingModal = ({
     regions: Region[]
     cities: City[]
 }) => {
-    const {isOpen, onOpen, onClose} = useDisclosure()
 
-    //const [groupId, setGroupId] = useState<Set<string>>(new Set(selectedGroup?.id))
-    //const [group, setGroup] = useState<Group | undefined>(selectedGroup)
-
+    const { register, handleSubmit, setValue, getValues, watch, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
+        resolver: zodResolver(CreateMeetingSchema),
+        mode: "all",
+    })
+    
     type FormFields = z.infer<typeof CreateMeetingSchema>
 
     const [date, setDate] = useState<DateValue | null>()
     const [startHour, setStartHour] = useState<TimeInputValue | null>()
     const [endHour, setEndHour] = useState<TimeInputValue | null>()
 
-    const city = cities.find(city => city.id === selectedGroup?.cityId)
-    const region = regions.find(region => region.id === city?.regionId)
-    const country = countries.find(country => country.id === region?.id)
-    
-    const { register, handleSubmit, setValue, getValues, watch, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
-        resolver: zodResolver(CreateMeetingSchema),
-        mode: "all",
-    })
-
-    //const [cityId, setCityId] = useState(city?.id)
     const cityId = watch("cityId")
-    const [regionId, setRegionId] = useState<string | undefined>(region?.id)
-    const [countryId, setCountryId] = useState<string | undefined>(country?.id)
+    const [regionId, setRegionId] = useState<string | undefined>()
+    const [countryId, setCountryId] = useState<string | undefined>()
+    
+    const [groupName, setGroupName] = useState<string | undefined>()
 
+    const initializedGroupData = (group?: Group) => {
+        const city = cities.find(c => c.id === group?.cityId)
+        const region = regions.find(r => r.id === city?.regionId)
+        const country = countries.find(c => c.id === region?.countryId)
+
+        reset({
+            ...getValues(),
+            groupId: group?.id,
+            street: group?.street ?? undefined,
+            cityId: group?.cityId ?? undefined,
+            price: group?.price ?? undefined
+        })
+
+        setGroupName(group?.name)
+        setRegionId(region?.id)
+        setCountryId(country?.id)
+    }
+
+    const {isOpen, onOpen, onClose} = useDisclosure()
 
     const submit: SubmitHandler<FormFields> = async (data) => {
         console.log(data)
     }
 
     useEffect(() => {
-        if (isOpen && selectedGroup) {
-          reset({
-            ...getValues(),
-            groupId: selectedGroup.id,
-            street: selectedGroup.street || undefined,
-            cityId: selectedGroup.cityId || undefined,
-            price: selectedGroup.price || undefined,
-          })
-        }
-    }, [isOpen, selectedGroup, reset, getValues])
-
-    useEffect(() => {
-        if (!cityId) return
-      
-        const selectedCity = cities.find(city => city.id === cityId)
-        const selectedRegion = regions.find(region => region.id === selectedCity?.regionId)
-        const selectedCountry = countries.find(country => country.id === selectedRegion?.countryId)
-      
-        setRegionId(selectedRegion?.id)
-        setCountryId(selectedCountry?.id)
-    }, [cityId, cities, regions, countries])
-      
-      
+        if (isOpen) initializedGroupData(selectedGroup)
+    }, [isOpen, selectedGroup])
 
     return (
         <main>
@@ -97,7 +90,7 @@ const CreateMeetingModal = ({
                 scrollBehavior="outside"
             >
                 <ModalContent>
-                    <ModalHeader>Nowe spotkanie dla grupy: {selectedGroup?.name}</ModalHeader>
+                    <ModalHeader>Nowe spotkanie dla grupy: {groupName}</ModalHeader>
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
                             <Select {...register("groupId")}
@@ -109,14 +102,7 @@ const CreateMeetingModal = ({
                                 selectedKeys={[watch("groupId")]}
                                 onSelectionChange={(keys) => {
                                     const group = groups.find(group => group.id === Array.from(keys)[0])
-
-                                    reset({
-                                        ...getValues(),
-                                        groupId: group?.id,
-                                        street: group?.street ?? undefined,
-                                        cityId: group?.cityId ?? undefined,
-                                        price: group?.price ?? undefined,
-                                    })
+                                    initializedGroupData(group)
                                 }}
                                 items={groups}
                             >
@@ -191,7 +177,7 @@ const CreateMeetingModal = ({
                                 onChange={(event)=>{
                                     setCountryId(event.target.value)
                                     setRegionId(undefined)
-                                    setValue("cityId", "")
+                                    setValue("cityId", "", {shouldValidate: true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting}
@@ -207,7 +193,7 @@ const CreateMeetingModal = ({
                                 selectedKeys={regionId ? [regionId] : []}
                                 onChange={(event)=>{
                                     setRegionId(event.target.value)
-                                    setValue("cityId", "")
+                                    setValue("cityId", "", {shouldValidate: true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting || !countryId}
@@ -222,7 +208,7 @@ const CreateMeetingModal = ({
                                 placeholder="Isla de Muerta"
                                 selectedKeys={[cityId]}
                                 onChange={(event) => {
-                                    setValue("cityId", event.target.value)
+                                    setValue("cityId", event.target.value, {shouldValidate: true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting || !countryId || !regionId}
@@ -230,6 +216,18 @@ const CreateMeetingModal = ({
                             >
                                 {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                             </Select>
+                            <Input {...register("price", { setValueAs: numberify })}
+                                label="Cena"
+                                labelPlacement="outside"
+                                variant="bordered"
+                                min={0}
+                                placeholder="150"
+                                value={watch("price")?.toString() || undefined}
+                                endContent={<div className="text-foreground-500 text-sm">PLN</div>}
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.price}
+                                errorMessage={errors.price?.message}
+                            />
                         </ModalBody>
                         <ModalFooter>
                             <Button
