@@ -25,17 +25,17 @@ const CreateGroupModal = () => {
         try {
             const result = await CreateGroup(data)
 
-            //if (result.field) {
-            //    setError(result.field as keyof FormFields, {message: result.message})
-            //} else {
             addToast({
                 title: result.message,
                 color: result.success ? "success" : "danger",
                 variant: "bordered"
             })
-            router.refresh()
-            onClose()
-            //}
+
+            if (result.success) {
+                router.refresh()
+                onClose()
+            }
+            
         } catch {
             addToast({
                 title: "Wystąpił nieznany błąd",

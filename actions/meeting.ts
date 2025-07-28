@@ -2,41 +2,64 @@
 
 import { CreateMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
-import { CheckLoginReturnUser, GenerateVerificationToken, GetUserByID } from "./auth"
+import { CheckLoginReturnUser, GenerateVerificationToken } from "./auth"
 import { Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { sendVerificationEmail } from "@/lib/nodemailer"
-import { randomUUID } from "crypto"
 import { GetGroupById } from "./group"
-import { Result } from "postcss"
-import { ActionStatus } from "@/types/enums"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
     const user = await CheckLoginReturnUser()
 
     if (!user) return {
-        status: ActionStatus.Error,
+        success: false,
         message: "Musisz być zalogowanym by utworzyć spotkanie"
     }
 
     if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
-        status: ActionStatus.Error,
+        success: false,
         message: "Brak uprawnień do dodania spotkania"
     }
 
     const group = await GetGroupById(data.groupId)
 
     if (!group) return {
-        status: ActionStatus.Error,
+        success: false,
         message: "Dana grupa nie istnieje"
     }
 
     if (user.role === Role.Moderator && user.id !== group.moderatorId) return {
-        status: ActionStatus.Error,
+        success: false,
         message: "Brak uprawień do dodania spotkania"
     }
 
     try {
+        const overlapingMeetings = await prisma.groupMeeting.findFirst({
+            where: {
+                moderatorId: user.id,
+                AND: [
+                    {
+                        startTime: { lt: data.endTime }
+                    },
+                    {
+                        endTime: { gt: data.startTime }
+                    }
+                ]
+            }
+        })
+
+        if (overlapingMeetings) {
+            //addActionError(errors, "startTime", "W tym czasie masz już inne spotkanie") 
+            
+            return {
+                success: false,
+                message: "Nie udało się dodać spotkania",
+                errors: {
+                    startTime: ["W tym dniu masz już inne spotkanie"]
+                }
+            }
+        }
+
         // Policz ile spotkań już było w tej grupie
         const existingMeetings = await prisma.groupMeeting.count({
             where: { groupId: data.groupId },
@@ -56,13 +79,15 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         })
     } catch {
         return {
-            status: ActionStatus.Error,
+            success: false,
             message: "Błąd połączenia z bazą danych"
         }
     }
 
+    //TODO podepnij resendera i dodaj wysyłkę maili informującą o nowych spotkaniach
+
     return {
-        status: ActionStatus.Success,
+        success: true,
         message: "Pomyślnie dodano nowe spotkanie"
     }
 }

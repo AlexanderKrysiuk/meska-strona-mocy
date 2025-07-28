@@ -2,7 +2,6 @@
 
 import { EditGroup } from "@/actions/group"
 import { EditGroupSchema } from "@/schema/group"
-import { ActionStatus } from "@/types/enums"
 import { finalNameify, finalSlugify, liveNameify, liveSlugify, numberify } from "@/utils/slug"
 import { Button, Form, Input, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -17,7 +16,7 @@ const EditGroupForm = ({
     countries,
     regions,
     cities
-}: {
+} : {
     group?: Group
     countries: Country[]
     regions: Region[]
@@ -47,9 +46,10 @@ const EditGroupForm = ({
         resolver: zodResolver(EditGroupSchema),
         mode: "all",
         defaultValues: {
-            name: group?.name || "",
-            slug: group?.slug || "",
-            maxMembers: group?.maxMembers || undefined,
+            groupId: group?.id,
+            name: group?.name,
+            slug: group?.slug,
+            maxMembers: group?.maxMembers,
             street: group?.street ?? null,
             cityId: group?.cityId ?? null,
             price: group?.price ?? null
@@ -59,56 +59,47 @@ const EditGroupForm = ({
     const submit: SubmitHandler<FormFields> = async (data) => {
         if (!group) return
 
-        try {
-            const result = await EditGroup(group.id, data)
+        const result = await EditGroup(data)
 
-            if (result.errors) {
-                for (const [field, messages] of Object.entries(result.errors)) {
-                    setError(field as keyof FormFields, { message: messages.join(", ") })
-                }
-            }
+        addToast({
+            title: result.message,
+            color: result.success ? "success" : "danger",
+            variant: "bordered"
+        })
 
-            addToast({
-                title: result.message,
-                color: result.status,
-                variant: "bordered"
+        if (result.errors) {
+            Object.entries(result.errors).forEach(([field, messages]) => {
+                setError(field as keyof FormFields, { message: messages.join(", ") })
             })
-
-            if (result.status === ActionStatus.Success) {
-                reset(data)
-                router.refresh()
-            }
-
-        } catch {
-            addToast({
-                title: "Wystąpił nieznany błąd",
-                color: "danger",
-                variant: "bordered"
-            })
-        }
+        } else {
+            reset(data)
+            router.refresh()
+        }      
     }
 
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
                 <Input
-                    {...register("name", {
-                        setValueAs(value) {
-                            return liveNameify(value)
-                        },
-                        onChange(event) {
-                            setValue("slug", liveSlugify(event.target.value), { shouldValidate: true })
-                        },
-                        onBlur(event) {
-                            setValue("name", finalNameify(event.target.value), { shouldValidate: true })
-                            setValue("slug", finalNameify(event.target.value), { shouldValidate: true })
-                        }
+                    {...register("name", 
+                        {
+                        // setValueAs(value) {
+                        //     return liveNameify(value)
+                        // },
                     })}
                     label="Nazwa grupy"
                     labelPlacement="outside"
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
+                    onChange={ (event) => {
+                        setValue("name", liveSlugify(event.target.value), { shouldValidate: true})
+                        setValue("slug", liveSlugify(event.target.value), { shouldValidate: true })
+                    }}
+                    onBlur={ (event) => {
+                        setValue("name", finalNameify(event.target.value), { shouldValidate: true })
+                        setValue("slug", finalNameify(event.target.value), { shouldValidate: true })
+                    }}
                     isDisabled={!group || isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}

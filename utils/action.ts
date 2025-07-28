@@ -1,6 +1,18 @@
-export type ValidationErrors = Record<string, string[]>
+export type ActionErrors = Record<string, string[]>
 
-export function addError(errors: ValidationErrors, field: string, message: string) {
+export enum ActionStatus {
+    Success = "success",
+    Partial = "warning",
+    Error = "danger"
+}
+
+export interface ActionResult {
+    status: ActionStatus,
+    message: string,
+    fieldErrors?: ActionErrors
+}
+
+export function addActionError(errors: ActionErrors, field: string, message: string) {
     if (!errors[field]) {
         errors[field] = []
     } 

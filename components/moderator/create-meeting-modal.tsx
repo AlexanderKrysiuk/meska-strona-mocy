@@ -2,7 +2,6 @@
 
 import { CreateMeeting } from "@/actions/meeting";
 import { CreateMeetingSchema } from "@/schema/meeting";
-import { ActionStatus } from "@/types/enums";
 import { combineDateAndTime } from "@/utils/date";
 import { liveNameify, numberify } from "@/utils/slug";
 import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons";
@@ -15,8 +14,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
-
-
 
 const CreateMeetingModal = ({
     groups,
@@ -35,7 +32,7 @@ const CreateMeetingModal = ({
 }) => {
     const router = useRouter()
 
-    const { register, handleSubmit, setValue, getValues, watch, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
+    const { register, handleSubmit, setValue, setError, getValues, watch, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         mode: "all",
     })
@@ -91,11 +88,15 @@ const CreateMeetingModal = ({
 
         addToast({
             title: result.message,
-            color: result.status,
+            color: result.success ? "success" : "danger",
             variant: "bordered"
         })
 
-        if (result.status === ActionStatus.Success) {
+        if (result.errors) {
+            Object.entries(result.errors).forEach(([field, messages]) => {
+                setError(field as keyof FormFields, { message: messages.join(", ") })
+            })
+        } else {
             router.refresh()
             onClose()
         }
@@ -153,6 +154,8 @@ const CreateMeetingModal = ({
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting}
+                                isInvalid={!!errors.startTime}
+                                errorMessage={errors.startTime?.message}
                             />
                             <div className="flex space-x-4">
                                 <TimeInput
@@ -167,8 +170,8 @@ const CreateMeetingModal = ({
                                     }}
                                     isRequired
                                     isDisabled={isSubmitting || !date}
-                                    isInvalid={!!errors.startTime}
-                                    errorMessage={errors.startTime?.message}
+                                    //isInvalid={!!errors.startTime}
+                                    //errorMessage={errors.startTime?.message}
                                 />
                                 <TimeInput
                                     label="Godzina Zakończenia"
