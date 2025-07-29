@@ -31,6 +31,18 @@ export const CreateMeetingSchema = z.object({
     message: "Czas zakończenia musi być po czasie rozpoczęcia",
 });
 
+export const EditMeetingSchema = z.object({
+    meetingId,
+    startTime,
+    endTime
+}).refine((data) => data.startTime > new Date(), {
+    path: ["startTime"],
+    message: "Czas rozpoczęcia nie może być w przeszłości",
+}).refine((data) => !data.endTime || data.endTime > data.startTime, {
+    path: ["endTime"],
+    message: "Czas rozpoczęcia nie może być w przeszłości",
+})
+
 export const RegisterToMeetingSchema = z.object({
     email,
     groupId,

@@ -3,7 +3,7 @@
 import { CreateGroup } from "@/actions/group";
 import { CreateGroupSchema } from "@/schema/group";
 //import { finalSlugify, liveSlugify } from "@/utils/slug";
-import { faSquarePlus } from "@fortawesome/free-solid-svg-icons";
+import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Alert, Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +49,7 @@ const CreateGroupModal = () => {
         <main>
             <Button
                 color="primary"
-                startContent={<FontAwesomeIcon icon={faSquarePlus}/>}
+                startContent={<FontAwesomeIcon icon={faUserPlus}/>}
                 className="text-white"
                 onPress={onOpen}
             >

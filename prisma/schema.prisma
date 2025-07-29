@@ -124,7 +124,7 @@ model Group {
 model GroupMeeting {
   id        String    @id @default(uuid())
   startTime DateTime
-  endTime   DateTime?
+  endTime   DateTime
 
   street String
   
