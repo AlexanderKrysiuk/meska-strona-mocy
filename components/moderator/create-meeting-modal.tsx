@@ -32,7 +32,7 @@ const CreateMeetingModal = ({
 }) => {
     const router = useRouter()
 
-    const { register, handleSubmit, setValue, setError, getValues, watch, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
+    const { register, handleSubmit, setValue, setError, getValues, watch, trigger, reset, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         mode: "all",
     })
@@ -166,7 +166,10 @@ const CreateMeetingModal = ({
                                     value={startHour}
                                     onChange={(time) => {
                                         setStartHour(time)
-                                        if (date && time) setValue("startTime", combineDateAndTime(date, time), {shouldValidate: true})
+                                        if (date && time) {
+                                            setValue("startTime", combineDateAndTime(date, time), {shouldValidate: true})
+                                            trigger("endTime")
+                                        }
                                     }}
                                     isRequired
                                     isDisabled={isSubmitting || !date}
