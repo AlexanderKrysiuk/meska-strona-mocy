@@ -1,6 +1,6 @@
 "use server"
 
-import { CreateMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
+import { CreateMeetingSchema, EditMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
 import { CheckLoginReturnUser, GenerateVerificationToken } from "./auth"
 import { Role } from "@prisma/client"
@@ -107,6 +107,80 @@ async function RefreshMeetingsNumbering (groupId: string) {
     return meetings.length
 }
 
+export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
+    const user = await CheckLoginReturnUser()
+
+    if (!user) return {
+        success: false,
+        message: "Musisz być zalogowanym by utworzyć spotkanie"
+    }
+
+    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+        success: false,
+        message: "Brak uprawnień do edycji spotkania"
+    }
+
+    const meeting = await GetMeetingById(data.meetingId)
+
+    if (!meeting) return {
+        success: false,
+        message: "Dane spotkanie nie istnieje"
+    }
+
+    if (user.role === Role.Moderator && user.id !== meeting.moderatorId) return {
+        success: false,
+        message: "Brak uprawień do edycji spotkania"
+    }
+
+    try {
+        const overlapingMeetings = await prisma.groupMeeting.findFirst({
+            where: {
+                moderatorId: user.id,
+                AND: [
+                    {
+                        startTime: { lt: data.endTime }
+                    },
+                    {
+                        endTime: { gt: data.startTime }
+                    }
+                ]
+            }
+        })
+
+        if (overlapingMeetings) return {
+            success: false,
+            message: "Nie udało się edytować spotkania",
+            errors: {
+                startTime: ["W tym dniu masz już inne spotkanie"]
+            }
+        }
+
+        await prisma.groupMeeting.update({
+            where: { id: data.meetingId },
+            data: {
+                startTime: data.startTime,
+                endTime: data.endTime,
+                price: data.price,
+                street: data.street,
+                cityId: data.cityId
+            }
+        })
+
+        await sortMeetings(meeting.groupId)
+
+    } catch {
+        return {
+            success: false,
+            message: "Błąd połączenia z bazą danych"
+        }
+    }
+
+    return {
+        success: true,
+        message: "Pomyślnie zmieniono dane spotkania"
+    }
+}
+
 export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {
     let group
 
@@ -156,4 +230,27 @@ export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSc
     }
 
 
+}
+
+export const GetMeetingById = async (id: string) => {
+    try {
+        return await prisma.groupMeeting.findUnique({ where: {id}})
+    } catch (error) {
+        return null
+    }
+}
+
+export const sortMeetings = async (groupId: string) => {
+    const meetings = await prisma.groupMeeting.findMany({
+        where: {groupId: groupId},
+        orderBy: { startTime: "asc"}
+    })
+
+    for (let i = 0; i < meetings.length; i++) {
+        const meeting = meetings[i];
+        await prisma.groupMeeting.update({
+          where: { id: meeting.id },
+          data: { number: i + 1 } // najstarszy = 1
+        });
+      }
 }

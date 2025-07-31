@@ -111,6 +111,9 @@ const MeetingsWrapper = ({
                                             meeting={meeting}
                                             meetings={meetings}
                                             group={group}
+                                            countries={countries}
+                                            regions={regions}
+                                            cities={cities}
                                         />
                                     </TableCell>
                                 </TableRow>

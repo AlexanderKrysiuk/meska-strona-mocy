@@ -34,7 +34,10 @@ export const CreateMeetingSchema = z.object({
 export const EditMeetingSchema = z.object({
     meetingId,
     startTime,
-    endTime
+    endTime,
+    street,
+    cityId,
+    price
 }).refine((data) => data.startTime > new Date(), {
     path: ["startTime"],
     message: "Czas rozpoczęcia nie może być w przeszłości",

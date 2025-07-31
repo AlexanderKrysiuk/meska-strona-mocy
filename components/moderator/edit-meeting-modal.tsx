@@ -1,13 +1,15 @@
 "use client"
 
+import { EditMeeting } from "@/actions/meeting"
 import { EditMeetingSchema } from "@/schema/meeting"
 import { combineDateAndTime } from "@/utils/date"
+import { liveNameify, numberify } from "@/utils/slug"
 import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, DatePicker, DateValue, Divider, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
+import { Button, DatePicker, DateValue, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarDate, Time, getLocalTimeZone, parseAbsoluteToLocal, today } from "@internationalized/date"
-import { Group, GroupMeeting } from "@prisma/client"
+import { City, Country, Group, GroupMeeting, Region } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -16,11 +18,17 @@ import { z } from "zod"
 const EditMeetingModal = ({
     meeting,
     meetings,
-    group
+    group,
+    countries,
+    regions,
+    cities
 } : {
     meeting: GroupMeeting
     meetings: GroupMeeting[]
     group: Group
+    countries: Country[]
+    regions: Region[]
+    cities: City[]
 }) => {
     const router = useRouter()
 
@@ -49,16 +57,28 @@ const EditMeetingModal = ({
       new Time(endZdt.hour, endZdt.minute)
     );
 
-    const { handleSubmit, setValue, watch, trigger, formState: { isSubmitting, errors, isValid, isDirty } } = useForm<FormFields>({
+    
+    const { register, handleSubmit, setError, setValue, watch, trigger, formState: { isSubmitting, errors, isValid, isDirty } } = useForm<FormFields>({
         resolver: zodResolver(EditMeetingSchema),
         mode: "all",
         defaultValues: {
             meetingId: meeting.id,
             startTime: meeting.startTime,
-            endTime: meeting.endTime
+            endTime: meeting.endTime,
+            street: meeting.street,
+            cityId: meeting.cityId,
+            price: meeting.price
         }
     })
 
+    const city = cities.find(c => c.id === meeting.cityId)
+    const region = regions.find(r => r.id === city?.regionId)
+    const country = countries.find(c => c.id === region?.countryId)
+
+    const cityId = watch("cityId")
+    const [regionId, setRegionId] = useState<string | undefined>(region?.id)
+    const [countryId, setCountryId] = useState<string | undefined>(country?.id)
+    
     const disabledDates = useMemo(() => {
         return meetings
             .filter(m => m.id !== meeting.id) // <- pomijamy edytowane spotkanie
@@ -76,13 +96,22 @@ const EditMeetingModal = ({
     }
 
     const submit: SubmitHandler<FormFields> = async (data) => {
-        console.log(data)
+        const result = await EditMeeting(data)
 
         addToast({
-            title: "Roboczy",
-            color: "primary"
+            title: result.message,
+            color: result.success ? "success" : "danger",
+            variant: "bordered"
         })
-        router.refresh()
+
+        if (result.errors) {
+            Object.entries(result.errors).forEach(([field, messages]) => {
+                setError(field as keyof FormFields, { message: messages.join(", ") })
+            })
+        } else {
+            router.refresh()
+            onClose()
+        }
     }
 
     const {isOpen, onOpen, onClose} = useDisclosure()
@@ -165,6 +194,80 @@ const EditMeetingModal = ({
                                     errorMessage={errors.endTime?.message}
                                 />
                             </div>
+                            <Input {...register("street", {
+                                setValueAs: liveNameify
+                            })} 
+                                label="Adres (ulica, numer)"
+                                labelPlacement="outside"
+                                placeholder="Tortuga 13/7"
+                                variant="bordered"
+                                type="text"
+                                value={watch("street")}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.street}
+                                errorMessage={errors.street?.message}
+                            />
+                            <Select
+                                label="Kraj"
+                                labelPlacement="outside"
+                                placeholder="Karaiby"
+                                variant="bordered"
+                                selectedKeys={countryId ? [countryId] : []}
+                                onChange={(event) => {
+                                    setCountryId(event.target.value)
+                                    setRegionId(undefined)
+                                    setValue("cityId", "", {shouldValidate: true})
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                items={countries}
+                            >
+                                {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
+                            </Select>
+                            <Select
+                                label="Województwo"
+                                labelPlacement="outside"
+                                placeholder="Archipelag Czarnej Perły"
+                                variant="bordered"
+                                selectedKeys={regionId ? [regionId] : []}
+                                onChange={(event) => {
+                                    setRegionId(event.target.value)
+                                    setValue("cityId", "", {shouldValidate: true})
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting || !countryId}
+                                items={regions.filter(region => region.countryId === countryId)}
+                            >
+                                {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
+                            </Select>
+                            <Select {...register("cityId")}
+                                label="Miasto"
+                                labelPlacement="outside"
+                                variant="bordered"
+                                placeholder="Isla de Muerta"
+                                selectedKeys={[cityId]}
+                                onChange={(event) => {
+                                    setValue("cityId", event.target.value, {shouldValidate: true, shouldDirty: true})
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting || !countryId || !regionId}
+                                items={cities.filter(city => city.regionId === regionId)}
+                            >
+                                {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
+                            </Select>
+                            <Input {...register("price", { setValueAs: numberify })}
+                                label="cena"
+                                labelPlacement="outside"
+                                variant="bordered"
+                                min={0}
+                                placeholder="150"
+                                value={watch("price").toString() || undefined}
+                                endContent={<div className="text-foreground-500 text-sm">PLN</div>}
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.price}
+                                errorMessage={errors.price?.message}
+                            />
                         </ModalBody>
                         <ModalFooter>
                             <Button
