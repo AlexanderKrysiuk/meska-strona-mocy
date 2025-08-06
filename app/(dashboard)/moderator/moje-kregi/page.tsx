@@ -2,18 +2,18 @@
 
 import { GetUserByID } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
-import MyGroupsWrapper from "./wrapper";
+import MycirclesWrapper from "./wrapper";
 
-const MyGroupsPage = async () => {
+const MycirclesPage = async () => {
     const user = await GetUserByID()
 
-    const groups = await prisma.group.findMany({
+    const circles = await prisma.circle.findMany({
         where: {
             moderatorId: user.id
         }
     })
 
-    return <MyGroupsWrapper groups={groups}/>
+    return <MycirclesWrapper circles={circles}/>
 }
  
-export default MyGroupsPage;
+export default MycirclesPage;

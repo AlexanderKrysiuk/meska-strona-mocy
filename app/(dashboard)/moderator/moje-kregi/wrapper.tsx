@@ -1,35 +1,35 @@
 "use client"
 
-import CreateGroupModal from "@/components/moderator/create-group-modal";
+import CreatecircleModal from "@/components/moderator/create-circle-modal";
 import { Card, CardBody, CardHeader, Divider } from "@heroui/react";
-import { Group } from "@prisma/client";
+import { Circle } from "@prisma/client";
 
-const MyGroupsWrapper = ({
-    groups
+const MycirclesWrapper = ({
+    circles
 } : {
-    groups: Group[]
+    circles: Circle[]
 }) => {
     return ( 
         <main className="p-4 space-y-4">
             <div className="flex space-x-4">
-                <CreateGroupModal/>
+                <CreatecircleModal/>
             </div>
             <div>
                 Kręgi
                 <Divider/>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                {groups.map((group) => (
+                {circles.map((circle) => (
                     <Card
-                        key={group.id}
+                        key={circle.id}
                     >
                         <CardHeader>
-                            {group.name}    
+                            {circle.name}    
                         </CardHeader>
                         <CardBody>
                         <p className="text-sm text-gray-600">
-                            Max: {group.maxMembers} członków <br/>
-                            Unikalny odnośnik: {group.slug}
+                            Max: {circle.maxMembers} członków <br/>
+                            Unikalny odnośnik: {circle.slug}
                         </p>
                         </CardBody>
                     </Card>
@@ -39,4 +39,4 @@ const MyGroupsWrapper = ({
     );
 }
  
-export default MyGroupsWrapper;
+export default MycirclesWrapper;

@@ -1,7 +1,7 @@
 import * as z from 'zod'
 
 //const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const groupId = z.string().uuid()
+const circleId = z.string().uuid()
 const name = z.string().min(1, "Grupa musi posiadać nazwę")
 const maxMembers = z.number({
   required_error: "Pole nie może być puste",
@@ -22,13 +22,13 @@ const price = z.number()
     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
   })    
 
-export const CreateGroupSchema = z.object({
+export const CreateCircleSchema = z.object({
     name,
     maxMembers,
 })
 
-export const EditGroupSchema = z.object({
-  groupId,
+export const EditCircleSchema = z.object({
+  circleId,
   name,
   slug,
   maxMembers,
@@ -37,6 +37,6 @@ export const EditGroupSchema = z.object({
   price: price.nullable()
 })
 
-export const EditGroupSlugSchema = z.object({
+export const EditCircleSlugSchema = z.object({
   slug
 })

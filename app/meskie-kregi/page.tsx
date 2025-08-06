@@ -1,17 +1,17 @@
 // import { prisma } from "@/lib/prisma";
 // import MensCircleWrapper from "./wrapper";
-// import { GroupMembershipStatus } from "@prisma/client";
+// import { CircleMembershipStatus } from "@prisma/client";
 
 const MensCirclePage = async () => {
-//     const meetings = await prisma.groupMeeting.findMany({
+//     const meetings = await prisma.circleMeeting.findMany({
 //         where: {
 //             startTime: {
 //                 gte: new Date(), // Spotkania, które odbędą się w przyszłości
 //             },
 //         },
-//         distinct: ["groupId"],
+//         distinct: ["circleId"],
 //         include: {
-//             group: {
+//             circle: {
 //                 select: {
 //                     id: true,
 //                     name: true,
@@ -21,7 +21,7 @@ const MensCirclePage = async () => {
 //                             members: {
 //                                 where: {
 //                                     status: {
-//                                         in: [GroupMembershipStatus.Candidate, GroupMembershipStatus.Member]
+//                                         in: [CircleMembershipStatus.Candidate, CircleMembershipStatus.Member]
 //                                     }
 //                                 } 
 //                             }
@@ -38,7 +38,7 @@ const MensCirclePage = async () => {
 //         },
 //     }).then(meetings => {
 //         // Filtrujemy tylko spotkania, które mają wolne miejsca
-//         return meetings.filter(meeting => meeting.group._count.members < meeting.group.maxMembers);
+//         return meetings.filter(meeting => meeting.circle._count.members < meeting.circle.maxMembers);
 //     });
     
 //     return <MensCircleWrapper meetings={meetings}/>

@@ -26,15 +26,15 @@ model User {
   // Optional for WebAuthn support
   Authenticator Authenticator[]
 
-  moderatedGroups Group[]        @relation("Moderator") // Użytkownik może moderować wiele grup
+  moderatedCircles Circle[]        @relation("Moderator") // Użytkownik może moderować wiele grup
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   
-  groupMembership GroupMembership[]
+  cicrleMembership CircleMembership[]
 
-  meetings        GroupMeeting[]
-  moderatedMeetings GroupMeeting[] @relation("Moderator")
+  meetings        CircleMeeting[]
+  moderatedMeetings CircleMeeting[] @relation("Moderator")
 }
 
 enum Role {
@@ -97,7 +97,7 @@ model Authenticator {
   @@id([userId, credentialID])
 }
 
-model Group {
+model Circle {
   id   String @id @default(uuid())
   name String
   slug String @unique
@@ -114,19 +114,20 @@ model Group {
 
   price Float?
 
-  meetings GroupMeeting[]
-  members  GroupMembership[]
+  meetings CircleMeeting[]
+  members  CircleMembership[]
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 }
 
-model GroupMeeting {
+model CircleMeeting {
   id        String    @id @default(uuid())
   startTime DateTime
   endTime   DateTime
 
   street String
+  status CircleMeetingStatus
   
   cityId String
   city City @relation(fields: [cityId], references: [id])
@@ -134,8 +135,8 @@ model GroupMeeting {
   number Int
   price  Float
 
-  groupId      String
-  group        Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  circleId      String
+  circle        Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
 
   moderatorId String
   moderator User @relation("Moderator", fields: [moderatorId], references: [id])
@@ -146,23 +147,29 @@ model GroupMeeting {
   updatedAt DateTime @updatedAt
 }
 
-model GroupMembership {
+enum CircleMeetingStatus {
+  Scheduled
+  Completed
+  Archived
+}
+
+model CircleMembership {
   id String @id @default(uuid())
-  status GroupMembershipStatus
+  status CircleMembershipStatus
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  groupId String
-  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  circleId String
+  circle   Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, groupId]) // Użytkownik może mieć tylko jedno zgłoszenie do danej grupy
+  @@unique([userId, circleId]) // Użytkownik może mieć tylko jedno zgłoszenie do danej grupy
 }
 
-enum GroupMembershipStatus {
+enum CircleMembershipStatus {
   Candidate
   Member
 }
@@ -171,6 +178,8 @@ model Country {
   id String @id @default(uuid())
   name String @unique
   code String?
+  timeZone String
+  locale String
 
   regions Region[]
 }
@@ -190,6 +199,6 @@ model City {
   regionId String
   region Region @relation(fields: [regionId], references: [id])
 
-  groups Group[]
-  groupMeetings GroupMeeting[]
+  circles Circle[]
+  circleMeetings CircleMeeting[]
 }

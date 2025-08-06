@@ -15,7 +15,7 @@ type Meeting = {
     city: string;
     street: string;
     price: number;
-    group: {
+    circle: {
         name: string;
         maxMembers: number;
         _count: { members: number };
@@ -53,13 +53,13 @@ const MensCircleWrapper = ({
                         <CardHeader
                             className="bg-emerald-800 text-white"
                         >
-                            Spotkanie grupy {meeting.group.name}
-                            {//meeting.group.moderator.image &&
+                            Spotkanie grupy {meeting.circle.name}
+                            {//meeting.circle.moderator.image &&
                                 <Avatar
                                     className="absolute right-4 top-4 lg:w-20 lg:h-20"
                                     size="lg"
                                     showFallback
-                                    src={meeting.group.moderator.image!}
+                                    src={meeting.circle.moderator.image!}
                                     isBordered
                             />
                             }
@@ -69,7 +69,7 @@ const MensCircleWrapper = ({
                         >
                             <div>
                                 <FontAwesomeIcon icon={faUserTie} className="mr-2"/>
-                                Prowadzący: {meeting.group.moderator.name}
+                                Prowadzący: {meeting.circle.moderator.name}
                             </div>
                             <div className="flex justify-start items-center">
                                 <FontAwesomeIcon icon={faCalendar} className="mr-2"/>
@@ -89,8 +89,8 @@ const MensCircleWrapper = ({
                             </div>
                             <div>
                                 <FontAwesomeIcon icon={faPeopleGroup} className="mr-2"/>
-                                <span className={meeting.group.maxMembers - meeting.group._count.members < 5 ? "text-danger" : ""}>
-                                    Wolne miejsca: {meeting.group.maxMembers - meeting.group._count.members}
+                                <span className={meeting.circle.maxMembers - meeting.circle._count.members < 5 ? "text-danger" : ""}>
+                                    Wolne miejsca: {meeting.circle.maxMembers - meeting.circle._count.members}
                                 </span>
                             </div>
                         </CardBody>

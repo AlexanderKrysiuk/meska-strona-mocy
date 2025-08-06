@@ -2,16 +2,16 @@
 
 import { CheckLoginOrRedirect } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
-import GroupSettingsWrapper from "./wrapper";
+import CircleSettingsWrapper from "./wrapper";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 
-const GroupSettingsPage = async () => {
+const CircleSettingsPage = async () => {
     const user = await CheckLoginOrRedirect()
 
     if (user.role !== Role.Admin && user.role !== Role.Moderator ) return redirect("/")
     
-    const groups = await prisma.group.findMany({
+    const circles = await prisma.circle.findMany({
         where: {
             moderatorId: user.id
         }
@@ -21,12 +21,12 @@ const GroupSettingsPage = async () => {
     const regions = await prisma.region.findMany()
     const cities = await prisma.city.findMany()
 
-    return <GroupSettingsWrapper 
-        groups={groups}
+    return <CircleSettingsWrapper 
+        circles={circles}
         countries={countries}
         regions={regions}
         cities={cities}
     />
 }
  
-export default GroupSettingsPage;
+export default CircleSettingsPage;

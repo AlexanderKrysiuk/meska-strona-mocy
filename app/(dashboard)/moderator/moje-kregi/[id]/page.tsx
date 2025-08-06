@@ -2,11 +2,11 @@
 
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import MyGroupWrapper from "./wrapper";
+import MycircleWrapper from "./wrapper";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
 
-const MyGroupPage = async (
+const MycirclePage = async (
     props: {
         params: Promise<{
             id: string
@@ -19,16 +19,16 @@ const MyGroupPage = async (
     const params = await props.params;
 
     await params
-    const group = await prisma.group.findUnique({
+    const circle = await prisma.circle.findUnique({
         where: { id: params.id }
     })
     
-    if (!group) return redirect("/moderator/moje-grupy")
-    if (session.user.id !== group?.moderatorId && session.user.role !== Role.Admin) return redirect("/moderator/")
+    if (!circle) return redirect("/moderator/moje-grupy")
+    if (session.user.id !== circle?.moderatorId && session.user.role !== Role.Admin) return redirect("/moderator/")
     
-    const meetings = await prisma.groupMeeting.findMany({
+    const meetings = await prisma.circleMeeting.findMany({
         where: {
-            groupId: params.id,
+            circleId: params.id,
             startTime: {gte: new Date()}
         },
         orderBy: {
@@ -40,8 +40,8 @@ const MyGroupPage = async (
     const regions = await prisma.region.findMany()
     const cities = await prisma.city.findMany()
     
-    return <MyGroupWrapper 
-        group={group}
+    return <MycircleWrapper 
+        circle={circle}
         meetings={meetings}
         countries={countries}
         regions={regions}
@@ -49,4 +49,4 @@ const MyGroupPage = async (
     />
 }
  
-export default MyGroupPage
+export default MycirclePage

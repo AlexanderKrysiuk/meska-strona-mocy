@@ -1,65 +1,57 @@
 "use client"
 
-import { EditGroup } from "@/actions/group"
-import { EditGroupSchema } from "@/schema/group"
-import { finalNameify, finalSlugify, liveNameify, liveSlugify, numberify } from "@/utils/slug"
-import { Button, Form, Input, Select, SelectItem, addToast } from "@heroui/react"
+import { EditCircle } from "@/actions/circle"
+import { EditCircleSchema } from "@/schema/circle"
+import { liveSlugify } from "@/utils/slug"
+import { Button, Form, Input, NumberInput, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { City, Country, Group, Region } from "@prisma/client"
+import { City, Country, Circle, Region } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
-const EditGroupForm = ({
-    group,
+const EditCircleForm = ({
+    circle,
     countries,
     regions,
     cities
 } : {
-    group?: Group
+    circle?: Circle
     countries: Country[]
     regions: Region[]
     cities: City[]
 }) => {
     const router = useRouter()
 
-    const city = cities.find(city => city.id === group?.cityId)
+    const city = cities.find(city => city.id === circle?.cityId)
     const region = regions.find(region => region.id === city?.regionId)
     const country = countries.find(country => country.id === region?.countryId)
 
-    const [cityId, setCityId] = useState(group?.cityId || "")
+    const [cityId, setCityId] = useState(circle?.cityId || "")
     const [regionId, setRegionId] = useState(region?.id || "")
     const [countryId, setCountryId] = useState(country?.id || "")
 
-    type FormFields = z.infer<typeof EditGroupSchema>
+    type FormFields = z.infer<typeof EditCircleSchema>
 
-    const {
-        register,
-        reset,
-        watch,
-        setValue,
-        setError,
-        handleSubmit,
-        formState: { errors, isSubmitting, isDirty, isValid }
-    } = useForm<FormFields>({
-        resolver: zodResolver(EditGroupSchema),
+    const { reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid }} = useForm<FormFields>({
+        resolver: zodResolver(EditCircleSchema),
         mode: "all",
         defaultValues: {
-            groupId: group?.id,
-            name: group?.name,
-            slug: group?.slug,
-            maxMembers: group?.maxMembers,
-            street: group?.street ?? null,
-            cityId: group?.cityId ?? null,
-            price: group?.price ?? null
+            circleId: circle?.id,
+            name: circle?.name,
+            slug: circle?.slug,
+            maxMembers: circle?.maxMembers,
+            street: circle?.street ?? null,
+            cityId: circle?.cityId ?? null,
+            price: circle?.price ?? null
         }
     })
 
     const submit: SubmitHandler<FormFields> = async (data) => {
-        if (!group) return
+        if (!circle) return
 
-        const result = await EditGroup(data)
+        const result = await EditCircle(data)
 
         addToast({
             title: result.message,
@@ -80,40 +72,31 @@ const EditGroupForm = ({
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
+                {/*
+                <Divider/>
+                {JSON.stringify(watch(),null,2)}<br/>
+                Valid: {JSON.stringify(isValid,null,2)}<br/>
+                Dirty: {JSON.stringify(isDirty,null,2)}<br/>
+                <Divider/>
+                */}
                 <Input
-                    {...register("name", 
-                        {
-                        // setValueAs(value) {
-                        //     return liveNameify(value)
-                        // },
-                    })}
                     label="Nazwa grupy"
                     labelPlacement="outside"
                     type="text"
                     placeholder="Załoga Czarnej Perły"
                     variant="bordered"
-                    onChange={ (event) => {
-                        setValue("name", liveSlugify(event.target.value), { shouldValidate: true})
-                        setValue("slug", liveSlugify(event.target.value), { shouldValidate: true })
+                    value={watch("name")}
+                    onValueChange={(value) => {
+                        setValue("name", value, {shouldDirty: true, shouldValidate: true})
+                        setValue("slug", liveSlugify(value), {shouldDirty: true, shouldValidate: true})
                     }}
-                    onBlur={ (event) => {
-                        setValue("name", finalNameify(event.target.value), { shouldValidate: true })
-                        setValue("slug", finalNameify(event.target.value), { shouldValidate: true })
-                    }}
-                    isDisabled={!group || isSubmitting}
+                    isClearable
+                    isRequired
+                    isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
                 />
-
                 <Input
-                    {...register("slug", {
-                        setValueAs(value) {
-                            return liveSlugify(value)
-                        },
-                        onBlur(event) {
-                            setValue("slug", finalSlugify(event.target.value), { shouldValidate: true })
-                        }
-                    })}
                     label="Unikalny odnośnik"
                     labelPlacement="outside"
                     type="text"
@@ -121,43 +104,42 @@ const EditGroupForm = ({
                     description="Ten odnośnik będzie częścią adresu URL Twojej grupy."
                     variant="bordered"
                     value={watch("slug")}
-                    isDisabled={!group || isSubmitting}
+                    onValueChange={(value) => {setValue("slug", liveSlugify(value), {shouldDirty: true ,shouldValidate: true})}}
+                    isClearable
+                    isRequired
+                    isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
-                />
-
-                <Input
-                    {...register("maxMembers", { setValueAs: numberify })}
+                    />
+                <NumberInput
                     label="Maksymalna liczba uczestników"
                     labelPlacement="outside"
                     variant="bordered"
-                    min={1}
                     placeholder="11"
-                    value={watch("maxMembers")?.toString() || ""}
+                    minValue={0}
+                    maxValue={15}
+                    formatOptions={{ maximumFractionDigits: 0 }}
+                    value={watch("maxMembers")}
+                    onValueChange={(value) => {setValue("maxMembers", value, {shouldDirty:true, shouldValidate: true})}}
+                    isClearable
                     isRequired
-                    isDisabled={!group || isSubmitting}
+                    isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
-
                 <Input
-                    {...register("street", {
-                        setValueAs: (value) => {
-                            if (value === null || value.trim() === "") return null
-                            return liveNameify(value)
-                        }
-                    })}
                     label="Adres (ulica, numer)"
                     labelPlacement="outside"
                     placeholder="Tortuga 13/7"
                     variant="bordered"
                     type="text"
-                    value={watch("street")?.toString() || ""}
-                    isDisabled={!group || isSubmitting}
+                    value={watch("street") || undefined}
+                    onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
+                    isClearable
+                    isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.street}
                     errorMessage={errors.street?.message}
                 />
-
                 <Select
                     label="Kraj"
                     labelPlacement="outside"
@@ -169,12 +151,11 @@ const EditGroupForm = ({
                         setRegionId("")
                         setValue("cityId", null, { shouldDirty: true })
                     }}
-                    isDisabled={!group || isSubmitting}
+                    isDisabled={!circle || isSubmitting}
                     items={countries}
-                >
+                    >
                     {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
                 </Select>
-
                 <Select
                     label="Województwo"
                     labelPlacement="outside"
@@ -185,14 +166,13 @@ const EditGroupForm = ({
                         setRegionId(event.target.value)
                         setValue("cityId", null, { shouldDirty: true })
                     }}
-                    isDisabled={!group || isSubmitting || !countryId}
+                    isDisabled={!circle || isSubmitting || !countryId}
                     items={regions.filter(region => region.countryId === countryId)}
-                >
+                    >
                     {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
                 </Select>
 
                 <Select
-                    {...register("cityId")}
                     label="Miasto"
                     labelPlacement="outside"
                     variant="bordered"
@@ -202,39 +182,41 @@ const EditGroupForm = ({
                         setCityId(event.target.value)
                         setValue("cityId", event.target.value || null, { shouldDirty: true })
                     }}
-                    isDisabled={!group || isSubmitting || !countryId || !regionId}
+                    isDisabled={!circle || isSubmitting || !countryId || !regionId}
                     isInvalid={!!errors.cityId}
                     errorMessage={errors.cityId?.message}
                     items={cities.filter(city => city.regionId === regionId)}
-                >
+                    >
                     {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                 </Select>
-
-                <Input
-                    {...register("price", { setValueAs: numberify })}
-                    value={watch("price")?.toString() || ""}
+                <NumberInput
                     label="Cena"
                     labelPlacement="outside"
                     variant="bordered"
-                    min={0}
                     placeholder="150"
-                    endContent={<div className="text-foreground-500 text-sm">PLN</div>}
+                    minValue={0}
+                    formatOptions={{
+                        style: "currency",
+                        currency: "PLN"
+                    }}
+                    value={watch("price") || undefined}
+                    onValueChange={(value) => {setValue("price", value, {shouldDirty:true, shouldValidate: true})}}
                     isClearable
-                    isDisabled={!group || isSubmitting}
+                    isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.price}
                     errorMessage={errors.price?.message}
                 />
                 <Button
                     type="submit"
                     color="primary"
-                    isDisabled={!group || isSubmitting || !isDirty || !isValid}
+                    isDisabled={!circle || isSubmitting || !isDirty || !isValid}
                     isLoading={isSubmitting}
                 >
-                    {isSubmitting ? "Przetwarzanie..." : "Zmień dane grupy"}
+                    {isSubmitting ? "Przetwarzanie..." : "Zmień dane kręgu"}
                 </Button>
             </Form>
         </main>
     )
 }
 
-export default EditGroupForm
+export default EditCircleForm

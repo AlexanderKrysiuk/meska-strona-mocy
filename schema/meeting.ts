@@ -2,12 +2,15 @@ import * as z from 'zod'
 
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const meetingId = z.string().uuid()
-const groupId = z.string().uuid()
+const circleId = z.string().uuid()
 const street = z.string().min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi");
 const cityId = z.string().min(1, "Wybierz miasto")
 
 
-const price = z.coerce.number().refine(price => price === 0 || price >= 10, {
+const price = z.coerce.number({
+    required_error: "Pole nie może być puste",
+    invalid_type_error: "Pole nie moze być puste"
+}).refine(price => price === 0 || price >= 10, {
     message: "spotkanie może być darmowe lub płatne co najmniej 10 zł",
   });
 
@@ -17,7 +20,7 @@ const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny
 const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
 export const CreateMeetingSchema = z.object({
-    groupId,
+    circleId,
     startTime,
     endTime,
     street,
@@ -48,6 +51,10 @@ export const EditMeetingSchema = z.object({
 
 export const RegisterToMeetingSchema = z.object({
     email,
-    groupId,
+    circleId,
+    meetingId
+})
+
+export const CompleteMeetingSchema = z.object({
     meetingId
 })

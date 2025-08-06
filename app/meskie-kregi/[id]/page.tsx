@@ -13,10 +13,10 @@ const MeetingReservationPage = async (
 ) => {
 //     const params = await props.params
 
-//     const meeting = await prisma.groupMeeting.findUnique({
+//     const meeting = await prisma.circleMeeting.findUnique({
 //         where: {id: params.id},
 //         include: {
-//             group: {
+//             circle: {
 //                 select: {
 //                     moderator: {
 //                         select: {

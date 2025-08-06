@@ -13,18 +13,18 @@ export const AllItems = [
 
 export const ModeratorItems = [
     {
-        href: "/moderator/moje-grupy",
+        href: "/moderator/moje-kregi",
         icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
-        title: "Moje grupy"
+        title: "Moje kręgi"
     },
     {
-        href: "/moderator/ustawienia-grup",
+        href: "/moderator/ustawienia-kregow",
         icon: <FontAwesomeIcon icon={faGears}/>,
-        title: "Ustawienia Grup"
+        title: "Ustawienia kręgów"
     },
     {
-        href: "/moderator/spotkania",
-        icon: <FontAwesomeIcon icon={faCalendar} className="mr-2"/>,
-        title: "Spotkania"
+        href: "/moderator/spotkania-kregow",
+        icon: <FontAwesomeIcon icon={faCalendar}/>,
+        title: "Spotkania kręgów"
     }
 ]

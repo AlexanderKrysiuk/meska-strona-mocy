@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { CreateGroupSchema, EditGroupSchema } from "@/schema/group"
+import { CreateCircleSchema, EditCircleSchema } from "@/schema/circle"
 import { TypeOf, object, string, z } from "zod"
 import { CheckLoginReturnUser, GetUserByID } from "./auth"
 import { Role } from "@prisma/client"
@@ -10,7 +10,7 @@ import { parse } from "path"
 import { customAlphabet } from 'nanoid'
 import { finalSlugify, liveSlugify } from "@/utils/slug"
 
-export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
+export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => {
     const user = await CheckLoginReturnUser()
 
     if (!user) return {
@@ -27,7 +27,7 @@ export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
     let slug = finalSlugify(data.name)
     
     while (true) {
-        const exist = await GetGroupBySlug(slug)
+        const exist = await GetCircleBySlug(slug)
 
         if (!exist) break
 
@@ -36,7 +36,7 @@ export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
     }
 
     try {
-        await prisma.group.create({
+        await prisma.circle.create({
             data: {
                 name: data.name,
                 slug: slug,
@@ -57,7 +57,7 @@ export const CreateGroup = async (data: z.infer<typeof CreateGroupSchema>) => {
     }
 }
 
-export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {    
+export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {    
     const user = await CheckLoginReturnUser()
 
     if (!user) return {
@@ -70,20 +70,20 @@ export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {
         message: "Brak uprawień do edycji grupy"
     }
 
-    const group = await GetGroupById(data.groupId)
+    const circle = await GetCircleById(data.circleId)
 
-    if (!group) return {
+    if (!circle) return {
         success: false,
         message: "Dana grupa nie istnieje"
     }
 
-    if (user.role === Role.Moderator && user.id !== group.moderatorId) return {
+    if (user.role === Role.Moderator && user.id !== circle.moderatorId) return {
         success: false,
         message: "Brak uprawnień do edycji grupy"
     }
 
-    if (group.slug !== data.slug) {
-        const existingSlug = await GetGroupBySlug(data.slug)
+    if (circle.slug !== data.slug) {
+        const existingSlug = await GetCircleBySlug(data.slug)
 
         if (existingSlug) return {
             success: false,
@@ -95,8 +95,8 @@ export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {
     }
 
     try {
-        await prisma.group.update({
-            where: { id: data.groupId },
+        await prisma.circle.update({
+            where: { id: data.circleId },
             data: {
                 name: data.name,
                 slug: data.slug,
@@ -117,7 +117,7 @@ export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {
         success: true,
         message: "Pomyślnie zaktualizowano grupę"
     }
-    // const parseResult = EditGroupSchema.safeParse(data)
+    // const parseResult = EditCircleSchema.safeParse(data)
         
     // if (!parseResult.success) {
     //     const flattened = parseResult.error.flatten()
@@ -132,19 +132,19 @@ export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {
     // //console.log(errors)
 
             
-    // if (data.slug && !errors["slug"] && data.slug !== group.slug) {
-    //     const existingSlug = await prisma.group.findUnique({
+    // if (data.slug && !errors["slug"] && data.slug !== circle.slug) {
+    //     const existingSlug = await prisma.circle.findUnique({
     //         where: {slug: data.slug}
     //     })
 
-    //     if (existingSlug && existingSlug.id !== group.id) {
+    //     if (existingSlug && existingSlug.id !== circle.id) {
     //         addError(errors, "slug", "Podany odnośnik jest już zajęty")
     //     }
     // }
 
 //     const dataToUpdate = Object.fromEntries(
 //         Object.entries(data).filter(([key, value]) =>
-//             !errors[key] && value !== group[key as keyof typeof group]
+//             !errors[key] && value !== circle[key as keyof typeof circle]
 //         )
 //     )
 
@@ -162,8 +162,8 @@ export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {
 //     //console.log(dataToUpdate)
 
 //     try {
-//         await prisma.group.update({
-//             where: {id: groupId},
+//         await prisma.circle.update({
+//             where: {id: circleId},
 //             data: dataToUpdate
 //         })
 
@@ -182,17 +182,17 @@ export const EditGroup = async (data: z.infer<typeof EditGroupSchema>) => {
 //     }
 }
 
-const GetGroupBySlug = async (slug: string) => {
+const GetCircleBySlug = async (slug: string) => {
     try {
-        return await prisma.group.findUnique({where: {slug}})
+        return await prisma.circle.findUnique({where: {slug}})
     } catch (error) {
         return null
     }
 }
 
-export const GetGroupById = async (id: string) => {
+export const GetCircleById = async (id: string) => {
     try {
-        return await prisma.group.findUnique({ where: {id}})
+        return await prisma.circle.findUnique({ where: {id}})
     } catch(error) {
         console.error("Błąd podczas pobierania grupy:", error)
         return null

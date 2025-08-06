@@ -3,10 +3,10 @@
 import { CreateMeetingSchema, EditMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
 import { CheckLoginReturnUser, GenerateVerificationToken } from "./auth"
-import { Role } from "@prisma/client"
+import { CircleMeetingStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { sendVerificationEmail } from "@/lib/nodemailer"
-import { GetGroupById } from "./group"
+import { GetCircleById } from "./circle"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
     const user = await CheckLoginReturnUser()
@@ -21,20 +21,20 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         message: "Brak uprawnień do dodania spotkania"
     }
 
-    const group = await GetGroupById(data.groupId)
+    const circle = await GetCircleById(data.circleId)
 
-    if (!group) return {
+    if (!circle) return {
         success: false,
         message: "Dana grupa nie istnieje"
     }
 
-    if (user.role === Role.Moderator && user.id !== group.moderatorId) return {
+    if (user.role === Role.Moderator && user.id !== circle.moderatorId) return {
         success: false,
         message: "Brak uprawień do dodania spotkania"
     }
 
     try {
-        const overlapingMeetings = await prisma.groupMeeting.findFirst({
+        const overlapingMeetings = await prisma.circleMeeting.findFirst({
             where: {
                 moderatorId: user.id,
                 AND: [
@@ -61,18 +61,19 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         }
 
         // Policz ile spotkań już było w tej grupie
-        const existingMeetings = await prisma.groupMeeting.count({
-            where: { groupId: data.groupId },
+        const existingMeetings = await prisma.circleMeeting.count({
+            where: { circleId: data.circleId },
         })
         
-        await prisma.groupMeeting.create({
+        await prisma.circleMeeting.create({
             data: {
+                status: CircleMeetingStatus.Scheduled,
                 startTime: data.startTime,
                 endTime: data.endTime,
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
-                groupId: data.groupId,
+                circleId: data.circleId,
                 moderatorId: user.id,
                 number: existingMeetings + 1,
             }
@@ -92,14 +93,14 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
     }
 }
 
-async function RefreshMeetingsNumbering (groupId: string) {
-    const meetings = await prisma.groupMeeting.findMany({
-        where: {groupId: groupId},
+async function RefreshMeetingsNumbering (circleId: string) {
+    const meetings = await prisma.circleMeeting.findMany({
+        where: {circleId: circleId},
         orderBy: {startTime: "asc"}
     })
 
     for (let i = 0; i < meetings.length ; i++) {
-        await prisma.groupMeeting.update({
+        await prisma.circleMeeting.update({
             where: {id: meetings[i].id },
             data: { number: i+1 }
         })
@@ -133,7 +134,7 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
     }
 
     try {
-        const overlapingMeetings = await prisma.groupMeeting.findFirst({
+        const overlapingMeetings = await prisma.circleMeeting.findFirst({
             where: {
                 moderatorId: user.id,
                 AND: [
@@ -155,7 +156,7 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
             }
         }
 
-        await prisma.groupMeeting.update({
+        await prisma.circleMeeting.update({
             where: { id: data.meetingId },
             data: {
                 startTime: data.startTime,
@@ -166,7 +167,7 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
             }
         })
 
-        await sortMeetings(meeting.groupId)
+        await sortMeetings(meeting.circleId)
 
     } catch {
         return {
@@ -182,12 +183,12 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
 }
 
 export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {
-    let group
+    let circle
 
     try {
-        group = await prisma.group.findUnique({
+        circle = await prisma.circle.findUnique({
             where: {
-                id: data.groupId
+                id: data.circleId
             },
             include: {
                 _count: {
@@ -201,8 +202,8 @@ export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSc
         throw new Error("Błąd połączenia z bazą danych.");
     }
 
-    if (!group) throw new Error("Nie znaleziono grupy.")    
-    if (group._count.members >= group.maxMembers) throw new Error("Brak wolnych miejsc w tej grupie.");
+    if (!circle) throw new Error("Nie znaleziono grupy.")    
+    if (circle._count.members >= circle.maxMembers) throw new Error("Brak wolnych miejsc w tej grupie.");
     
     let user
 
@@ -234,21 +235,21 @@ export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSc
 
 export const GetMeetingById = async (id: string) => {
     try {
-        return await prisma.groupMeeting.findUnique({ where: {id}})
+        return await prisma.circleMeeting.findUnique({ where: {id}})
     } catch (error) {
         return null
     }
 }
 
-export const sortMeetings = async (groupId: string) => {
-    const meetings = await prisma.groupMeeting.findMany({
-        where: {groupId: groupId},
+export const sortMeetings = async (circleId: string) => {
+    const meetings = await prisma.circleMeeting.findMany({
+        where: {circleId: circleId},
         orderBy: { startTime: "asc"}
     })
 
     for (let i = 0; i < meetings.length; i++) {
         const meeting = meetings[i];
-        await prisma.groupMeeting.update({
+        await prisma.circleMeeting.update({
           where: { id: meeting.id },
           data: { number: i + 1 } // najstarszy = 1
         });

@@ -14,7 +14,7 @@ type Meeting = {
     street: string;
     city: string;
     price: number;
-    group: {
+    circle: {
         moderator: {
             name: string | null;
             image: string | null;
@@ -43,18 +43,18 @@ const MeetingReservationWrapper = ({
                 <h4>
                     Cześć, cieszę się, że chcesz dołączyć do Męskiego Kręgu!
                 </h4>
-                {meeting.group.moderator.image &&
+                {meeting.circle.moderator.image &&
                     <Avatar
                         size="lg"
                         className="lg:w-24 lg:h-24"
                         showFallback
-                        src={meeting.group.moderator.image!}
+                        src={meeting.circle.moderator.image!}
                         isBordered
                     />
                 }
             </div>
             <p className="text-center">
-                To przestrzeń, w której mężczyźni spotykają się, aby dzielić się doświadczeniami, wspierać i wzrastać. Nazywam się {meeting.group.moderator.name} i jestem moderatorem tego spotkania.
+                To przestrzeń, w której mężczyźni spotykają się, aby dzielić się doświadczeniami, wspierać i wzrastać. Nazywam się {meeting.circle.moderator.name} i jestem moderatorem tego spotkania.
             </p>
             <h5 className="text-center">
                 Co dalej?

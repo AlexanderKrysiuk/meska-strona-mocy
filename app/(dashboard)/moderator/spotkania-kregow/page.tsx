@@ -12,19 +12,22 @@ const MeetingsPage = async () => {
 
     if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return redirect("/")
 
-    const groups = await prisma.group.findMany({
+    const circles = await prisma.circle.findMany({
         where: {
             moderatorId: user.id
         }
     })
 
-    const groupsIds = groups.map(group => group.id)
+    const circlesIds = circles.map(circle => circle.id)
 
-    const meetings = await prisma.groupMeeting.findMany({
+    const meetings = await prisma.circleMeeting.findMany({
         where: {
-            groupId: {
-                in: groupsIds
+            circleId: {
+                in: circlesIds
             }
+        },
+        orderBy: {
+            startTime: "asc"
         }
     })
 
@@ -35,7 +38,7 @@ const MeetingsPage = async () => {
     return  (
         <div>
             <MeetingsWrapper 
-                groups={groups} 
+                circles={circles} 
                 meetings={meetings} 
                 countries={countries} 
                 regions={regions} 
@@ -44,7 +47,7 @@ const MeetingsPage = async () => {
             <Divider/>
             <pre>{JSON.stringify(meetings,null,2)}</pre>
             <Divider/>
-            <pre>{JSON.stringify(groups,null,2)}</pre>    
+            <pre>{JSON.stringify(circles,null,2)}</pre>    
         </div>
     )
 }

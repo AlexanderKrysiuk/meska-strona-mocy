@@ -1,7 +1,7 @@
 "use client"
 
-import { CreateGroup } from "@/actions/group";
-import { CreateGroupSchema } from "@/schema/group";
+import { CreateCircle } from "@/actions/circle";
+import { CreateCircleSchema } from "@/schema/circle";
 //import { finalSlugify, liveSlugify } from "@/utils/slug";
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -11,19 +11,19 @@ import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
-const CreateGroupModal = () => {
+const CreateCircleModal = () => {
     const {isOpen, onOpen, onClose} = useDisclosure()
     const router = useRouter()
     
-    type FormFields = z.infer<typeof CreateGroupSchema>
+    type FormFields = z.infer<typeof CreateCircleSchema>
 
     const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
-        resolver: zodResolver(CreateGroupSchema)
+        resolver: zodResolver(CreateCircleSchema)
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
         try {
-            const result = await CreateGroup(data)
+            const result = await CreateCircle(data)
 
             addToast({
                 title: result.message,
@@ -53,7 +53,7 @@ const CreateGroupModal = () => {
                 className="text-white"
                 onPress={onOpen}
             >
-                Utwórz nową grupę
+                Utwórz nowy krąg
             </Button>
             <Modal
                 isOpen={isOpen}
@@ -116,7 +116,7 @@ const CreateGroupModal = () => {
                                 isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || Object.keys(errors).length > 0}
                                 isLoading={isSubmitting}
                             >
-                                {isSubmitting ? "Przetwarzanie..." : "Utwórz nową grupę"}
+                                {isSubmitting ? "Przetwarzanie..." : "Utwórz nowy krąg"}
                             </Button>
                         </ModalFooter>
                     </Form>
@@ -125,4 +125,4 @@ const CreateGroupModal = () => {
         </main>
     );
 }
-export default CreateGroupModal;
+export default CreateCircleModal;

@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarDate, Time, getLocalTimeZone, parseAbsoluteToLocal, today } from "@internationalized/date"
-import { City, Country, Group, GroupMeeting, Region } from "@prisma/client"
+import { City, Country, Circle, CircleMeeting, Region } from "@prisma/client"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -18,14 +18,14 @@ import { z } from "zod"
 const EditMeetingModal = ({
     meeting,
     meetings,
-    group,
+    circle,
     countries,
     regions,
     cities
 } : {
-    meeting: GroupMeeting
-    meetings: GroupMeeting[]
-    group: Group
+    meeting: CircleMeeting
+    meetings: CircleMeeting[]
+    circle: Circle
     countries: Country[]
     regions: Region[]
     cities: City[]
@@ -134,7 +134,7 @@ const EditMeetingModal = ({
                 scrollBehavior="outside"
             >
                 <ModalContent>
-                    <ModalHeader>Spotkanie Grupy: {group.name}</ModalHeader>
+                    <ModalHeader>Spotkanie Grupy: {circle.name}</ModalHeader>
                     <Divider/>
                         {JSON.stringify(watch(),null,2)}
                         {JSON.stringify(date,null,2)}

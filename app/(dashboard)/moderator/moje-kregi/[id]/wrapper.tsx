@@ -1,20 +1,20 @@
 "use client"
 
-import EditGroupForm from "@/components/moderator/moje-grupy/edit-group-form";
+import EditcircleForm from "@/components/moderator/moje-kregi/edit-circle-form";
 import { faCalendar, faGears } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Card, CardBody, CardFooter, CardHeader, Divider } from "@heroui/react";
-import { City, Country, Group, GroupMeeting, Region } from "@prisma/client";
+import { City, Country, Circle, CircleMeeting, Region } from "@prisma/client";
 
-const MyGroupWrapper = ({
-    group,
+const MycircleWrapper = ({
+    circle,
     meetings,
     countries,
     regions,
     cities
 } : {
-    group: Group
-    meetings: GroupMeeting[]
+    circle: Circle
+    meetings: CircleMeeting[]
     countries: Country[]
     regions: Region[]
     cities: City[]
@@ -27,8 +27,8 @@ const MyGroupWrapper = ({
                 </CardHeader>
                 <Divider/>
                 <CardBody>
-                    <EditGroupForm 
-                        group={group}
+                    <EditcircleForm 
+                        circle={circle}
                         countries={countries}
                         regions={regions}
                         cities={cities}
@@ -63,4 +63,4 @@ const MyGroupWrapper = ({
      );
 }
  
-export default MyGroupWrapper;
+export default MycircleWrapper;
