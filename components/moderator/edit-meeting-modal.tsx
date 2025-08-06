@@ -144,6 +144,7 @@ const EditMeetingModal = ({
 
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
+                            
                             <DatePicker
                                 label="Data spotkania"
                                 labelPlacement="outside"
@@ -268,6 +269,7 @@ const EditMeetingModal = ({
                                 isInvalid={!!errors.price}
                                 errorMessage={errors.price?.message}
                             />
+                            
                         </ModalBody>
                         <ModalFooter>
                             <Button

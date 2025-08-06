@@ -1,5 +1,6 @@
 "use client"
 
+import { CompleteMeeting } from "@/actions/meeting"
 import { CompleteMeetingSchema } from "@/schema/meeting"
 import { faCalendarCheck, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
@@ -37,13 +38,15 @@ const CompleteMeetingModal = ({
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        
+        const result = await CompleteMeeting(data)
+
         addToast({
-            title: data.meetingId,
+            title: result.message,
+            color: result.success ? "success" : "danger",
             variant: "bordered"
         })
 
-        if(!data) {
+        if (result.success) {
             router.refresh()
             onClose()
         }
@@ -101,18 +104,12 @@ const CompleteMeetingModal = ({
                         <div className="text-danger font-semibold">
                             Zatwierdzonego spotkania nie będzie można edytować. Zatwierdzaj tylko spotkania, które już się faktycznie odbyły.
                         </div>
-                        
-                        {/*
-                        Czy na pewno chcesz zatwierdzić spotkanie dla grupy{" "}
-                        <strong>{circle.name}</strong> w dniu{" "}
-                        <strong>{formattedTime}</strong>?
-                        */}
                     </ModalBody>
                     <ModalFooter>
                         <Form onSubmit={handleSubmit(submit)}>
                             <Button
                                 color="primary"
-                                startContent={<FontAwesomeIcon icon={faCheck}/>}
+                                startContent={isSubmitting ? undefined : <FontAwesomeIcon icon={faCheck}/>}
                                 type="submit"
                                 isDisabled={isSubmitting}
                                 isLoading={isSubmitting}

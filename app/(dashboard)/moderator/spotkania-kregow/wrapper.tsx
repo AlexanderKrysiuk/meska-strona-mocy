@@ -77,7 +77,7 @@ const MeetingsWrapper = ({
                 >
                     <TableHeader>
                         <TableColumn>Data</TableColumn>
-                        <TableColumn>Grupa</TableColumn>
+                        <TableColumn>Krąg</TableColumn>
                         <TableColumn>Ulica</TableColumn>
                         <TableColumn>Miasto</TableColumn>
                         <TableColumn>Akcje</TableColumn>
@@ -142,7 +142,7 @@ const MeetingsWrapper = ({
                 >
                     <TableHeader>
                         <TableColumn>Data</TableColumn>
-                        <TableColumn>Grupa</TableColumn>
+                        <TableColumn>Krąg</TableColumn>
                         <TableColumn>Ulica</TableColumn>
                         <TableColumn>Miasto</TableColumn>
                         <TableColumn>Akcje</TableColumn>
@@ -177,7 +177,7 @@ const MeetingsWrapper = ({
                                         {city?.name}
                                     </TableCell>
                                     <TableCell>
-                                        raz dwa trzy
+                                        {" "}
                                     </TableCell>
                                 </TableRow>
                             )

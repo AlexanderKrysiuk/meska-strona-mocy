@@ -1,6 +1,6 @@
 "use server"
 
-import { CreateMeetingSchema, EditMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
+import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
 import { CheckLoginReturnUser, GenerateVerificationToken } from "./auth"
 import { CircleMeetingStatus, Role } from "@prisma/client"
@@ -254,4 +254,47 @@ export const sortMeetings = async (circleId: string) => {
           data: { number: i + 1 } // najstarszy = 1
         });
       }
+}
+
+export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema>) => {
+    const user = await CheckLoginReturnUser()
+
+    if (!user) return {
+        success: false,
+        message: "Musisz być zalogowanym by zatwierdzić spotkanie"
+    }
+
+    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+        success: false,
+        message: "Brak uprawnień do zatwierdzenia spotkania"
+    }
+
+    const meeting = await GetMeetingById(data.meetingId)
+
+    if (!meeting) return {
+        success: false,
+        message: "Dana spotkanie nie istnieje"
+    }
+
+    if (user.role === Role.Moderator && user.id !== meeting.moderatorId) return {
+        success: false,
+        message: "Brak uprawień do zatwierdzenia spotkania"
+    }
+
+    try {
+        await prisma.circleMeeting.update({
+            where: { id: data.meetingId },
+            data: { status: CircleMeetingStatus.Completed }
+        })
+    } catch {
+        return {
+            success: false,
+            message: "Błąd połączenia z bazą danych"
+        }
+    }
+
+    return {
+        success: true,
+        message: "Pomyślnie zatwierdzono spotkanie"
+    }
 }
