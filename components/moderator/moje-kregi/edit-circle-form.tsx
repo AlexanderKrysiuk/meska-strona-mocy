@@ -72,13 +72,11 @@ const EditCircleForm = ({
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
-                {/*
-                <Divider/>
+                {/* <Divider/>
                 {JSON.stringify(watch(),null,2)}<br/>
                 Valid: {JSON.stringify(isValid,null,2)}<br/>
                 Dirty: {JSON.stringify(isDirty,null,2)}<br/>
-                <Divider/>
-                */}
+                <Divider/> */}
                 <Input
                     label="Nazwa grupy"
                     labelPlacement="outside"
@@ -110,7 +108,7 @@ const EditCircleForm = ({
                     isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
-                    />
+                />
                 <NumberInput
                     label="Maksymalna liczba uczestników"
                     labelPlacement="outside"
@@ -171,7 +169,6 @@ const EditCircleForm = ({
                     >
                     {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
                 </Select>
-
                 <Select
                     label="Miasto"
                     labelPlacement="outside"
@@ -189,7 +186,7 @@ const EditCircleForm = ({
                     >
                     {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                 </Select>
-                <NumberInput
+                <NumberInput 
                     label="Cena"
                     labelPlacement="outside"
                     variant="bordered"
@@ -199,12 +196,12 @@ const EditCircleForm = ({
                         style: "currency",
                         currency: "PLN"
                     }}
-                    value={watch("price") || undefined}
-                    onValueChange={(value) => {setValue("price", value, {shouldDirty:true, shouldValidate: true})}}
+                    value={watch("price")!}
+                    onValueChange={(value) => {setValue("price", value ?? null, {shouldDirty:true, shouldValidate: true})}}
                     isClearable
                     isDisabled={!circle || isSubmitting}
                     isInvalid={!!errors.price}
-                    errorMessage={errors.price?.message}
+                    errorMessage={errors.price?.message}    
                 />
                 <Button
                     type="submit"

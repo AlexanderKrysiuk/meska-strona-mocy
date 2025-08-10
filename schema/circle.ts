@@ -17,10 +17,24 @@ const slug = z.string()
 const street = z.string().min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi")
 const cityId = z.string().uuid().nullable()
 
-const price = z.number()
-  .refine((val) => val === null || val === 0 || val >= 10, {
-    message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
-  })    
+const price = z.preprocess(
+  (val) => {
+    const num = Number(val);
+    return isNaN(num) ? null : num; // zamień NaN na null
+  },
+  z.number().nullable().refine(
+    (val) => val === null || val === 0 || val >= 10,
+    {
+      message:
+        "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł",
+    }
+  )
+);
+
+// const price = z.number().nullable()
+//   .refine((val) => val === null || val === 0 || val >= 10, {
+//     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
+//   })    
 
 export const CreateCircleSchema = z.object({
     name,

@@ -1,11 +1,11 @@
 "use server"
 
-import { GetUserByID } from "@/actions/auth";
+import { CheckLoginOrRedirect } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
 import MycirclesWrapper from "./wrapper";
 
 const MycirclesPage = async () => {
-    const user = await GetUserByID()
+    const user = await CheckLoginOrRedirect()
 
     const circles = await prisma.circle.findMany({
         where: {
