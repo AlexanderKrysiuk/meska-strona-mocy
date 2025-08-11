@@ -4,7 +4,7 @@ import { RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Divider, Form, Input, Link, addToast } from "@heroui/react";
+import { Button, Form, Input, Link, addToast } from "@heroui/react";
 import { RegisterNewUser } from "@/actions/user";
 
 type FormFields = z.infer<typeof RegisterSchema>
@@ -26,11 +26,11 @@ const RegisterForm = () => {
 
     return (
         <Form onSubmit={handleSubmit(submit)}>
-            <pre>
+            {/* <pre>
                 {JSON.stringify(watch(),null,2)}<br/>
                 Valid: {JSON.stringify(isValid,null,2)}
             </pre>
-            <Divider/>
+            <Divider/> */}
             <Input
                 label="Imię i nazwisko"
                 labelPlacement="outside"
