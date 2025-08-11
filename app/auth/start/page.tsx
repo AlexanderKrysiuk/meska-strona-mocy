@@ -1,26 +1,15 @@
-"use client"
+"use server"
 
-import LoginForm from "@/components/auth/login-form";
-import RegisterForm from "@/components/auth/register-form";
-import { Card, CardBody, Tab, Tabs } from "@heroui/react";
+import { CheckLoginReturnUser } from "@/actions/auth";
+import { redirect } from "next/navigation";
+import StartPageWrapper from "./wrapper";
 
-const StartPage = () => {
-    return ( 
-        <main className="flex w-full justify-center mt-[0.3vh] p-4">
-            <Card className="w-full max-w-xs">
-                <CardBody>
-                    <Tabs fullWidth>
-                        <Tab title="Logowanie">
-                            <LoginForm/>
-                        </Tab>
-                        <Tab title="Rejestracja">
-                            <RegisterForm/>
-                        </Tab>
-                    </Tabs>
-                </CardBody>
-            </Card>
-        </main>
-     );
+const StartPage = async () => {
+    const user = await CheckLoginReturnUser()
+
+    if (user) redirect("/")
+    
+    return <StartPageWrapper/>
 }
  
 export default StartPage;
