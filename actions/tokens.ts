@@ -15,3 +15,13 @@ export const GenerateVerificationToken = async (email:string) => {
         return null
     }
 }
+
+export const GetVerificationToken = async (id:string) => {
+    try {
+        return await prisma.verificationToken.findUnique({
+            where: {id: id}
+        })
+    } catch {
+        return null
+    }
+}

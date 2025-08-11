@@ -10,6 +10,27 @@ import { VerificationToken } from "@prisma/client"
 import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
+import ResetPasswordForm from "./reset-password-form"
+
+export const TokenNotValid = () => {
+    return (
+        <main className="absolute inset-0 flex items-center justify-center">
+            <Card className="max-w-xs">
+                <CardHeader>
+                    <Alert
+                        color="danger"
+                        title="Podany token jest nieważny"
+                        description="Wypełnij formularz aby otrzymać nowy"
+                        className="items-center"
+                    />
+                </CardHeader>
+                <CardBody>
+                    <ResetPasswordForm/>
+                </CardBody>
+            </Card>
+        </main>
+    )
+}
 
 export const TokenNotFound = () => {
     return (
