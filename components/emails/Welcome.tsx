@@ -18,39 +18,44 @@ export default function WelcomeEmail({
   name?: string;
 }) {
 //export default function WelcomeEmail({ token, name }: VerificationEmailProps) {
-  const domain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const verificationUrl = `${domain}/auth/verification?token=${token?.id || ""}`;
+    const domain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const verificationUrl = `${domain}/auth/verification?token=${token?.id || ""}`;
 
-  return (
-    <Html>
-      <Head />
-      <Preview>Potwierdź swoje konto – Męska Strona Mocy</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Section style={{ marginBottom: "32px" }}>
-            <Text style={heading}>
-              {name ? `Witaj, ${name}!` : "Witaj!"}
-            </Text>
-            <Text style={paragraph}>
-              Dziękujemy za dołączenie do Męskiej Strony Mocy. Aby w pełni
-              korzystać z serwisu, potwierdź swoje konto klikając w przycisk
-              poniżej:
-            </Text>
-            <Button
-              href={verificationUrl}
-              style={button}
-            >
-              Potwierdź konto
-            </Button>
-            <Text style={paragraph}>
-              Jeśli nie rejestrowałeś się na naszej stronie, zignoruj tę
-              wiadomość.
-            </Text>
-          </Section>
-        </Container>
-      </Body>
-    </Html>
-  );
+    return (
+        <Html>
+            <Head />
+            <Preview>Potwierdź swoje konto – Męska Strona Mocy</Preview>
+            <Body style={main}>
+                <Container style={container}>
+                    <Section style={{ marginBottom: "32px" }}>
+                        <Text style={heading}>
+                            {name ? `Witaj, ${name}!` : "Witaj!"}
+                        </Text>
+                        <Text style={paragraph}>
+                            Dziękujemy za dołączenie do Męskiej Strony Mocy. Aby w pełni
+                            korzystać z serwisu, potwierdź swoje konto klikając w przycisk
+                            poniżej:
+                        </Text>
+                        <Button
+                            href={verificationUrl}
+                            style={button}
+                        >
+                            Potwierdź konto
+                        </Button>
+                        <Text style={paragraph}>
+                            Po potwierdzeniu zostaniesz przekierowany do ustawienia hasła do konta.
+                        </Text>
+                        <Text style={paragraph}>
+                            Jeśli nie rejestrowałeś się na naszej stronie, zignoruj tę wiadomość.
+                        </Text>
+                        <Text style={{ ...paragraph, fontSize: "12px", color: "#888" }}>
+                            Ta wiadomość jest generowana automatycznie, prosimy na nią nie odpowiadać.
+                        </Text>
+                    </Section>
+                </Container>
+            </Body>
+        </Html>
+    );
 }
 
 const main = {
