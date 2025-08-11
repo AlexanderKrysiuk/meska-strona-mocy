@@ -1,13 +1,15 @@
 "use server"
 
-import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/nodemailer";
 import { prisma } from "@/lib/prisma";
 import { NewPasswordSchema, RegisterSchema, ResetPasswordSchema } from "@/schema/user";
 import { VerificationToken } from "@prisma/client";
-import { TypeOf, z } from "zod";
+import { z } from "zod";
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { GenerateVerificationToken } from "./tokens";
+import { SendResetPasswordEmail } from "./resend";
+import { GetUserByEmail } from "./user";
 
 export const NEWRegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
     
@@ -34,21 +36,13 @@ export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
 
     try {
         const verificationToken = await GenerateVerificationToken(data.email)
-        await sendVerificationEmail(verificationToken)
+        //await sendVerificationEmail(verificationToken)
     } catch (error) {
         throw new Error("Nie udało się wysłać e-maila weryfikacyjnego.")
     }
 }
 
 export const SetNewPassword = async (data: z.infer<typeof NewPasswordSchema>, token: VerificationToken) => {
-    // try {
-    //     await prisma.verificationToken.delete({
-    //         where: { id: token.id }
-    //     }) 
-    // } catch (error) {
-    //     throw new Error("Podano nieprawidłowy token")
-    // }
-
     const hashedPassword = await bcrypt.hash(data.newPassword, parseInt(process.env.BCRYPT_SALT_ROUNDS!))
 
     try {
@@ -75,24 +69,25 @@ export const SetNewPassword = async (data: z.infer<typeof NewPasswordSchema>, to
 }
 
 export const ResetPassword = async (data: z.infer<typeof ResetPasswordSchema>) => {
-    try {
-        const existingUser = await prisma.user.findUnique({ where: { email: data.email}})
-        if (!existingUser) return 
+    const user = await GetUserByEmail(data.email)
 
-        await prisma.verificationToken.deleteMany({ where: { email: data.email }})
-
+    if (user) {
         const verificationToken = await GenerateVerificationToken(data.email)
-        await sendResetPasswordEmail(verificationToken) 
-    } catch(error) {
-        throw new Error("Błąd połączenia z bazą danych.");
-    }
-}
 
-export async function GenerateVerificationToken(email:string) {
-    const expires = new Date(new Date().getTime() + 3600*100)
-    return await prisma.verificationToken.create({
-        data: { email, expires }
-    })
+        if (!verificationToken) return {
+            success: false,
+            message: "Reset hasła nie powiódł się. Spróbuj ponownie."
+        }
+
+        const result = await SendResetPasswordEmail(verificationToken)
+
+        if (!result.success) return result
+    }
+
+    return {
+        success: true,
+        message: "Jeśli podany e-mail jest w bazie, został wysłany link resetujący hasło"
+    }
 }
 
 export const GetUserByID = async () => {
@@ -105,18 +100,6 @@ export const GetUserByID = async () => {
             where: {id: session.user.id}
         })
 
-        if (!user) throw new Error("Użytkownik nie istnieje.")
-        return user
-    } catch(error) {
-        throw new Error("Błąd połączenia z bazą danych")
-    }
-}
-
-export const GetUserByEmail = async (email:string) => {
-    try {
-        const user = await prisma.user.findUnique({
-            where: {email}
-        })
         if (!user) throw new Error("Użytkownik nie istnieje.")
         return user
     } catch(error) {

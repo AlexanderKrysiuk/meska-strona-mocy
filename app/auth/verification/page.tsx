@@ -1,11 +1,18 @@
+"use server"
+import { CheckLoginReturnUser } from "@/actions/auth"
 import { GetVerificationToken } from "@/actions/tokens"
 import { NewPasswordCard, TokenNotValid } from "@/components/auth/verification"
+import { redirect } from "next/navigation"
 
 const VerificationPage = async ({
     searchParams
 } : {
     searchParams : Promise<{ token: string}>
 }) => {
+    const user = await CheckLoginReturnUser()
+
+    if (user) redirect("/")
+
     const { token } = await searchParams
 
     const verificationToken = await GetVerificationToken(token)

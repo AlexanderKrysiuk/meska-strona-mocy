@@ -1,11 +1,10 @@
 "use server"
 
-import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema, RegisterToMeetingSchema } from "@/schema/meeting"
+import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
-import { CheckLoginReturnUser, GenerateVerificationToken } from "./auth"
+import { CheckLoginReturnUser } from "./auth"
 import { CircleMeetingStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { sendVerificationEmail } from "@/lib/nodemailer"
 import { GetCircleById } from "./circle"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
