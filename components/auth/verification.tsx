@@ -4,7 +4,7 @@ import { SetNewPassword } from "@/actions/auth"
 import { NewPasswordSchema } from "@/schema/user"
 import { faEye, faEyeSlash, faLock } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Alert, Button, Card, CardBody, CardFooter, CardHeader, Form, Input, Spinner, addToast } from "@heroui/react"
+import { Alert, Button, Card, CardBody, CardHeader, Form, Input, Spinner, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { VerificationToken } from "@prisma/client"
 import { useEffect, useState } from "react"
@@ -103,7 +103,7 @@ export const NewPasswordCard = (token: VerificationToken) => {
     }
 
     return (
-        <main className="absolute inset-0 flex items-center justify-center">
+        <main className="flex items-center justify-center h-full">
             {verificationComplete ? (
                 <Spinner
                     size="lg"
@@ -111,13 +111,13 @@ export const NewPasswordCard = (token: VerificationToken) => {
                     label="Ustawiono nowe hasło, następuje przekierowanie..."
                 />
             ) : (
-                <Card className="m-4 w-full max-w-xs">
+                <Card className="w-full max-w-xs">
                     <CardHeader className="flex items-center justify-center">
                         <FontAwesomeIcon icon={faLock} className="mr-2 text-xl text-primary"/>
                         <h2 className="text-lg font-semibold">Nowe hasło</h2>
                     </CardHeader>
-                    <Form onSubmit={handleSubmit(submit)}>
-                        <CardBody>
+                    <CardBody>
+                        <Form onSubmit={handleSubmit(submit)}>
                             <Input 
                                 label="Email"
                                 labelPlacement="outside"
@@ -180,8 +180,6 @@ export const NewPasswordCard = (token: VerificationToken) => {
                                 isInvalid={!!errors.confirmPassword}
                                 errorMessage={errors.confirmPassword?.message}
                             />
-                        </CardBody>
-                        <CardFooter>
                             <Button
                                 type="submit"
                                 color="primary"
@@ -191,8 +189,8 @@ export const NewPasswordCard = (token: VerificationToken) => {
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Ustaw hasło"}   
                             </Button>
-                        </CardFooter>
-                    </Form>
+                        </Form>
+                    </CardBody>
                 </Card>
             )}
         </main>

@@ -16,7 +16,7 @@ export default function ResetPasswordEmail({
   token: VerificationToken;
 }) {
   const domain = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const resetUrl = `${domain}/auth/reset-password?token=${token?.id || ""}`;
+  const resetUrl = `${domain}/auth/verification?token=${token?.id || ""}`;
 
   return (
     <Html>
