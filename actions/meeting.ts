@@ -182,56 +182,56 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
     }
 }
 
-export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {
-    let circle
+// export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {
+//     let circle
 
-    try {
-        circle = await prisma.circle.findUnique({
-            where: {
-                id: data.circleId
-            },
-            include: {
-                _count: {
-                    select: {
-                        members: true
-                    }
-                }
-            }
-        })
-    } catch (error) {
-        throw new Error("Błąd połączenia z bazą danych.");
-    }
+//     try {
+//         circle = await prisma.circle.findUnique({
+//             where: {
+//                 id: data.circleId
+//             },
+//             include: {
+//                 _count: {
+//                     select: {
+//                         members: true
+//                     }
+//                 }
+//             }
+//         })
+//     } catch (error) {
+//         throw new Error("Błąd połączenia z bazą danych.");
+//     }
 
-    if (!circle) throw new Error("Nie znaleziono grupy.")    
-    if (circle._count.members >= circle.maxMembers) throw new Error("Brak wolnych miejsc w tej grupie.");
+//     if (!circle) throw new Error("Nie znaleziono grupy.")    
+//     if (circle._count.members >= circle.maxMembers) throw new Error("Brak wolnych miejsc w tej grupie.");
     
-    let user
+//     let user
 
-    try {
-        user = await prisma.user.findUnique({
-            where: { email: data.email}
-        })
-    } catch (error) {
-        throw new Error("Błąd połączenia z bazą danych.");
-    }
+//     try {
+//         user = await prisma.user.findUnique({
+//             where: { email: data.email}
+//         })
+//     } catch (error) {
+//         throw new Error("Błąd połączenia z bazą danych.");
+//     }
 
-    if (!user) {
-        try {
-            user = await prisma.user.create({ data })
-        } catch (error) {
-            throw new Error("Rejestracja nie powiodła się. Spróbuj ponownie.")
-        }
+//     if (!user) {
+//         try {
+//             user = await prisma.user.create({ data })
+//         } catch (error) {
+//             throw new Error("Rejestracja nie powiodła się. Spróbuj ponownie.")
+//         }
 
-        try {
-            const verificationToken = await GenerateVerificationToken(data.email)
-            await sendVerificationEmail(verificationToken)
-        } catch (error) {
-            throw new Error("Nie udało się wysłać e-maila weryfikacyjnego.")
-        }
-    }
+//         try {
+//             const verificationToken = await GenerateVerificationToken(data.email)
+//             await sendVerificationEmail(verificationToken)
+//         } catch (error) {
+//             throw new Error("Nie udało się wysłać e-maila weryfikacyjnego.")
+//         }
+//     }
 
 
-}
+// }
 
 export const GetMeetingById = async (id: string) => {
     try {

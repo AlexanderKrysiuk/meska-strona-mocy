@@ -4,10 +4,14 @@ import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/nodemailer"
 import { prisma } from "@/lib/prisma";
 import { NewPasswordSchema, RegisterSchema, ResetPasswordSchema } from "@/schema/user";
 import { VerificationToken } from "@prisma/client";
-import { z } from "zod";
+import { TypeOf, z } from "zod";
 import bcrypt from "bcryptjs"
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+
+export const NEWRegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
+    
+}
 
 export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
     let existingUser;

@@ -4,36 +4,40 @@ import { RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Alert, Button, Form, Input, Link, addToast } from "@heroui/react";
-import { RegisterNewUser } from "@/actions/auth";
+import { Button, Form, Input, Link, addToast } from "@heroui/react";
+import { RegisterNewUser } from "@/actions/user";
 
 type FormFields = z.infer<typeof RegisterSchema>
 
 const RegisterForm = () => {
-    const { register, handleSubmit, setError, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+    const { handleSubmit, setValue, watch, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
         resolver: zodResolver(RegisterSchema)
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        try {
-            await RegisterNewUser(data)
-            addToast({
-                title: "Utworzono nowe konto, wysłano e-mail weryfikujący",
-                color: "success",
-                variant: "bordered"
-            })
-        } catch (error) {
-            setError("root", {message: error instanceof Error ? error.message : "Wystąpił nieznany błąd"})
-        }
+        const result = await RegisterNewUser(data)
+
+        addToast({
+            title: result.message,
+            color: result.success ? "success" : "danger",
+            variant: "bordered"
+        })
     }
 
     return (
         <Form onSubmit={handleSubmit(submit)}>
-            <Input {...register("name")}
+            {/* <pre>
+                {JSON.stringify(watch(),null,2)}<br/>
+                Valid: {JSON.stringify(isValid,null,2)}
+            </pre>
+            <Divider/> */}
+            <Input
                 label="Imię i nazwisko"
                 labelPlacement="outside"
                 type="text"
                 autoComplete="name"
+                value={watch("name")!}
+                onValueChange={(value) => setValue("name", value, {shouldValidate: true})}
                 placeholder="Jack Sparrow"
                 variant="bordered"
                 isClearable
@@ -41,11 +45,13 @@ const RegisterForm = () => {
                 isInvalid={!!errors.name || !!errors.root}
                 errorMessage={errors.name?.message}
             />
-            <Input {...register("email")}
+            <Input
                 label="Email"
                 labelPlacement="outside"
                 type="email"
                 autoComplete="email"
+                value={watch("email")}
+                onValueChange={(value) => setValue("email", value, {shouldValidate: true})}
                 placeholder="jack.sparrow@piratebay.co.uk"
                 variant="bordered"
                 isClearable
@@ -54,20 +60,12 @@ const RegisterForm = () => {
                 isInvalid={!!errors.email || !!errors.root}
                 errorMessage={errors.email?.message}
             />
-            {errors.root && 
-                <Alert
-                    title={errors.root.message}
-                    variant="bordered"
-                    color="danger"
-                />
-            }
             <Button
                 type="submit"
                 color="primary"
                 fullWidth
-                isDisabled={isSubmitting || !watch("email")}
+                isDisabled={isSubmitting || !isValid}
                 isLoading={isSubmitting}
-                className="text-white"
             >
                 {isSubmitting ? "Przetwarzanie..." : "Załóż konto"}
             </Button>
