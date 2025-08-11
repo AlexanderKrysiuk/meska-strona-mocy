@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/prisma"
 
 export const GenerateVerificationToken = async (email:string) => {
-    const expires = new Date(new Date().getTime() + 3600*100)
+    const expires = new Date()
+    expires.setHours(expires.getHours() + 1)
     try {
         await prisma.verificationToken.deleteMany({
             where: {email:email}
