@@ -207,20 +207,6 @@ const EditMeetingModal = ({
                                     errorMessage={errors.endTime?.message}
                                 />
                             </div>
-                            <Input
-                                label="Adres (ulica, numer)"
-                                labelPlacement="outside"
-                                placeholder="Tortuga 13/7"
-                                variant="bordered"
-                                type="text"
-                                value={watch("street")}
-                                onValueChange={(value) => setValue("street", value, {shouldDirty: true, shouldValidate: true})}
-                                isClearable
-                                isRequired
-                                isDisabled={isSubmitting}
-                                isInvalid={!!errors.street}
-                                errorMessage={errors.street?.message}
-                            />
                             <Select
                                 label="Kraj"
                                 labelPlacement="outside"
@@ -269,6 +255,20 @@ const EditMeetingModal = ({
                             >
                                 {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                             </Select>
+                            <Input
+                                label="Adres (ulica, numer)"
+                                labelPlacement="outside"
+                                placeholder="Tortuga 13/7"
+                                variant="bordered"
+                                type="text"
+                                value={watch("street")}
+                                onValueChange={(value) => setValue("street", value, {shouldDirty: true, shouldValidate: true})}
+                                isClearable
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.street}
+                                errorMessage={errors.street?.message}
+                            />
                             <NumberInput
                                 label="Cena"
                                 labelPlacement="outside"

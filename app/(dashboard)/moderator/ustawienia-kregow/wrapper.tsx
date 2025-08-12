@@ -38,6 +38,8 @@ const CircleSettingsWrapper = ({
                         setCircleId(new Set(keys as Set<string>))
                     }}
                     hideEmptyContent
+                    disallowEmptySelection
+                    isDisabled={!circles}
                 >
                     {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
                 </Select>
@@ -45,7 +47,7 @@ const CircleSettingsWrapper = ({
             </div>
             <Card>
                 <CardHeader>
-                    <FontAwesomeIcon icon={faGears} className="mr-2"/> Ustawienia Grupy: {selectedCircle?.name}
+                    <FontAwesomeIcon icon={faGears} className="mr-2"/> Ustawienia Kręgu: {selectedCircle?.name}
                 </CardHeader>
                 <CardBody>
                     <EditCircleForm

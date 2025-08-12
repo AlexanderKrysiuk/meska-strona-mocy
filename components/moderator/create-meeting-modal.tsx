@@ -44,46 +44,34 @@ const CreateMeetingModal = ({
 
     type FormFields = z.infer<typeof CreateMeetingSchema>
 
-    const { register, handleSubmit, trigger, watch, setError, setValue, resetField, formState: { errors,isValid, isSubmitting } } = useForm<FormFields>({
+    const { getValues, reset, handleSubmit, trigger, watch, setError, setValue, formState: { errors,isValid, isSubmitting } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         mode: "all",
     })
 
-    const resetDates = () => {
-        resetField("startTime")
-        resetField("endTime")
-        setDate(null)
-        setStartHour(null)
-        setEndHour(null)
-    }
-
-    const setMeetingData = (circleId: string | undefined) => {
+    const setMeetingData = (circleId: string | undefined, cleardates: boolean) => {
         const circle = circles.find(c => c.id === circleId)
         setCircleName(circle?.name)
-        
-        if (circle?.id) {
-            setValue("circleId", circle.id, {shouldValidate: true})
-        } else {
-            resetField("circleId")
-        }
-    
-        if (circle?.street) {
-            setValue("street", circle.street, {shouldValidate: true})
-        } else {
-            resetField("street")
-        }        
-        
-        if (circle?.price) {
-            setValue("price", circle.price, {shouldValidate: true})
-        } else {
-            resetField("price")
 
-        }      
-        
-        if (circle?.cityId) {
-            setValue("cityId", circle.cityId, {shouldValidate: true})
-        } else {
-            resetField("cityId")
+        const values = getValues()
+
+        reset({
+            circleId: circle?.id ?? "",
+            street: circle?.street ?? "",
+            price: circle?.price ?? NaN,
+            cityId: circle?.cityId ?? "",
+            startTime: cleardates ? undefined : values.startTime,
+            endTime: cleardates ? undefined : values.endTime
+        }, {
+            keepErrors: false,
+            keepDirty: false,
+            keepTouched: false
+        })
+
+        if (cleardates) {
+            setDate(null)
+            setStartHour(null)
+            setEndHour(null)
         }
 
         const city = cities.find(c => c.id === circle?.cityId)
@@ -129,11 +117,10 @@ const CreateMeetingModal = ({
                 color="primary"
                 startContent={<FontAwesomeIcon icon={faCalendarPlus}/>}
                 onPress={()=>{
-                    setMeetingData(circleId)
-                    resetDates()
+                    setMeetingData(circleId, true)
                     onOpen()
                 }}
-                isDisabled={circles.length < 1}
+                isDisabled={!circles}
             >
                 Utwórz nowe spotkanie
             </Button>
@@ -146,16 +133,16 @@ const CreateMeetingModal = ({
                 <ModalContent>
                     
                     <ModalHeader>Nowe spotkanie kręgu: {circleName}</ModalHeader>
-                    {/*
+                    
+                    {/* <pre>
                     {JSON.stringify(circles,null,2)}
-                    <Divider/>
                     {JSON.stringify(watch(),null,2)}<br/>
                     Valid: {JSON.stringify(isValid,null,2)}
-                    <Divider/>
-                    */}
+                    </pre> */}
+                
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
-                            <Select {...register("circleId")}
+                            <Select
                                 hideEmptyContent
                                 disallowEmptySelection
                                 label="Krąg"
@@ -165,7 +152,7 @@ const CreateMeetingModal = ({
                                 selectedKeys={[watch("circleId")]}
                                 onSelectionChange={(keys)=>{
                                     //setValue("circleId", Array.from(keys)[0].toString(), {shouldValidate: true})
-                                    setMeetingData(Array.from(keys)[0].toString())
+                                    setMeetingData(Array.from(keys)[0].toString() ?? "", false)
                                 }}
                                 isRequired
                                 items={circles}
@@ -190,7 +177,7 @@ const CreateMeetingModal = ({
                                 errorMessage={errors.startTime?.message}
                             />
                             <div className="flex space-x-4">
-                                <TimeInput {...register("startTime", {valueAsDate: true})}
+                                <TimeInput
                                     label="Godzina rozpoczęczia"
                                     labelPlacement="outside"
                                     variant="bordered"
@@ -206,7 +193,7 @@ const CreateMeetingModal = ({
                                     isRequired
                                     isDisabled={isSubmitting || !date}
                                 />
-                                <TimeInput {...register("endTime", {valueAsDate: true})}
+                                <TimeInput
                                     label="Godzina zakończenia"
                                     labelPlacement="outside"
                                     variant="bordered"
@@ -222,6 +209,20 @@ const CreateMeetingModal = ({
                                     errorMessage={errors.endTime?.message}
                                 />
                             </div>
+                            <Input
+                                label="Adres (ulica, numer)"
+                                labelPlacement="outside"
+                                placeholder="Tortuga 13/7"
+                                variant="bordered"
+                                type="text"
+                                value={watch("street")}
+                                onValueChange={(value)=>{setValue("street", value, {shouldValidate: true})}}
+                                isClearable
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.street}
+                                errorMessage={errors.street?.message}
+                            />
                             <Select
                                 label="Kraj"
                                 labelPlacement="outside"
@@ -233,7 +234,7 @@ const CreateMeetingModal = ({
                                 onSelectionChange={(keys) => {
                                     setCountryId(Array.from(keys)[0].toString())
                                     setRegionId(null)
-                                    resetField("cityId")
+                                    setValue("cityId", undefined!, {shouldValidate:true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting}
@@ -251,7 +252,7 @@ const CreateMeetingModal = ({
                                 selectedKeys={[regionId!]}
                                 onSelectionChange={(keys) => {
                                     setRegionId(Array.from(keys)[0].toString())
-                                    resetField("cityId")
+                                    setValue("cityId", undefined!, {shouldValidate:true})
                                 }}
                                 isRequired
                                 isDisabled={isSubmitting || !countryId}
@@ -259,7 +260,7 @@ const CreateMeetingModal = ({
                             >
                                 {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
                             </Select>
-                            <Select {...register("cityId")}
+                            <Select
                                 label="Miasto"
                                 labelPlacement="outside"
                                 variant="bordered"
@@ -276,32 +277,17 @@ const CreateMeetingModal = ({
                             >
                                 {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                             </Select>
-                            <Input {...register("street")}
-                                label="Adres (ulica, numer)"
-                                labelPlacement="outside"
-                                placeholder="Tortuga 13/7"
-                                variant="bordered"
-                                type="text"
-                                value={watch("street") || undefined}
-                                onValueChange={(value)=>{setValue("street", value, {shouldValidate: true})}}
-                                isClearable
-                                isRequired
-                                isDisabled={isSubmitting}
-                                isInvalid={!!errors.street}
-                                errorMessage={errors.street?.message}
-                            />
-                            <NumberInput {...register("price", {valueAsNumber: true})}
+                            <NumberInput
                                 label="Cena"
                                 labelPlacement="outside"
                                 variant="bordered"
-                                placeholder="150"
+                                placeholder="150,00 zł"
                                 minValue={0}
                                 formatOptions={{
                                     style: "currency",
                                     currency: "PLN"
                                 }}
                                 value={watch("price")}
-                                onChange={()=>{}}
                                 onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
                                 isClearable
                                 isRequired

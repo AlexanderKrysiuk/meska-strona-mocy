@@ -64,13 +64,13 @@ const CompleteMeetingModal = ({
     }).format(new Date(meeting.startTime))
 
     const formattedStartTime = new Intl.DateTimeFormat(country?.locale, {
-        day: "2-digit",
-        month: "2-digit"
+        hour: "2-digit",
+        minute: "2-digit"
     }).format(meeting.startTime)
 
     const formattedEndTime = new Intl.DateTimeFormat(country?.locale, {
-        day: "2-digit",
-        month: "2-digit"
+        hour: "2-digit",
+        minute: "2-digit"
     }).format(meeting.endTime)
 
     return (
@@ -90,10 +90,10 @@ const CompleteMeetingModal = ({
                 placement="center"
             >
                 <ModalContent>
-                    <ModalHeader>Zatwierdzenie spotkania</ModalHeader>
+                    <ModalHeader>Zakończenie spotkania</ModalHeader>
                     <ModalBody>
                         <div>
-                            Czy na pewno chcesz zatwierdzić spotkanie grupy:{" "}
+                            Czy na pewno chcesz zakończyć spotkanie kręgu:{" "}
                             <strong>{circle.name}</strong>?
                         </div>
                         <div>
@@ -102,7 +102,7 @@ const CompleteMeetingModal = ({
                             Godzina: <strong>{formattedStartTime} – {formattedEndTime}</strong>
                         </div>
                         <div className="text-danger font-semibold">
-                            Zatwierdzonego spotkania nie będzie można edytować. Zatwierdzaj tylko spotkania, które już się faktycznie odbyły.
+                            Zakończonego spotkania nie będzie można edytować. Kończ tylko spotkania, które już się faktycznie odbyły.
                         </div>
                     </ModalBody>
                     <ModalFooter>
@@ -114,7 +114,7 @@ const CompleteMeetingModal = ({
                                 isDisabled={isSubmitting}
                                 isLoading={isSubmitting}
                             >
-                                {isSubmitting ? "Zatwierdzanie..." : "Zatwierdź"}
+                                {isSubmitting ? "Przetwarzanie..." : "Zakończ"}
                             </Button>
                         </Form>
                         <Button

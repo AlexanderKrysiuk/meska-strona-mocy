@@ -28,7 +28,6 @@ const EditCircleForm = ({
     const region = regions.find(region => region.id === city?.regionId)
     const country = countries.find(country => country.id === region?.countryId)
 
-    const [cityId, setCityId] = useState(circle?.cityId || "")
     const [regionId, setRegionId] = useState(region?.id || "")
     const [countryId, setCountryId] = useState(country?.id || "")
 
@@ -42,9 +41,9 @@ const EditCircleForm = ({
             name: circle?.name,
             slug: circle?.slug,
             maxMembers: circle?.maxMembers,
-            street: circle?.street ?? null,
-            cityId: circle?.cityId ?? null,
-            price: circle?.price ?? null
+            street: circle?.street,
+            cityId: circle?.cityId,
+            price: circle?.price
         }
     })
 
@@ -76,8 +75,7 @@ const EditCircleForm = ({
                     {JSON.stringify(watch(),null,2)}<br/>
                     Valid: {JSON.stringify(isValid,null,2)}<br/>
                     Dirty: {JSON.stringify(isDirty,null,2)}<br/>
-                </pre>
-                <Divider/> */}
+                </pre> */}
                 <Input
                     label="Nazwa grupy"
                     labelPlacement="outside"
@@ -98,7 +96,6 @@ const EditCircleForm = ({
                 <Input
                     label="Unikalny odnośnik"
                     labelPlacement="outside"
-                    type="text"
                     placeholder="zaloga-czarnej-perly"
                     description="Ten odnośnik będzie częścią adresu URL Twojej grupy."
                     variant="bordered"
@@ -132,7 +129,7 @@ const EditCircleForm = ({
                     placeholder="Tortuga 13/7"
                     variant="bordered"
                     type="text"
-                    value={watch("street") || undefined}
+                    value={watch("street") || null!}
                     onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
                     isClearable
                     isDisabled={!circle || isSubmitting}
@@ -144,6 +141,7 @@ const EditCircleForm = ({
                     labelPlacement="outside"
                     placeholder="Karaiby"
                     variant="bordered"
+                    hideEmptyContent
                     selectedKeys={[countryId]}
                     onChange={(event) => {
                         setCountryId(event.target.value)
@@ -175,9 +173,8 @@ const EditCircleForm = ({
                     labelPlacement="outside"
                     variant="bordered"
                     placeholder="Isla de Muerta"
-                    selectedKeys={[cityId]}
+                    selectedKeys={[watch("cityId")!]}
                     onChange={(event) => {
-                        setCityId(event.target.value)
                         setValue("cityId", event.target.value || null, { shouldDirty: true })
                     }}
                     isDisabled={!circle || isSubmitting || !countryId || !regionId}

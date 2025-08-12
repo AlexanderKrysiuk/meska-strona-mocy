@@ -50,13 +50,14 @@ const MeetingsWrapper = ({
                     onSelectionChange={(keys) => {
                         setCircleId(new Set(keys as Set<string>))
                     }}
-                    isDisabled={circles.length < 1}
+                    isDisabled={!circles}
+                    hideEmptyContent
                 >
                     {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
                 </Select>
                 <CreateCircleModal/>
             </div>
-            <div>Grupa: {JSON.stringify(selectedCircle,null,2)}</div>
+            {/* <div>Krąg: {JSON.stringify(selectedCircle,null,2)}</div> */}
             <Divider/>
             <div className="flex space-x-4 items-center">
                 <h6 className="w-full">Zaplanowane spotkania</h6>
@@ -145,7 +146,6 @@ const MeetingsWrapper = ({
                         <TableColumn>Krąg</TableColumn>
                         <TableColumn>Ulica</TableColumn>
                         <TableColumn>Miasto</TableColumn>
-                        <TableColumn>Akcje</TableColumn>
                     </TableHeader>
                     <TableBody 
                         emptyContent={"Brak zakończonych spotkań"}
@@ -176,23 +176,20 @@ const MeetingsWrapper = ({
                                     <TableCell>
                                         {city?.name}
                                     </TableCell>
-                                    <TableCell>
-                                        {" "}
-                                    </TableCell>
                                 </TableRow>
                             )
                         })}
                     </TableBody>
                 </Table>
             </div>
-            <pre>
+            {/* <pre>
             {JSON.stringify(completedOrArchivedMeetings,null,2)}            
             </pre>
             <Divider/>
             {JSON.stringify(meetings,null,2)}
             {JSON.stringify(countries,null,2)}
             {JSON.stringify(regions,null,2)}
-            {JSON.stringify(cities,null,2)}
+            {JSON.stringify(cities,null,2)} */}
         </main>
      );
 }
