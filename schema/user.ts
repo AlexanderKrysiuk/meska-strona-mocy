@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-const name = z.string().optional()
+const name = z.string().optional().nullable()
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const newPassword = z.string()
 .min(8, "Hasło musi mieć co najmniej 8 znaków" )

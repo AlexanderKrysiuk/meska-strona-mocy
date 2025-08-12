@@ -4,7 +4,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { useCurrentUser } from "@/hooks/user";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { ModeratorItems } from "./user-menu";
+import { AllItems, ModeratorItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
@@ -28,8 +28,20 @@ const Header = () => {
                     </Link>
                 </NavbarBrand>
             </NavbarContent>
-            <NavbarContent className="lg:hidden">
-
+            <NavbarContent className="hidden lg:flex items-center">
+                {AllItems.map((item)=>(
+                <NavbarItem 
+                    isActive={pathname.startsWith(item.href)}
+                    key={item.title}
+                >
+                        <Link
+                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            href={item.href}
+                        >
+                            {item.title}
+                        </Link>
+                </NavbarItem>
+                ))}
             </NavbarContent>
             <NavbarContent justify="end">
                 <NavbarItem>
@@ -107,27 +119,42 @@ const Header = () => {
                         <Divider/>
                     </NavbarMenuItem>
                 )}
-                {user?.role === Role.Moderator || user?.role === Role.Admin && 
+                {[Role.Admin, Role.Moderator].includes(user?.role as Role) && (
                     <div>
                         <span className="text-sm text-foreground-500">
                             Moderator
                         </span>
-                        {ModeratorItems.map((item)=>(
-                            <NavbarMenuItem
-                                key={item.title}
-                            >
-                                <Link
-                                    href={item.href}
-                                    color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                                    className="flex gap-2 hover:primary transition-colors duration-400"
+                        <div className="space-y-4">
+                            {ModeratorItems.map((item)=>(
+                                <NavbarMenuItem
+                                    key={item.title}
                                 >
-                                    {item.icon} {item.title}
-                                </Link>
-                            </NavbarMenuItem>
-                        ))}
+                                    <Link
+                                        href={item.href}
+                                        color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                                        className="flex gap-2 hover:primary transition-colors duration-400"
+                                    >
+                                        {item.icon} {item.title}
+                                    </Link>
+                                </NavbarMenuItem>
+                            ))}
+                        </div>
                         <Divider/>
                     </div>
-                }
+                )}
+                {AllItems.map((item)=>(
+                    <NavbarMenuItem
+                        isActive={pathname.startsWith(item.href)}
+                        key={item.title}
+                    >
+                        <Link
+                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            href={item.href}
+                        >
+                            {item.title}
+                        </Link>
+                    </NavbarMenuItem>
+                ))}
                 <NavbarMenuItem>
                     {user ? 
                         <Link

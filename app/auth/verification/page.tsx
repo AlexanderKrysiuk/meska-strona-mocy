@@ -1,29 +1,23 @@
-import { GenerateVerificationToken } from "@/actions/auth"
-import { NewPasswordCard, TokenExpired, TokenNotFound } from "@/components/auth/verification"
-import { sendVerificationEmail } from "@/lib/nodemailer"
-import { prisma } from "@/lib/prisma"
+"use server"
+import { CheckLoginReturnUser } from "@/actions/auth"
+import { GetVerificationToken } from "@/actions/tokens"
+import { NewPasswordCard, TokenNotValid } from "@/components/auth/verification"
+import { redirect } from "next/navigation"
 
 const VerificationPage = async ({
     searchParams
 } : {
     searchParams : Promise<{ token: string}>
 }) => {
+    const user = await CheckLoginReturnUser()
+
+    if (user) redirect("/")
+
     const { token } = await searchParams
 
-    const verificationToken = await prisma.verificationToken.findFirst({
-        where: { id: token }
-    })
+    const verificationToken = await GetVerificationToken(token)
 
-    if (!verificationToken) return <TokenNotFound/>
-
-    if (verificationToken.expires <= new Date()) {
-        await prisma.verificationToken.delete({
-            where: { id: verificationToken.id }
-        })
-        const newToken = await GenerateVerificationToken(verificationToken.email)
-        await sendVerificationEmail(newToken)
-        return <TokenExpired/>
-    }
+    if (!verificationToken || verificationToken.expires <= new Date()) return <TokenNotValid/>
 
     return <NewPasswordCard
         id={verificationToken.id}
