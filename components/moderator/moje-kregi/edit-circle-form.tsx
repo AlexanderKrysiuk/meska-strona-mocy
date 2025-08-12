@@ -72,10 +72,11 @@ const EditCircleForm = ({
     return (
         <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
-                {/* <Divider/>
-                {JSON.stringify(watch(),null,2)}<br/>
-                Valid: {JSON.stringify(isValid,null,2)}<br/>
-                Dirty: {JSON.stringify(isDirty,null,2)}<br/>
+                {/* <pre>
+                    {JSON.stringify(watch(),null,2)}<br/>
+                    Valid: {JSON.stringify(isValid,null,2)}<br/>
+                    Dirty: {JSON.stringify(isDirty,null,2)}<br/>
+                </pre>
                 <Divider/> */}
                 <Input
                     label="Nazwa grupy"
