@@ -6,7 +6,6 @@ import Footer from "@/components/footer";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { Providers } from "./providers";
-import { cookies } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,13 +29,10 @@ export default async function RootLayout({
 }>) {
   const session = await auth()
 
-  const cookieStore = cookies();
-  const theme = (await cookieStore).get("theme")?.value || "dark";
-
   return (
     <SessionProvider session={session}>
-      <html lang="en" className={theme} style={{ colorScheme: theme }}>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+      <html lang="en" suppressHydrationWarning>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>          
           <main className="flex-grow">
             <Providers>
               <Header/>

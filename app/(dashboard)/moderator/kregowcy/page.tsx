@@ -18,7 +18,7 @@ const MycirclesPage = async () => {
 
     const circleIds = circles.map(circle => circle.id);
 
-    const Memberships = await prisma.circleMembership.findMany({
+    const memberships = await prisma.circleMembership.findMany({
         where: {
             circleId: {
                 in: circleIds
@@ -26,7 +26,7 @@ const MycirclesPage = async () => {
         }
     })
     
-    const usersIds = Memberships.map(membership => membership.userId)
+    const usersIds = memberships.map(membership => membership.userId)
 
     const users = await prisma.user.findMany({
         where: {
@@ -35,7 +35,9 @@ const MycirclesPage = async () => {
             }
         },
         select: {
-            name: true
+            id: true,
+            name: true,
+            email: true
         }
     })
 
@@ -45,9 +47,9 @@ const MycirclesPage = async () => {
         <pre>
             <CircleMembersWrapper
                 users={users}
-            />
-            KRĘGOWCY<br/>
-            {JSON.stringify(users,null,2)}          
+                memberships={memberships}
+                circles={circles}
+            />         
         </pre>
     )
 }
