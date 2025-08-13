@@ -2,10 +2,8 @@
 
 import { CheckLoginOrRedirect } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
-import MycirclesWrapper from "./wrapper";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
-import { Divider } from "@heroui/react";
 import CircleMembersWrapper from "./wrapper";
 
 const MycirclesPage = async () => {
