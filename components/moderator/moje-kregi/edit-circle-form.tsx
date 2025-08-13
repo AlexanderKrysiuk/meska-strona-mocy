@@ -129,7 +129,7 @@ const EditCircleForm = ({
                     placeholder="Tortuga 13/7"
                     variant="bordered"
                     type="text"
-                    value={watch("street") || null!}
+                    value={watch("street") || ""}
                     onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
                     isClearable
                     isDisabled={!circle || isSubmitting}
