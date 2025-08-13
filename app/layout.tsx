@@ -6,6 +6,7 @@ import RootWrapper from "@/components/root-wraper";
 import Footer from "@/components/footer";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
+import { cookies } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth()
+
   return (
     <SessionProvider session={session}>
       <html lang="en">

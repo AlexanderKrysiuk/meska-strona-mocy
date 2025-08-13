@@ -15,7 +15,7 @@ const DashboadLayout = ({
     const pathname = usePathname()
     return ( 
         <main className="h-full lg:grid lg:grid-cols-5">
-            <div className="hidden lg:block lg:col-span-1 border-r">
+            <div className="hidden lg:block lg:col-span-1 border-r border-foreground-200">
                 <Listbox
                     className="pr-0"
                     aria-label="Dashboard Menu"

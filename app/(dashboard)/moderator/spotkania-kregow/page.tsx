@@ -2,7 +2,6 @@
 
 import { CheckLoginOrRedirect } from "@/actions/auth";
 import { prisma } from "@/lib/prisma";
-import { Divider } from "@heroui/divider";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import MeetingsWrapper from "./wrapper";
@@ -35,21 +34,13 @@ const MeetingsPage = async () => {
     const regions = await prisma.region.findMany()
     const cities = await prisma.city.findMany()
 
-    return  (
-        <div>
-            <MeetingsWrapper 
+    return  <MeetingsWrapper 
                 circles={circles} 
                 meetings={meetings} 
                 countries={countries} 
                 regions={regions} 
                 cities={cities}            
             />
-            <Divider/>
-            <pre>{JSON.stringify(meetings,null,2)}</pre>
-            <Divider/>
-            <pre>{JSON.stringify(circles,null,2)}</pre>    
-        </div>
-    )
 }
  
 export default MeetingsPage;

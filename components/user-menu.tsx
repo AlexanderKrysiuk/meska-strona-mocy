@@ -13,9 +13,9 @@ export const AllItems = [
 
 export const ModeratorItems = [
     {
-        href: "/moderator/moje-kregi",
+        href: "/moderator/kregowcy",
         icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
-        title: "Moje kręgi"
+        title: "kręgowcy"
     },
     {
         href: "/moderator/ustawienia-kregow",
