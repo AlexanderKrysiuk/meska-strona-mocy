@@ -55,7 +55,6 @@ const EditCircleForm = ({
         addToast({
             title: result.message,
             color: result.success ? "success" : "danger",
-            variant: "bordered"
         })
 
         if (result.errors) {

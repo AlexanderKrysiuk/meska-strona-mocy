@@ -1,5 +1,6 @@
 "use client"
 
+import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
 import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { Circle, CircleMembership, User } from "@prisma/client";
@@ -44,6 +45,7 @@ const CircleMembersWrapper = ({
             <Divider/>
             <div className="flex space-x-4 items-center">
                 <h6 className="w-full">Kręgowcy</h6>
+                <AddCircleMemberModal/>
             </div>
             <div className="w-full overflow-x-auto p-2">
                 <Table

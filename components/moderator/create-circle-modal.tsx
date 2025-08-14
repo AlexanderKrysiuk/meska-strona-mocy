@@ -3,9 +3,9 @@
 import { CreateCircle } from "@/actions/circle";
 import { CreateCircleSchema } from "@/schema/circle";
 //import { finalSlugify, liveSlugify } from "@/utils/slug";
-import { faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, addToast, useDisclosure } from "@heroui/react";
+import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -17,31 +17,21 @@ const CreateCircleModal = () => {
     
     type FormFields = z.infer<typeof CreateCircleSchema>
 
-    const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormFields>({
+    const { handleSubmit, watch, setValue, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateCircleSchema)
     })
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        try {
-            const result = await CreateCircle(data)
+        const result = await CreateCircle(data)
 
-            addToast({
-                title: result.message,
-                color: result.success ? "success" : "danger",
-                variant: "bordered"
-            })
+        addToast({
+            title: result.message,
+            color: result.success ? "success" : "danger",
+        })
 
-            if (result.success) {
-                router.refresh()
-                onClose()
-            }
-            
-        } catch {
-            addToast({
-                title: "Wystąpił nieznany błąd",
-                color: "danger",
-                variant: "bordered"
-            })
+        if (result.success) {
+            router.refresh()
+            onClose()
         }
     }
 
@@ -49,7 +39,7 @@ const CreateCircleModal = () => {
         <main>
             <Button
                 color="primary"
-                startContent={<FontAwesomeIcon icon={faUserPlus}/>}
+                startContent={<FontAwesomeIcon icon={faCirclePlus}/>}
                 className="text-white"
                 onPress={onOpen}
             >
@@ -61,59 +51,45 @@ const CreateCircleModal = () => {
                 placement="center"
             >
                 <ModalContent>
-                    <ModalHeader>Nowa grupa</ModalHeader>
+                    <ModalHeader>Nowy krąg</ModalHeader>
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
-                            <Input {...register("name")}
-                                label="Nazwa grupy"
+                            <Input
+                                label="Nazwa kręgu"
                                 labelPlacement="outside"
                                 type="text"
                                 placeholder="Załoga Czarnej Perły"
                                 variant="bordered"
+                                value={watch("name")}
+                                onValueChange={(value) => setValue("name", value, {shouldValidate:true})}
                                 isClearable
+                                isRequired
                                 isDisabled={isSubmitting}
-                                isInvalid={!!errors.name || !!errors.root}
+                                isInvalid={!!errors.name}
                                 errorMessage={errors.name?.message}
                             />
-                            <Input {...register("maxMembers", {valueAsNumber: true})}
+                            <NumberInput
                                 label="Maksymalna liczba uczestników"
                                 labelPlacement="outside"
-                                type="number"
+                                variant="bordered"
                                 placeholder="11"
-                                variant="bordered"
-                                min={1}
-                                isDisabled={isSubmitting}
-                                isInvalid={!!errors.maxMembers || !!errors.root}
-                                errorMessage={errors.maxMembers?.message} 
-                            />
-                            {/*<Input {...register("slug")}
-                                label="Unikalny Odnośnik"
-                                labelPlacement="outside"
-                                type="text"
-                                placeholder="zaloga-czarnej-perly"
-                                description="Ten odnośnik będzie częścią adresu URL Twojej grupy (np. meska-strona-mocy.pl/meskie-kregi/nazwa-grupy). Użyj krótkiej, łatwej do zapamiętania nazwy bez polskich znaków. Odnośnik powinien być unikalny."
-                                variant="bordered"
-                                value={watch("slug")}
-                                onValueChange={(value) => setValue("slug", liveSlugify(value))}
-                                onBlur={(event) => {setValue("slug", finalSlugify(event.target.value))}}
+                                minValue={1}
+                                maxValue={15}
+                                formatOptions={{ maximumFractionDigits: 0 }}
+                                value={watch("maxMembers")}
+                                onValueChange={(value) => setValue("maxMembers", value, {shouldValidate:true})}
                                 isClearable
+                                isRequired
                                 isDisabled={isSubmitting}
-                                isInvalid={!!errors.slug || !!errors.root}
-                                errorMessage={errors.slug?.message}
-                            />*/}
-                            {errors.root && 
-                                <Alert
-                                    title={errors.root.message}
-                                    variant="bordered"
-                                    color="danger"
-                                />
-                            }
+                                isInvalid={!!errors.maxMembers}
+                                errorMessage={errors.maxMembers?.message}
+                            />
                         </ModalBody>
                         <ModalFooter>
                             <Button
                                 type="submit"
                                 color="primary"
-                                isDisabled={isSubmitting || !watch("name") || !watch("maxMembers") || Object.keys(errors).length > 0}
+                                isDisabled={isSubmitting || !isValid}
                                 isLoading={isSubmitting}
                             >
                                 {isSubmitting ? "Przetwarzanie..." : "Utwórz nowy krąg"}
