@@ -15,7 +15,7 @@ const CircleMembersWrapper = ({
     memberships: CircleMembership[]
     circles: Circle[]
 }) => {
-    const [circleId, setCircleId] = useState<string | null>(null)
+    const [circleId, setCircleId] = useState<string>()
 
     const filteredUsers = users.filter(user => {
         const membership = memberships.find(m => m.userId === user.id);
@@ -45,7 +45,10 @@ const CircleMembersWrapper = ({
             <Divider/>
             <div className="flex space-x-4 items-center">
                 <h6 className="w-full">Kręgowcy</h6>
-                <AddCircleMemberModal/>
+                <AddCircleMemberModal
+                    defaultCircleId={circleId}
+                    circles={circles}
+                />
             </div>
             <div className="w-full overflow-x-auto p-2">
                 <Table

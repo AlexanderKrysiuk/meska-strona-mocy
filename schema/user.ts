@@ -1,5 +1,6 @@
 import * as z from 'zod'
 
+const circleId = z.string().uuid()
 const name = z.string().optional().nullable()
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const newPassword = z.string()
@@ -30,5 +31,11 @@ export const NewPasswordSchema = z.object({
 })
 
 export const ResetPasswordSchema = z.object({
+    email
+})
+
+export const ManualAddUserToCircle = z.object({
+    circleId,
+    name,
     email
 })
