@@ -3,7 +3,7 @@
 import { ManualAddUserToCircle } from "@/schema/user"
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, Form, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, useDisclosure } from "@heroui/react"
+import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle } from "@prisma/client"
 import { useEffect } from "react"
@@ -22,7 +22,7 @@ const AddCircleMemberModal = ({
     type FormFields = z.infer<typeof ManualAddUserToCircle>
     const {isOpen, onOpen, onClose} = useDisclosure()
     
-    const { handleSubmit, watch, setValue } = useForm<FormFields>({
+    const { handleSubmit, watch, setValue, formState: {errors, isSubmitting, isValid} } = useForm<FormFields>({
         resolver: zodResolver(ManualAddUserToCircle)
     })
 
@@ -47,9 +47,9 @@ const AddCircleMemberModal = ({
                 scrollBehavior="outside"
             >
                 <ModalContent>
-                    <pre>
+                    {/* <pre>
                         {JSON.stringify(watch(),null,2)}
-                    </pre>
+                    </pre> */}
                     <ModalHeader>Dodaj nowego użytkownika</ModalHeader>
                     <Form onSubmit={handleSubmit(()=>{})}>
                         <ModalBody className="w-full">
@@ -68,7 +68,45 @@ const AddCircleMemberModal = ({
                             >
                                 {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
                             </Select>
+                            <Input
+                                label="Imię i nazwisko"
+                                labelPlacement="outside"
+                                type="text"
+                                value={watch("name")!}
+                                onValueChange={(value) => setValue("name", value, {shouldValidate:true})}
+                                placeholder="Jack Sparrow"
+                                variant="bordered"
+                                isClearable
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.name}
+                                errorMessage={errors.name?.message}
+                            />
+                            <Input
+                                label="Email"
+                                labelPlacement="outside"
+                                type="email"
+                                autoComplete="email"
+                                value={watch("email")}
+                                onValueChange={(value) => setValue("email", value, {shouldValidate:true})}
+                                placeholder="jack.sparrow@piratebay.co.uk"
+                                variant="bordered"
+                                isClearable
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.email}
+                                errorMessage={errors.email?.message}
+                            />
                         </ModalBody>
+                        <ModalFooter>
+                            <Button
+                                type="submit"
+                                color="primary"
+                                isDisabled={isSubmitting || !isValid}
+                                isLoading={isSubmitting}
+                            >
+                                {isSubmitting ? "Przetwarzanie..." : "Dodaj nowego kręgowca"}
+                            </Button>
+                        </ModalFooter>
                     </Form>
                 </ModalContent>
             </Modal>

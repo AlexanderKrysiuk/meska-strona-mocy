@@ -36,13 +36,13 @@ const RegisterForm = () => {
                 labelPlacement="outside"
                 type="text"
                 autoComplete="name"
-                value={watch("name") ?? undefined}
+                value={watch("name")!}
                 onValueChange={(value) => setValue("name", value || null, {shouldValidate: true})}
                 placeholder="Jack Sparrow"
                 variant="bordered"
                 isClearable
                 isDisabled={isSubmitting}
-                isInvalid={!!errors.name || !!errors.root}
+                isInvalid={!!errors.name}
                 errorMessage={errors.name?.message}
             />
             <Input
@@ -57,7 +57,7 @@ const RegisterForm = () => {
                 isClearable
                 isRequired
                 isDisabled={isSubmitting}
-                isInvalid={!!errors.email || !!errors.root}
+                isInvalid={!!errors.email}
                 errorMessage={errors.email?.message}
             />
             <Button
