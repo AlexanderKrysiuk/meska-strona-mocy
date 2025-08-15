@@ -6,36 +6,47 @@ import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, 
 import { Circle, CircleMembership, User } from "@prisma/client";
 import { useState } from "react";
 
+type CirclesWithMembers = (Circle & {
+    members: (CircleMembership & {
+        user: Pick<User, "id" | "name" | "email">
+    })[]
+})[]  
+
 const CircleMembersWrapper = ({
-    users,
-    memberships,
-    circles
+    circlesWithMembers
 } : {
-    users: Partial<User>[]
-    memberships: CircleMembership[]
-    circles: Circle[]
+    circlesWithMembers: CirclesWithMembers
 }) => {
     const [circleId, setCircleId] = useState<string>()
 
-    const filteredUsers = users.filter(user => {
-        const membership = memberships.find(m => m.userId === user.id);
-        return !circleId || membership?.circleId === circleId;
-    });
-    
+    // Wszystkie memberships spłaszczone do listy użytkowników z info o kręgu
+    const allMembers = circlesWithMembers.flatMap(circle =>
+        circle.members.map(m => ({
+            membershipId: m.id,       // <- używamy id łącznika
+            ...m.user,
+            circleName: circle.name,
+            circleId: circle.id
+        }))
+    )  
+
+    // Filtrowanie po wybranym kręgu
+    const filteredMembers = circleId
+        ? allMembers.filter(m => m.circleId === circleId)
+        : allMembers;    
 
     return (
         <main className="p-4 space-y-4">
             <div className="flex space-x-4 items-center">
                 <Select
                     label="Krąg"
-                    items={circles}
+                    items={circlesWithMembers}
                     placeholder="Wybierz krąg"
                     variant="bordered"
                     selectedKeys={[circleId!]}
                     onSelectionChange={(keys) => {
                         setCircleId(Array.from(keys)[0] as string)
                     }}
-                    isDisabled={!circles}
+                    isDisabled={!circlesWithMembers}
                     hideEmptyContent
                 >
                     {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
@@ -47,7 +58,7 @@ const CircleMembersWrapper = ({
                 <h6 className="w-full">Kręgowcy</h6>
                 <AddCircleMemberModal
                     defaultCircleId={circleId}
-                    circles={circles}
+                    circles={circlesWithMembers}
                 />
             </div>
             <div className="w-full overflow-x-auto p-2">
@@ -60,23 +71,18 @@ const CircleMembersWrapper = ({
                         <TableColumn>Krąg</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"Brak kręgowców"}>
-                        {filteredUsers.map((user) => {
-                            const membership = memberships.find(m => m.userId === user.id)
-                            const circle = circles.find(c => c.id === membership?.circleId)
-                            return (
-                                <TableRow key={user.id}>
-                                    <TableCell>{user.name || "Brak danych"}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>{circle?.name}</TableCell>
-                                </TableRow>
-                            )
-                        })}
+                        {filteredMembers.map((member) => (
+                            <TableRow key={member.membershipId}>
+                                <TableCell>{member.name || "Brak danych"}</TableCell>
+                                <TableCell>{member.email}</TableCell>
+                                <TableCell>{member.circleName}</TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
             </div>
             <pre>
-                USERS:{JSON.stringify(users,null,2)}
-                CIRCLES: {JSON.stringify(circles,null,2)}
+                {JSON.stringify(circlesWithMembers,null,2)}
             </pre>
         </main>
     );
