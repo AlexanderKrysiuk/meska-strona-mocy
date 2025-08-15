@@ -2,6 +2,7 @@
 
 import ResetPasswordEmail from "@/components/emails/ResetPassword"
 import WelcomeEmail from "@/components/emails/Welcome"
+import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
 import { resend } from "@/lib/resend"
 import { VerificationToken } from "@prisma/client"
 
@@ -43,6 +44,27 @@ export const SendResetPasswordEmail = async (token: VerificationToken) => {
         return {
             success: false,
             message: "Nie wysłano e-maila resetującego hasło"
+        }
+    }
+}
+
+export const SendWelcomeToCircleEmail = async (email:string, circleName:string, name?:string) => {
+    try {
+        await resend.emails.send({
+            from: "info@meska-strona-mocy.pl",
+            to: email,
+            subject: `Witamy w kręgu - ${circleName}`,
+            react: WelcomeToCircleEmail({name, circleName})
+        })
+        return {
+            success: true,
+            message: "Wysłano e-mail zapraszający do kręgu"
+        }
+    } catch (error) {
+        console.error("SendWelcomeToCircleEmail", error)
+        return {
+            success: false,
+            message: "Nie wysłano maila zapraszającego"
         }
     }
 }

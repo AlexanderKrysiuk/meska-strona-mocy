@@ -1,13 +1,15 @@
 "use client"
 
-import { ManualAddUserToCircle } from "@/schema/user"
+import { AddNewUserToCircle } from "@/actions/user"
+import { AddUserToCircle } from "@/schema/user"
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, useDisclosure } from "@heroui/react"
+import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle } from "@prisma/client"
+import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
 
@@ -19,16 +21,33 @@ const AddCircleMemberModal = ({
     defaultCircleId?: string
     circles: Circle[]
 }) => {
-    type FormFields = z.infer<typeof ManualAddUserToCircle>
+    type FormFields = z.infer<typeof AddUserToCircle>
+
+    const router = useRouter()
+
     const {isOpen, onOpen, onClose} = useDisclosure()
     
     const { handleSubmit, watch, setValue, formState: {errors, isSubmitting, isValid} } = useForm<FormFields>({
-        resolver: zodResolver(ManualAddUserToCircle)
+        resolver: zodResolver(AddUserToCircle)
     })
 
     useEffect(() => {
         setValue("circleId", defaultCircleId!)
     }, [defaultCircleId, setValue, isOpen])
+
+    const submit: SubmitHandler<FormFields> = async(data) => {
+        const result = await AddNewUserToCircle(data)
+
+        addToast({
+            title: result.message,
+            color: result.success ? "success" : "danger"
+        })
+
+        if (result.success) {
+            router.refresh()
+            onClose()
+        }
+    }
 
     return (
         <main>
@@ -51,7 +70,7 @@ const AddCircleMemberModal = ({
                         {JSON.stringify(watch(),null,2)}
                     </pre> */}
                     <ModalHeader>Dodaj nowego użytkownika</ModalHeader>
-                    <Form onSubmit={handleSubmit(()=>{})}>
+                    <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
                             <Select
                                 label="Krąg"

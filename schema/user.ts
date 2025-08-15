@@ -34,8 +34,6 @@ export const ResetPasswordSchema = z.object({
     email
 })
 
-export const ManualAddUserToCircle = z.object({
-    circleId,
-    name,
-    email
+export const AddUserToCircle = RegisterSchema.extend({
+    circleId
 })
