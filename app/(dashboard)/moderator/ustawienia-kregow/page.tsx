@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma";
 import CircleSettingsWrapper from "./wrapper";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
+import { PermissionGate } from "@/utils/gate";
 
 const CircleSettingsPage = async () => {
     const user = await CheckLoginOrRedirect()
 
-    if (user.role !== Role.Admin && user.role !== Role.Moderator ) return redirect("/")
+    if (!PermissionGate(user.roles, [Role.Moderator])) return redirect("/")
     
     const circles = await prisma.circle.findMany({
         where: {

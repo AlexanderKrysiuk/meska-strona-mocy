@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import MeetingsWrapper from "./wrapper";
+import { PermissionGate } from "@/utils/gate";
 
 const MeetingsPage = async () => {
     const user = await CheckLoginOrRedirect()
 
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return redirect("/")
+    if (!PermissionGate(user.roles, [Role.Moderator])) return redirect("/")
 
     const circles = await prisma.circle.findMany({
         where: {

@@ -8,6 +8,7 @@ import { AllItems, ModeratorItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
+import { PermissionGate } from "@/utils/gate";
 
 const Header = () => {
     const user = useCurrentUser()
@@ -61,7 +62,7 @@ const Header = () => {
                                 />
                             </DropdownTrigger>
                             <DropdownMenu>
-                                {user.role === Role.Moderator || user.role === Role.Admin ? (
+                                {PermissionGate(user.roles, [Role.Moderator]) ? (
                                     <DropdownSection
                                         title="Moderator"
                                         showDivider
@@ -119,7 +120,7 @@ const Header = () => {
                         <Divider/>
                     </NavbarMenuItem>
                 )}
-                {[Role.Admin, Role.Moderator].includes(user?.role as Role) && (
+                {PermissionGate(user?.roles, [Role.Moderator]) && (
                     <div>
                         <span className="text-sm text-foreground-500">
                             Moderator

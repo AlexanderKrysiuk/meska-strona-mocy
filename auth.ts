@@ -13,9 +13,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {},
       authorize: async (credentials) => {
           const { email, password } = credentials as { email:string, password: string} 
-          const user = await prisma.user.findUnique({ where: { email } });
+          const user = await prisma.user.findUnique({ 
+            where: { email },
+            include: { roles: true }
+          });
           if (!user || !user.password || !user.emailVerified || !await bcrypt.compare(password, user.password)) return null
-          return { id: user.id, email: user.email , name: user.name, image: user.image, role: user.role ?? undefined}  // Dodajemy rolę
+          return { 
+            id: user.id, 
+            email: user.email, 
+            name: user.name,
+            image: user.image,
+            roles: user.roles.map(r => r.role)
+          }  // Dodajemy rolę
       }
     })
   ],
@@ -26,16 +35,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         // Przypisujemy rolę z użytkownika do tokenu
-        token.role = user.role
+        token.roles = user.roles as Role[]
       }
       //console.log("TOKEN:",token)
       return token
     },
     async session({ session, token }) {
       if (token.sub) session.user.id = token.sub
-      if (token?.role) {
+      if (token?.roles) {
         // Przypisujemy rolę z tokenu do sesji
-        session.user.role = token.role as Role; // Przypisanie roli do sesji
+        session.user.roles = token.roles as Role[]; // Przypisanie roli do sesji
 
       }
       //console.log("SESSION TOKEN:",token)

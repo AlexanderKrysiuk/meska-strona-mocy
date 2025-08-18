@@ -6,6 +6,7 @@ import { CheckLoginReturnUser } from "./auth"
 import { CircleMeetingStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { GetCircleById } from "./circle"
+import { PermissionGate } from "@/utils/gate"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
     const user = await CheckLoginReturnUser()
@@ -15,7 +16,7 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         message: "Musisz być zalogowanym by utworzyć spotkanie"
     }
 
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+    if (!PermissionGate(user.roles, [Role.Moderator])) return {
         success: false,
         message: "Brak uprawnień do dodania spotkania"
     }
@@ -27,7 +28,7 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         message: "Dana grupa nie istnieje"
     }
 
-    if (user.role === Role.Moderator && user.id !== circle.moderatorId) return {
+    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== circle.moderatorId) return {
         success: false,
         message: "Brak uprawień do dodania spotkania"
     }
@@ -115,7 +116,7 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
         message: "Musisz być zalogowanym by utworzyć spotkanie"
     }
 
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+    if (!PermissionGate(user.roles, [Role.Moderator])) return {
         success: false,
         message: "Brak uprawnień do edycji spotkania"
     }
@@ -127,7 +128,7 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
         message: "Dane spotkanie nie istnieje"
     }
 
-    if (user.role === Role.Moderator && user.id !== meeting.moderatorId) return {
+    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== meeting.moderatorId) return {
         success: false,
         message: "Brak uprawień do edycji spotkania"
     }
@@ -263,7 +264,7 @@ export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema
         message: "Musisz być zalogowanym by zatwierdzić spotkanie"
     }
 
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+    if (!PermissionGate(user.roles, [Role.Moderator])) return {
         success: false,
         message: "Brak uprawnień do zatwierdzenia spotkania"
     }
@@ -275,7 +276,7 @@ export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema
         message: "Dana spotkanie nie istnieje"
     }
 
-    if (user.role === Role.Moderator && user.id !== meeting.moderatorId) return {
+    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== meeting.moderatorId) return {
         success: false,
         message: "Brak uprawień do zatwierdzenia spotkania"
     }

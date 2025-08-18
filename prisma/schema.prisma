@@ -20,7 +20,7 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
-  role          Role?
+  roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]
   sessions      Session[]
   // Optional for WebAuthn support
@@ -35,6 +35,15 @@ model User {
 
   meetings        CircleMeeting[]
   moderatedMeetings CircleMeeting[] @relation("Moderator")
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  role   Role   // enum
+
+  @@unique([userId, role]) // użytkownik nie może mieć tej samej roli dwa razy
 }
 
 enum Role {

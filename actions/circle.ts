@@ -9,6 +9,7 @@ import { ActionStatus } from "@/types/enums"
 import { parse } from "path"
 import { customAlphabet } from 'nanoid'
 import { finalSlugify, liveSlugify } from "@/utils/slug"
+import { PermissionGate } from "@/utils/gate"
 
 export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => {
     const user = await CheckLoginReturnUser()
@@ -18,7 +19,7 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
         message: "Musisz być zalogowanym by utworzyć grupę"
     }
 
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+    if (!PermissionGate(user.roles, [Role.Moderator])) return {
         status: ActionStatus.Error,
         message: "Brak uprawnień do dodania grupy"
     }
@@ -65,7 +66,7 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Musisz być zalogowanym aby edytować grupę"
     }
 
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
+    if (!PermissionGate(user.roles, [Role.Moderator])) return {
         success: false,
         message: "Brak uprawień do edycji grupy"
     }
@@ -77,7 +78,7 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Dana grupa nie istnieje"
     }
 
-    if (user.role === Role.Moderator && user.id !== circle.moderatorId) return {
+    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== circle.moderatorId) return {
         success: false,
         message: "Brak uprawnień do edycji grupy"
     }
