@@ -42,14 +42,14 @@ export function MeetingInvite({
   return (
     <Html>
       <Head />
-      <Preview>Zaproszenie na spotkanie w grupie {circleName}</Preview>
+      <Preview>Zaproszenie na spotkanie kręgu {circleName}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Header title={`Zaproszenie na spotkanie w ${circleName}`} />
 
           <Section>
             <Text style={paragraph}>
-              Cześć {userName}, zapraszam Cię na nowe spotkanie w grupie <strong>{circleName}</strong>!
+              Cześć {userName}, zapraszam Cię na nowe spotkanie kręgu <strong>{circleName}</strong>!
             </Text>
 
             <Text style={paragraph}>
@@ -80,7 +80,7 @@ export function MeetingInvite({
             )}
 
             <Text style={{ ...paragraph, fontSize: "14px", color: "#555" }}>
-              Jeśli nie możesz wziąć udziału, prosimy o informację moderatorowi.
+              Jeśli nie możesz wziąć udziału, prosimy o przekazanie tej informacji moderatorowi.
             </Text>
           </Section>
 
