@@ -2,9 +2,9 @@
 
 import { DeleteUserFromCircle } from "@/actions/user";
 import { DeleteUserFromCircleSchema } from "@/schema/user";
-import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faTrashCan, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea, addToast, useDisclosure } from "@heroui/react";
+import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea, Tooltip, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -16,7 +16,7 @@ const DeleteCircleMemberModal = ({
     circleName
 } : {
     membershipId: string
-    memberName: string
+    memberName?: string | null
     circleName: string | null
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
@@ -47,15 +47,21 @@ const DeleteCircleMemberModal = ({
 
     return (
         <main>
-            <Button
+            <Tooltip
                 color="danger"
-                isIconOnly
-                radius="full"
-                variant="light"
-                onPress={onOpen}
+                placement="top"
+                content="Wyrzuć z kręgu"
             >
-                <FontAwesomeIcon icon={faXmark}/>
-            </Button>
+                <Button
+                    color="danger"
+                    isIconOnly
+                    onPress={onOpen}
+                    radius="full"
+                    variant="light"
+                >
+                    <FontAwesomeIcon icon={faTrashCan}/>
+                </Button>
+            </Tooltip>
             <Modal
                 isOpen={isOpen}
                 onClose={onClose}
