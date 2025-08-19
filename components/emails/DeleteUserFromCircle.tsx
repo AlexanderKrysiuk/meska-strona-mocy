@@ -1,4 +1,6 @@
 import { Html, Head, Preview, Body, Container, Section, Text } from "@react-email/components";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 
 export default function DeleteUserFromCircleEmail({
   name,
@@ -6,7 +8,7 @@ export default function DeleteUserFromCircleEmail({
   moderatorName,
   reason,
 }: {
-  name: string | null;
+  name?: string | null;
   circleName: string;
   moderatorName?: string | null;
   reason?: string | null;
@@ -17,9 +19,11 @@ export default function DeleteUserFromCircleEmail({
       <Preview>Zostałeś usunięty z kręgu {circleName} – Męska Strona Mocy</Preview>
       <Body style={main}>
         <Container style={container}>
+          <Header title={`Zostałeś usunięty z kręgu ${circleName}`} />
+
           <Section style={{ marginBottom: "32px" }}>
-            <Text style={heading}>
-              {name ? `Cześć, ${name}` : "Cześć"}
+            <Text style={paragraph}>
+              {name ? `Cześć, ${name}` : "Cześć"}!
             </Text>
             <Text style={paragraph}>
               Informujemy, że zostałeś usunięty z kręgu <strong>{circleName}</strong>.
@@ -34,10 +38,9 @@ export default function DeleteUserFromCircleEmail({
                 <em>Powód usunięcia:</em> {reason}
               </Text>
             )}
-            <Text style={{ ...paragraph, fontSize: "12px", color: "#888" }}>
-              Ta wiadomość jest generowana automatycznie, prosimy na nią nie odpowiadać.
-            </Text>
           </Section>
+
+          <Footer />
         </Container>
       </Body>
     </Html>
@@ -59,14 +62,8 @@ const container = {
   margin: "0 auto",
 } as const;
 
-const heading = {
-  fontSize: "20px",
-  fontWeight: "bold",
-  marginBottom: "16px",
-} as const;
-
 const paragraph = {
-  fontSize: "14px",
-  lineHeight: "20px",
-  marginBottom: "20px",
+  fontSize: "16px",
+  lineHeight: "22px",
+  marginBottom: "16px",
 } as const;

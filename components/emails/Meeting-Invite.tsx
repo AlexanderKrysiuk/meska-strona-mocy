@@ -1,5 +1,8 @@
 import React from "react";
 import { Html, Head, Preview, Body, Container, Section, Text, Img } from "@react-email/components";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
+import { Button } from "./components/Button";
 
 interface MeetingInviteProps {
   userName?: string | null;
@@ -28,24 +31,22 @@ export function MeetingInvite({
     <Html>
       <Head />
       <Preview>Zaproszenie na spotkanie w grupie {circleName}</Preview>
-      <Body style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#f4f4f5", padding: "20px" }}>
-        <Container style={{ backgroundColor: "#ffffff", padding: "25px", borderRadius: "10px", boxShadow: "0 0 10px rgba(0,0,0,0.05)" }}>
+      <Body style={main}>
+        <Container style={container}>
+          <Header title={`Zaproszenie na spotkanie w ${circleName}`} />
+
           <Section>
-            <Text style={{ fontSize: "16px" }}>
+            <Text style={paragraph}>
               Cześć {userName}, zapraszam Cię na nowe spotkanie w grupie <strong>{circleName}</strong>!
             </Text>
 
-            <Text style={{ fontSize: "16px", marginTop: "15px" }}>
-              Oto szczegóły spotkania:
-            </Text>
-
-            <Text style={{ fontSize: "16px", marginTop: "10px" }}>
+            <Text style={paragraph}>
               <strong>Data:</strong> {startTime.toLocaleString()} – {endTime.toLocaleString()}
             </Text>
-            <Text style={{ fontSize: "16px" }}>
+            <Text style={paragraph}>
               <strong>Miejsce:</strong> {street}, {city}
             </Text>
-            <Text style={{ fontSize: "16px" }}>
+            <Text style={paragraph}>
               <strong>Cena spotkania:</strong> {price.toFixed(2)} PLN
             </Text>
 
@@ -60,27 +61,41 @@ export function MeetingInvite({
                     style={{ borderRadius: "50%", marginRight: "10px" }}
                   />
                 )}
-                <Text style={{ fontSize: "16px" }}>
+                <Text style={paragraph}>
                   Spotkanie prowadzi: <strong>{moderatorName}</strong>
                 </Text>
               </Section>
             )}
 
-            <Text style={{ fontSize: "14px", marginTop: "20px", color: "#555" }}>
+            <Text style={{ ...paragraph, fontSize: "14px", color: "#555" }}>
               Jeśli nie możesz wziąć udziału, prosimy o informację moderatorowi.
             </Text>
-
-            <Text style={{ fontSize: "14px", marginTop: "10px", color: "#888" }}>
-              Do zobaczenia na spotkaniu!
-            </Text>
-
-            <Text style={{ fontSize: "16px", marginTop: "20px" }}>
-              Pozdrawiamy,<br/>
-              {moderatorName ?? "Twój zespół"}
-            </Text>
           </Section>
+
+          <Footer />
         </Container>
       </Body>
     </Html>
   );
 }
+
+const main = {
+  backgroundColor: "#121212",
+  color: "#fff",
+  fontFamily: "Arial, sans-serif",
+  padding: "40px 0",
+} as const;
+
+const container = {
+  backgroundColor: "#1e1e1e",
+  borderRadius: "8px",
+  padding: "32px",
+  maxWidth: "500px",
+  margin: "0 auto",
+} as const;
+
+const paragraph = {
+  fontSize: "16px",
+  lineHeight: "22px",
+  marginBottom: "16px",
+} as const;
