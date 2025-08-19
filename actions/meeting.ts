@@ -11,65 +11,55 @@ import { GetActiveCircleMembersByCircleID } from "./circle-membership"
 import { resend } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 
-export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
+export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
     const user = await CheckLoginReturnUser()
-
-    if (!user) return {
-        success: false,
-        message: "Musisz być zalogowanym by utworzyć spotkanie"
-    }
-
-    if (!PermissionGate(user.roles, [Role.Moderator])) return {
-        success: false,
-        message: "Brak uprawnień do dodania spotkania"
+    if (!user) return { success: false, message: "Musisz być zalogowanym by utworzyć spotkanie" }
+  
+    // Sprawdzenie uprawnień
+    if (!PermissionGate(user.roles, [Role.Moderator])) {
+        return { success: false, message: "Brak uprawnień do dodania spotkania" }
     }
 
     const circle = await GetCircleById(data.circleId)
-
-    if (!circle) return {
-        success: false,
-        message: "Dana grupa nie istnieje"
+    if (!circle) return { success: false, message: "Dana grupa nie istnieje" }
+  
+    if (user.id !== circle.moderatorId) {
+        return { success: false, message: "Brak uprawień do dodania spotkania" }
     }
-
-    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== circle.moderatorId) return {
-        success: false,
-        message: "Brak uprawień do dodania spotkania"
-    }
-
-    const activeMembers = await GetActiveCircleMembersByCircleID(circle.id) || []
-
+  
+    const activeMembers = (await GetActiveCircleMembersByCircleID(circle.id)) || []
+  
     try {
-        const overlapingMeetings = await prisma.circleMeeting.findFirst({
+         // Sprawdzenie nakładających się spotkań
+        const overlapingMeeting = await prisma.circleMeeting.findFirst({
             where: {
                 moderatorId: user.id,
                 AND: [
-                    {
-                        startTime: { lt: data.endTime }
-                    },
-                    {
-                        endTime: { gt: data.startTime }
-                    }
-                ]
-            }
+                    { startTime: { lt: data.endTime } },
+                    { endTime: { gt: data.startTime } },
+                ],
+            },
         })
-
-        if (overlapingMeetings) {
-            //addActionError(errors, "startTime", "W tym czasie masz już inne spotkanie") 
-            
+        if (overlapingMeeting) {
             return {
                 success: false,
                 message: "Nie udało się dodać spotkania",
-                errors: {
-                    startTime: ["W tym dniu masz już inne spotkanie"]
-                }
+                errors: { startTime: ["W tym dniu masz już inne spotkanie"] },
             }
         }
-
-        // Policz ile spotkań już było w tej grupie
-        const existingMeetings = await prisma.circleMeeting.count({
-            where: { circleId: data.circleId },
-        })
-        
+  
+        const existingMeetings = await prisma.circleMeeting.count({ where: { circleId: data.circleId } })
+  
+        // Przygotowanie uczestników
+        const participantData =
+            activeMembers.length > 0
+            ? activeMembers.filter(m => m.user).map(m => ({
+                user: { connect: { id: m.user.id } },
+                status: MeetingParticipantStatus.Pending,
+            }))
+            : undefined
+  
+        // Tworzenie spotkania z uczestnikami
         const meeting = await prisma.circleMeeting.create({
             data: {
                 status: CircleMeetingStatus.Scheduled,
@@ -81,25 +71,17 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
                 circleId: data.circleId,
                 moderatorId: user.id,
                 number: existingMeetings + 1,
-                ...(activeMembers.length > 0 && {
-                    participants: {
-                        create: activeMembers
-                        .filter(m => m.user)
-                        .map(member => ({
-                            user: { connect: { id: member.user.id } },
-                            status: MeetingParticipantStatus.Pending
-                        }))
-                    }
-                })
+                ...(participantData && { participants: { create: participantData } }),
             },
             include: {
                 participants: { include: { user: true } },
                 circle: true,
                 moderator: true,
-                city: true
-            }
+                city: true,
+            },
         })
-
+  
+        // Wysyłka maili w osobnym try/catch
         try {
             for (const participant of meeting.participants) {
                 await resend.emails.send({
@@ -115,28 +97,21 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
                         city: meeting.city.name,
                         price: meeting.price,
                         moderatorName: meeting.moderator?.name,
-                        moderatorAvatarUrl: meeting.moderator?.image
-                    })
+                        moderatorAvatarUrl: meeting.moderator?.image,
+                    }),
                 })
             }
         } catch (error) {
-            console.error("Błąd przy wysyłce maili:", error);
+            console.error("Błąd przy wysyłce maili:", error)
         }
-
-        return {
-            success: true,
-            message: "Pomyślnie dodano nowe spotkanie"
-        }
-
+  
+        return { success: true, message: "Pomyślnie dodano nowe spotkanie" }
     } catch (error) {
         console.error(error)
-        return {
-            success: false,
-            message: "Błąd połączenia z bazą danych"
-        }
+        return { success: false, message: "Błąd połączenia z bazą danych" }
     }
 }
-
+  
 async function RefreshMeetingsNumbering (circleId: string) {
     const meetings = await prisma.circleMeeting.findMany({
         where: {circleId: circleId},
