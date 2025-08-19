@@ -37,6 +37,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Przypisujemy rolę z użytkownika do tokenu
         token.roles = user.roles as Role[]
       }
+      if (user?.name) { token.name = user.name }
       //console.log("TOKEN:",token)
       return token
     },
@@ -47,6 +48,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.roles = token.roles as Role[]; // Przypisanie roli do sesji
 
       }
+      if (token?.name) { session.user.name = token.name }
       //console.log("SESSION TOKEN:",token)
       //console.log("SESSION:",session)
       return session

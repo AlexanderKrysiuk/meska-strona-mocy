@@ -1,5 +1,6 @@
 "use server"
 
+import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
 import ResetPasswordEmail from "@/components/emails/ResetPassword"
 import WelcomeEmail from "@/components/emails/Welcome"
 import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"

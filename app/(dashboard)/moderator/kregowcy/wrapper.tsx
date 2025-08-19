@@ -2,6 +2,7 @@
 
 import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
+import DeleteCircleMemberModal from "@/components/moderator/delete-circle-member-modal";
 import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { Circle, CircleMembership, User } from "@prisma/client";
 import { useState } from "react";
@@ -25,7 +26,8 @@ const CircleMembersWrapper = ({
             membershipId: m.id,       // <- używamy id łącznika
             ...m.user,
             circleName: circle.name,
-            circleId: circle.id
+            circleId: circle.id,
+            status: m.status
         }))
     )  
 
@@ -69,15 +71,19 @@ const CircleMembersWrapper = ({
                         <TableColumn>Imię i Nazwisko</TableColumn>
                         <TableColumn>E-mail</TableColumn>
                         <TableColumn>Krąg</TableColumn>
+                        <TableColumn>Status</TableColumn>
+                        <TableColumn>Akcje</TableColumn>
                     </TableHeader>
-                    <TableBody emptyContent={"Brak kręgowców"}>
-                        {filteredMembers.map((member) => (
-                            <TableRow key={member.membershipId}>
-                                <TableCell>{member.name || "Brak danych"}</TableCell>
-                                <TableCell>{member.email}</TableCell>
-                                <TableCell>{member.circleName}</TableCell>
+                    <TableBody emptyContent={"Brak kręgowców"} items={filteredMembers}>
+                        {(item) => (
+                            <TableRow key={item.membershipId}>
+                                <TableCell>{item.name || "Brak danych"}</TableCell>
+                                <TableCell>{item.email}</TableCell>
+                                <TableCell>{item.circleName}</TableCell>
+                                <TableCell>{item.status}</TableCell>
+                                <TableCell><DeleteCircleMemberModal membershipId={item.membershipId} memberName={item.name!} circleName={item.circleName} /></TableCell>
                             </TableRow>
-                        ))}
+                        )}
                     </TableBody>
                 </Table>
             </div>

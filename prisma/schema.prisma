@@ -179,8 +179,9 @@ model CircleMembership {
 }
 
 enum CircleMembershipStatus {
-  Candidate
-  Member
+  Active
+  Left
+  Removed
 }
 
 model Country {

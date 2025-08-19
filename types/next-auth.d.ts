@@ -9,14 +9,17 @@ declare module 'next-auth' {
       id: string
       email: string
       roles: Role[] // Dodajemy rolę, która będzie typem 'Role' z Prisma
+      name?: string | null
     } & DefaultSession['user']
   }
 
   interface User extends DefaultUser {
     roles?: Role[] // Dodajemy opcjonalne pole 'role', które będzie typu 'Role' z Prisma
+    name?: string | null
   }
 
   interface JWT {
     roles: Role[] // Dodajemy rolę do JWT
+    name?: string | null
   }
 }

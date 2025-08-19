@@ -20,7 +20,7 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
     }
 
     if (!PermissionGate(user.roles, [Role.Moderator])) return {
-        status: ActionStatus.Error,
+        success: false,
         message: "Brak uprawnień do dodania grupy"
     }
  
@@ -196,6 +196,14 @@ export const GetCircleById = async (id: string) => {
         return await prisma.circle.findUnique({ where: {id}})
     } catch(error) {
         console.error("Błąd podczas pobierania grupy:", error)
+        return null
+    }
+}
+
+export const GetCircleMembershipById = async (id:string) => {
+    try {
+        return await prisma.circleMembership.findUnique({ where: { id: id }})
+    } catch {
         return null
     }
 }

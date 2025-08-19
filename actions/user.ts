@@ -1,12 +1,16 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { AddUserToCircle, RegisterSchema } from "@/schema/user"
+import { AddUserToCircleSchema, DeleteUserFromCircleSchema, RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
 import { SendRegisterNewUserEmail, SendWelcomeToCircleEmail } from "./resend"
-import { CircleMembershipStatus } from "@prisma/client"
-import { GetCircleById } from "./circle"
+import { CircleMembershipStatus, Role } from "@prisma/client"
+import { GetCircleById, GetCircleMembershipById } from "./circle"
+import { CheckLoginReturnUser } from "./auth"
+import { PermissionGate } from "@/utils/gate"
+import { resend } from "@/lib/resend"
+import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
 
 export const GetUserByEmail = async (email:string) => {
     try {
@@ -14,6 +18,14 @@ export const GetUserByEmail = async (email:string) => {
             where: {email: email}
         })
     } catch(error) {
+        return null
+    }
+}
+
+export const GetUserByID = async (id:string) => {
+    try {
+        return await prisma.user.findUnique({where: {id: id}})
+    } catch {
         return null
     }
 }
@@ -54,7 +66,7 @@ export const RegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
     }
 }
 
-export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircle>) => {
+export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSchema>) => {
     const result = await RegisterNewUser({ email: data.email, name: data.name})
     if (!result.success) return result
 
@@ -69,7 +81,7 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircle>) =
             data: {
                 circleId: circle.id,
                 userId: user.id,
-                status: CircleMembershipStatus.Member
+                status: CircleMembershipStatus.Active
             }
         })
         await SendWelcomeToCircleEmail(user.email, circle.name, user.name ?? undefined)
@@ -83,5 +95,73 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircle>) =
             success: false,
             message: "Nie udało się dodać użytkownika do kręgu"
         }
+    }
+}
+
+export const DeleteUserFromCircle = async (data: z.infer<typeof DeleteUserFromCircleSchema>) => {
+    const user = await CheckLoginReturnUser()
+
+    if (!user) return {
+        success: false,
+        message: "Musisz być zalogowanym by usunąć użytkownika"
+    }
+
+    const membership = await GetCircleMembershipById(data.membershipId) 
+
+    if (!membership) return {
+        success: false,
+        message: "Nie znaleziono informacji o członkostwie"
+    }
+
+    const member = await GetUserByID(membership.userId)
+
+    if (!member) return {
+        success: false,
+        message: "Nie znaleziono danych o kręgowcu"
+    }
+
+    const circle = await GetCircleById(membership.circleId)
+
+    if (!circle) return {
+        success: false,
+        message: "Brak informacji o kręgu"
+    }
+
+    if (!(user.roles.includes(Role.Moderator) && circle.moderatorId === user.id)) return { 
+        success: false, 
+        message: "Brak uprawnień do usunięcia użytkownika" 
+    }
+
+    try {
+        await prisma.circleMembership.update({
+            where: { id: membership.id },
+            data: { status: CircleMembershipStatus.Removed } 
+        })
+    } catch {
+        return {
+            success: false,
+            message: "Nie udało się usunąć użytkownika z kręgu"
+        }
+    }
+
+    try {
+        await resend.emails.send({
+            from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+            to: member.email,
+            subject: `Usunięcie z kręgu - ${circle.name}`,
+            react: DeleteUserFromCircleEmail({
+                name: member.name,
+                circleName: circle.name,
+                moderatorName: user?.name,
+                reason: data.reason
+            })
+        })
+    } catch (error) {
+        console.error("Wysłanie maila:", error )
+    }
+
+    return {
+        success: true,
+        message: "Użytkownik został usunięty z kręgu"
     }
 }

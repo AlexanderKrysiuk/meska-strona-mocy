@@ -1,7 +1,7 @@
 "use client"
 
 import { AddNewUserToCircle } from "@/actions/user"
-import { AddUserToCircle } from "@/schema/user"
+import { AddUserToCircleSchema } from "@/schema/user"
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, addToast, useDisclosure } from "@heroui/react"
@@ -21,14 +21,14 @@ const AddCircleMemberModal = ({
     defaultCircleId?: string
     circles: Circle[]
 }) => {
-    type FormFields = z.infer<typeof AddUserToCircle>
+    type FormFields = z.infer<typeof AddUserToCircleSchema>
 
     const router = useRouter()
 
     const {isOpen, onOpen, onClose} = useDisclosure()
     
     const { handleSubmit, watch, setValue, formState: {errors, isSubmitting, isValid} } = useForm<FormFields>({
-        resolver: zodResolver(AddUserToCircle)
+        resolver: zodResolver(AddUserToCircleSchema)
     })
 
     useEffect(() => {

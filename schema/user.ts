@@ -1,6 +1,8 @@
 import * as z from 'zod'
 
 const circleId = z.string().uuid()
+const membershipId = z.string().uuid()
+const reason = z.string().max(500).optional().nullable()
 const name = z.string().optional().nullable()
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const newPassword = z.string()
@@ -34,6 +36,11 @@ export const ResetPasswordSchema = z.object({
     email
 })
 
-export const AddUserToCircle = RegisterSchema.extend({
+export const AddUserToCircleSchema = RegisterSchema.extend({
     circleId
+})
+
+export const DeleteUserFromCircleSchema = z.object({
+    membershipId,
+    reason
 })

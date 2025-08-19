@@ -10,9 +10,8 @@ export const authConfig = {
     providers: [],
     callbacks: {
         async session({ token, session}){
-            if (token.roles) {
-                session.user.roles = token.roles as Role[]
-              }
+            if (token?.roles) { session.user.roles = token.roles as Role[] }
+            if (token?.name) { session.user.name = token.name }
             return session
         }
       },
