@@ -20,6 +20,7 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
+  balance       Float @default(0)
   roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]
   sessions      Session[]
@@ -33,7 +34,7 @@ model User {
   
   cicrleMembership CircleMembership[]
 
-  meetings        CircleMeeting[]
+  meetings        CircleMeetingParticipant[]
   moderatedMeetings CircleMeeting[] @relation("Moderator")
 }
 
@@ -150,16 +151,40 @@ model CircleMeeting {
   moderatorId String
   moderator User @relation("Moderator", fields: [moderatorId], references: [id])
 
-  participants User[]
+  participants CircleMeetingParticipant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+
 enum CircleMeetingStatus {
   Scheduled
   Completed
   Archived
+}
+
+model CircleMeetingParticipant {
+  id         String   @id @default(uuid())
+  userId     String
+  meetingId  String
+  user       User     @relation(fields: [userId], references: [id])
+  meeting    CircleMeeting @relation(fields: [meetingId], references: [id])
+
+  status     MeetingParticipantStatus @default(Pending)
+  amountPaid Float    @default(0)
+  paymentDate DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, meetingId])
+}
+
+enum MeetingParticipantStatus {
+  Pending
+  Confirmed
+  Vacation
 }
 
 model CircleMembership {

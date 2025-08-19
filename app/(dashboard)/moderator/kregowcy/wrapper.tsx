@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react";
-import { Select, SelectItem, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Divider } from "@heroui/react";
+import { Select, SelectItem, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Divider, User as HeroUser } from "@heroui/react";
 import { Circle, CircleMembership, CircleMembershipStatus, User } from "@prisma/client";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
 import DeleteCircleMemberModal from "@/components/moderator/delete-circle-member-modal";
@@ -9,7 +9,7 @@ import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal
 
 type CirclesWithMembers = (Circle & {
     members: (CircleMembership & {
-        user: Pick<User, "id" | "name" | "email">
+        user: Pick<User, "id" | "name" | "email" | "image">
     })[]
 })[]
 
@@ -46,7 +46,7 @@ const CircleMembersWrapper = ({ circlesWithMembers }: { circlesWithMembers: Circ
                 ...m.user,
                 circleName: circle.name,
                 circleId: circle.id,
-                status: m.status
+                status: m.status,
             }))
         )
     , [circlesWithMembers]);
@@ -109,7 +109,15 @@ const CircleMembersWrapper = ({ circlesWithMembers }: { circlesWithMembers: Circ
                                 key={item.membershipId}
                                 className={item.status === CircleMembershipStatus.Active ? "" : "opacity-50"}    
                             >
-                                <TableCell>{item.name ?? "Brak danych"}</TableCell>
+                                <TableCell>
+                                    <HeroUser
+                                        avatarProps={{ 
+                                            showFallback: true,
+                                            src: item.image!
+                                        }}
+                                        name={item.name ?? "Brak danych"}
+                                    />
+                                </TableCell>
                                 <TableCell>{item.email}</TableCell>
                                 <TableCell>{item.circleName}</TableCell>
                                 <TableCell><StatusChip status={item.status}/></TableCell>

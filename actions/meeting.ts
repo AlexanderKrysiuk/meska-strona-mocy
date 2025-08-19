@@ -3,10 +3,13 @@
 import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
 import { CheckLoginReturnUser } from "./auth"
-import { CircleMeetingStatus, Role } from "@prisma/client"
+import { CircleMeetingStatus, CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { GetCircleById } from "./circle"
 import { PermissionGate } from "@/utils/gate"
+import { GetActiveCircleMembersByCircleID } from "./circle-membership"
+import { resend } from "@/lib/resend"
+import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
     const user = await CheckLoginReturnUser()
@@ -32,6 +35,8 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         success: false,
         message: "Brak uprawień do dodania spotkania"
     }
+
+    const activeMembers = await GetActiveCircleMembersByCircleID(circle.id) || []
 
     try {
         const overlapingMeetings = await prisma.circleMeeting.findFirst({
@@ -65,7 +70,7 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
             where: { circleId: data.circleId },
         })
         
-        await prisma.circleMeeting.create({
+        const meeting = await prisma.circleMeeting.create({
             data: {
                 status: CircleMeetingStatus.Scheduled,
                 startTime: data.startTime,
@@ -76,20 +81,59 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
                 circleId: data.circleId,
                 moderatorId: user.id,
                 number: existingMeetings + 1,
+                ...(activeMembers.length > 0 && {
+                    participants: {
+                        create: activeMembers
+                        .filter(m => m.user)
+                        .map(member => ({
+                            user: { connect: { id: member.user.id } },
+                            status: MeetingParticipantStatus.Pending
+                        }))
+                    }
+                })
+            },
+            include: {
+                participants: { include: { user: true } },
+                circle: true,
+                moderator: true,
+                city: true
             }
         })
-    } catch {
+
+        try {
+            for (const participant of meeting.participants) {
+                await resend.emails.send({
+                    from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+                    to: participant.user.email,
+                    subject: `Nowe spotkanie ${meeting.circle.name}`,
+                    react: MeetingInvite({
+                        userName: participant.user.name,
+                        circleName: meeting.circle.name,
+                        startTime: meeting.startTime,
+                        endTime: meeting.endTime,
+                        street: meeting.street,
+                        city: meeting.city.name,
+                        price: meeting.price,
+                        moderatorName: meeting.moderator?.name,
+                        moderatorAvatarUrl: meeting.moderator?.image
+                    })
+                })
+            }
+        } catch (error) {
+            console.error("Błąd przy wysyłce maili:", error);
+        }
+
+        return {
+            success: true,
+            message: "Pomyślnie dodano nowe spotkanie"
+        }
+
+    } catch (error) {
+        console.error(error)
         return {
             success: false,
             message: "Błąd połączenia z bazą danych"
         }
-    }
-
-    //TODO podepnij resendera i dodaj wysyłkę maili informującą o nowych spotkaniach
-
-    return {
-        success: true,
-        message: "Pomyślnie dodano nowe spotkanie"
     }
 }
 

@@ -21,7 +21,8 @@ const CircleMembersPage = async () => {
                         select: {
                             id: true,
                             name: true,
-                            email: true
+                            email: true,
+                            image: true
                         }
                     }
                 }
