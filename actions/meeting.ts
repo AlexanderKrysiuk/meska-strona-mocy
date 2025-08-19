@@ -77,7 +77,7 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
                 participants: { include: { user: true } },
                 circle: true,
                 moderator: true,
-                city: true,
+                city: { include: { region: { include: { country:true }}}}
             },
         })
   
@@ -95,6 +95,7 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
                         endTime: meeting.endTime,
                         street: meeting.street,
                         city: meeting.city.name,
+                        locale: meeting.city.region.country.locale,
                         price: meeting.price,
                         moderatorName: meeting.moderator?.name,
                         moderatorAvatarUrl: meeting.moderator?.image,

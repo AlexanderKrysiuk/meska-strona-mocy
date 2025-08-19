@@ -2,7 +2,6 @@ import React from "react";
 import { Html, Head, Preview, Body, Container, Section, Text, Img } from "@react-email/components";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { Button } from "./components/Button";
 
 interface MeetingInviteProps {
   userName?: string | null;
@@ -11,18 +10,31 @@ interface MeetingInviteProps {
   endTime: Date;
   street: string;
   city: string;
+  locale: string; // np. "pl-PL", "de-DE"
   price: number;
   moderatorName?: string | null;
   moderatorAvatarUrl?: string | null;
 }
 
+const formatDate = (date: Date, locale: string) => {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+};
+
 export function MeetingInvite({
-  userName = "Uczestniku",
+  userName,
   circleName,
   startTime,
   endTime,
   street,
   city,
+  locale,
   price,
   moderatorName,
   moderatorAvatarUrl
@@ -41,7 +53,7 @@ export function MeetingInvite({
             </Text>
 
             <Text style={paragraph}>
-              <strong>Data:</strong> {startTime.toLocaleString()} – {endTime.toLocaleString()}
+              <strong>Data:</strong> {formatDate(startTime, locale)} – {formatDate(endTime, locale)}
             </Text>
             <Text style={paragraph}>
               <strong>Miejsce:</strong> {street}, {city}
