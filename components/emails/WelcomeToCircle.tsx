@@ -2,14 +2,23 @@ import { Html, Head, Preview, Body, Container, Section, Text } from "@react-emai
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { Button } from "./components/Button";
+import { CircleMeeting, City, Country, Region } from "@prisma/client";
+
+type MeetingWithCity = CircleMeeting & { city: City & { region: Region & { country: Country }} }
 
 interface WelcomeToCircleEmailProps {
-  name?: string;
+  name?: string | null;
   circleName: string;
   circleUrl?: string;
+  meetings?: MeetingWithCity[];
 }
 
-export default function WelcomeToCircleEmail({ name, circleName, circleUrl }: WelcomeToCircleEmailProps) {
+export default function WelcomeToCircleEmail({ 
+  name, 
+  circleName, 
+  circleUrl,
+  meetings = []
+}: WelcomeToCircleEmailProps) {
   return (
     <Html>
       <Head />
@@ -30,6 +39,27 @@ export default function WelcomeToCircleEmail({ name, circleName, circleUrl }: We
               <Button href={circleUrl} style={{ marginBottom: "20px" }}>
                 Przejdź do kręgu
               </Button>
+            )}
+
+            {meetings.length > 0 && (
+              <Section style={{ marginTop: "32px" }}>
+                <Text style={{ ...paragraph, fontWeight: "bold" }}>
+                  Najbliższe spotkania:
+                </Text>
+                {meetings.map((m) => {
+                  const locale = m.city.region.country.locale;
+                  const start = new Date(m.startTime);
+                  const end = new Date(m.endTime);
+
+                  return (
+                    <Text key={m.id} style={paragraph}>
+                      📅 {start.toLocaleString(locale, { dateStyle: "full", timeStyle: "short" })}
+                         - {end.toLocaleTimeString(locale, { timeStyle: "short" })}<br />
+                      📍 {m.city.name}, {m.street}
+                    </Text>
+                  );
+                })}
+              </Section>
             )}
 
             <Text style={{ ...paragraph, fontSize: "12px", color: "#888" }}>

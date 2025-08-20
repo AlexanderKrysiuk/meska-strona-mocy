@@ -318,3 +318,19 @@ export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema
         message: "Pomyślnie zatwierdzono spotkanie"
     }
 }
+
+export const GetCircleFutureMeetingsByCircleID = async (ID:string) => {
+    try {
+        return await prisma.circleMeeting.findMany({
+            where: { 
+                circleId:ID,
+                startTime: { gte: new Date() }
+            },
+            include: { city: { include: { region: { include: { country: true }}}} },
+            orderBy: { startTime: "asc" }
+        })
+    } catch(error) {
+        console.error(error)
+        return null
+    }
+}

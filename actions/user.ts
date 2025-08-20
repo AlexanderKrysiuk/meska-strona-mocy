@@ -11,6 +11,8 @@ import { CheckLoginReturnUser } from "./auth"
 import { PermissionGate } from "@/utils/gate"
 import { resend } from "@/lib/resend"
 import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
+import { GetCircleFutureMeetingsByCircleID } from "./meeting"
+import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
 
 export const GetUserByEmail = async (email:string) => {
     try {
@@ -76,6 +78,8 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
     const circle = await GetCircleById(data.circleId)
     if (!circle) return { success: false, message: "Podany krąg nie został znaleziony"}
 
+    const futureMeetings = await GetCircleFutureMeetingsByCircleID(circle.id) || []
+
     try {
         await prisma.circleMembership.create({
             data: {
@@ -84,7 +88,34 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
                 status: CircleMembershipStatus.Active
             }
         })
-        await SendWelcomeToCircleEmail(user.email, circle.name, user.name ?? undefined)
+
+        if (futureMeetings?.length > 0) {
+            await prisma.circleMeetingParticipant.createMany({
+                data: futureMeetings.map((meeting) => ({
+                    meetingId: meeting.id,
+                    userId: user.id,
+                })),
+                skipDuplicates: true
+            })
+        }
+
+        try {
+            if (futureMeetings.length > 0) {
+                await resend.emails.send({
+                    from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+                    to: user.email,
+                    subject: `Witamy w kręgu - ${circle.name}`,
+                    react: WelcomeToCircleEmail({
+                        name: user.name,
+                        circleName: circle.name,
+                        meetings: futureMeetings
+                    })
+                    
+                })
+            }
+        } catch(error) {
+            console.log(error)
+        }
 
         return {
             success: true,

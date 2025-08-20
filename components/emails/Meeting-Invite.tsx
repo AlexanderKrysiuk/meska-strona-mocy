@@ -16,15 +16,21 @@ interface MeetingInviteProps {
   moderatorAvatarUrl?: string | null;
 }
 
-const formatDate = (date: Date, locale: string) => {
-  return new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+const formatMeetingDate = (start: Date, end: Date, locale: string) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  // jeśli spotkanie kończy się tego samego dnia, pokazujemy tylko godziny
+  if (
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate()
+  ) {
+    return `${startDate.toLocaleString(locale, { dateStyle: "full", timeStyle: "short" })} - ${endDate.toLocaleTimeString(locale, { timeStyle: "short" })}`;
+  }
+
+  // jeśli kończy się innego dnia, pokazujemy pełną datę i godzinę
+  return `${startDate.toLocaleString(locale, { dateStyle: "full", timeStyle: "short" })} - ${endDate.toLocaleString(locale, { dateStyle: "full", timeStyle: "short" })}`;
 };
 
 export function MeetingInvite({
@@ -45,7 +51,7 @@ export function MeetingInvite({
       <Preview>Zaproszenie na spotkanie kręgu {circleName}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Header title={`Zaproszenie na spotkanie w ${circleName}`} />
+          <Header title={`Zaproszenie na spotkanie kręgu ${circleName}`} />
 
           <Section>
             <Text style={paragraph}>
@@ -53,7 +59,7 @@ export function MeetingInvite({
             </Text>
 
             <Text style={paragraph}>
-              <strong>Data:</strong> {formatDate(startTime, locale)} – {formatDate(endTime, locale)}
+              <strong>Data:</strong> {formatMeetingDate(startTime, endTime, locale)}
             </Text>
             <Text style={paragraph}>
               <strong>Miejsce:</strong> {street}, {city}
@@ -80,7 +86,7 @@ export function MeetingInvite({
             )}
 
             <Text style={{ ...paragraph, fontSize: "14px", color: "#555" }}>
-              Jeśli nie możesz wziąć udziału, prosimy o przekazanie tej informacji moderatorowi.
+              Jeśli nie możesz wziąć udziału, skontaktuj się z moderatorem spotkania.
             </Text>
           </Section>
 
