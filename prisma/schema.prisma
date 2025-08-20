@@ -185,6 +185,7 @@ enum MeetingParticipantStatus {
   Pending
   Confirmed
   Vacation
+  Removed
 }
 
 model CircleMembership {

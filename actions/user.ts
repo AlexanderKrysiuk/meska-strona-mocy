@@ -5,7 +5,7 @@ import { AddUserToCircleSchema, DeleteUserFromCircleSchema, RegisterSchema } fro
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
 import { SendRegisterNewUserEmail, SendWelcomeToCircleEmail } from "./resend"
-import { CircleMembershipStatus, Role } from "@prisma/client"
+import { CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
 import { GetCircleById, GetCircleMembershipById } from "./circle"
 import { CheckLoginReturnUser } from "./auth"
 import { PermissionGate } from "@/utils/gate"
@@ -13,6 +13,7 @@ import { resend } from "@/lib/resend"
 import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
 import { GetCircleFutureMeetingsByCircleID } from "./meeting"
 import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
+import { GetFutureMeetingsForUserInCircle } from "./meeting-participants"
 
 export const GetUserByEmail = async (email:string) => {
     try {
@@ -163,12 +164,37 @@ export const DeleteUserFromCircle = async (data: z.infer<typeof DeleteUserFromCi
         message: "Brak uprawnień do usunięcia użytkownika" 
     }
 
+    const futureMeetings = await GetFutureMeetingsForUserInCircle(member.id, circle.id)
+
     try {
-        await prisma.circleMembership.update({
-            where: { id: membership.id },
-            data: { status: CircleMembershipStatus.Removed } 
-        })
-    } catch {
+        const totalRefund = futureMeetings.reduce((sum, p) => sum + p.amountPaid, 0);
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Zmieniamy status członkostwa
+            await tx.circleMembership.update({
+                where: { id: membership.id },
+                data: { status: CircleMembershipStatus.Removed }
+            });
+
+            // 2. Aktualizujemy uczestnictwo w przyszłych spotkaniach
+            for (const participant of futureMeetings) {
+                await tx.circleMeetingParticipant.update({
+                    where: { id: participant.id },
+                    data: { status: MeetingParticipantStatus.Removed, amountPaid: 0 },
+                });
+            }
+
+            // 3. Zwrot pieniędzy na saldo użytkownika
+            if (totalRefund > 0) {
+                await tx.user.update({
+                    where: { id: member.id },
+                    data: { balance: { increment: totalRefund } },
+                });
+            }
+        });
+
+    } catch(error) {
+        console.log(error)
         return {
             success: false,
             message: "Nie udało się usunąć użytkownika z kręgu"
@@ -188,7 +214,7 @@ export const DeleteUserFromCircle = async (data: z.infer<typeof DeleteUserFromCi
             })
         })
     } catch (error) {
-        console.error("Wysłanie maila:", error )
+        console.error(error )
     }
 
     return {
