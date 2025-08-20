@@ -101,19 +101,16 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
         }
 
         try {
-            if (futureMeetings.length > 0) {
-                await resend.emails.send({
-                    from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
-                    to: user.email,
-                    subject: `Witamy w kręgu - ${circle.name}`,
-                    react: WelcomeToCircleEmail({
-                        name: user.name,
-                        circleName: circle.name,
-                        meetings: futureMeetings
-                    })
-                    
-                })
-            }
+            await resend.emails.send({
+                from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+                to: user.email,
+                subject: `Witamy w kręgu - ${circle.name}`,
+                react: WelcomeToCircleEmail({
+                    name: user.name,
+                    circleName: circle.name,
+                    meetings: futureMeetings
+                })    
+            })
         } catch(error) {
             console.log(error)
         }

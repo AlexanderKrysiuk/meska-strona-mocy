@@ -10,6 +10,7 @@ import { PermissionGate } from "@/utils/gate"
 import { GetActiveCircleMembersByCircleID } from "./circle-membership"
 import { resend } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
+import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
     const user = await CheckLoginReturnUser()
@@ -153,17 +154,25 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
         message: "Brak uprawień do edycji spotkania"
     }
 
+    // Zapisujemy stare dane spotkania
+    const oldMeetingData = {
+        startTime: meeting.startTime,
+        endTime: meeting.endTime,
+        street: meeting.street,
+        city: meeting.city.name,
+        price: meeting.price,
+        locale: meeting.city.region.country.locale
+    };
+
+
+
     try {
         const overlapingMeetings = await prisma.circleMeeting.findFirst({
             where: {
                 moderatorId: user.id,
                 AND: [
-                    {
-                        startTime: { lt: data.endTime }
-                    },
-                    {
-                        endTime: { gt: data.startTime }
-                    }
+                    { startTime: { lt: data.endTime }},
+                    { endTime: { gt: data.startTime }}
                 ]
             }
         })
@@ -176,7 +185,7 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
             }
         }
 
-        await prisma.circleMeeting.update({
+        const updatedMeeting = await prisma.circleMeeting.update({
             where: { id: data.meetingId },
             data: {
                 startTime: data.startTime,
@@ -184,10 +193,40 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
                 price: data.price,
                 street: data.street,
                 cityId: data.cityId
+            },
+            include: { 
+                participants: { include: { user: true }},
+                city: { include: { region: { include: { country:true }}}}
             }
         })
 
         await sortMeetings(meeting.circleId)
+
+        for (const participant of updatedMeeting.participants) {
+            try {
+                await resend.emails.send({
+                    from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+                    to: participant.user.email,
+                    subject: `Zmiana spotkania w kręgu ${meeting.circle.name}`,
+                    react: MeetingUpdatedEmail({
+                        userName: participant.user.name,
+                        circleName: meeting.circle.name,
+                        oldMeeting: oldMeetingData,
+                        newMeeting: {
+                            startTime: updatedMeeting.startTime,
+                            endTime: updatedMeeting.endTime,
+                            street: updatedMeeting.street,
+                            city: updatedMeeting.city.name,
+                            price: updatedMeeting.price,
+                            locale: updatedMeeting.city.region.country.locale
+                        },
+                        moderatorName: user.name
+                    })
+                })
+            } catch (error) {
+                console.error(error)
+            }
+        }
 
     } catch {
         return {
@@ -255,7 +294,13 @@ export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
 
 export const GetMeetingById = async (id: string) => {
     try {
-        return await prisma.circleMeeting.findUnique({ where: {id}})
+        return await prisma.circleMeeting.findUnique({
+            where: { id },
+            include: { 
+                city: { include: { region: { include: { country: true }}}},
+                circle: true
+            }
+        })
     } catch (error) {
         return null
     }
