@@ -379,3 +379,59 @@ export const GetCircleFutureMeetingsByCircleID = async (ID:string) => {
         return null
     }
 }
+
+export const GetMeetingWithMembersByMeetingID = async (meetingID:string) => {
+
+    // opóźnienie 11 sekund
+    //await new Promise(resolve => setTimeout(resolve, 11000));
+
+    const moderator = await CheckLoginReturnUser() 
+        
+    // if (!moderator) return {
+    //     success: false,
+    //     message: "Musisz być zalogowanym by otrzymać dane o spotkaniu"
+    // }
+    
+    if (!moderator) throw new Error("Musisz być zalogowany")
+            
+    //     if (!PermissionGate(moderator.roles, [Role.Moderator])) return {
+    //     success: false,
+    //     message: "Nie jesteś moderatorem"
+    // }
+    
+    if (!PermissionGate(moderator.roles, [Role.Moderator])) throw new Error("Nie jesteś moderatorem")
+        
+    const meeting = await prisma.circleMeeting.findUnique({
+        where: { id: meetingID },
+        include: {
+            participants: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            image: true,
+                            email: true
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    // if (!meeting) return {
+    //     success: false,
+    //     message: "Podane spotkanie nie istnieje"
+    // }
+
+    if (!meeting) throw new Error("Podane spotkanie nie istnieje")
+
+    // if (meeting.moderatorId !== moderator.id) return {
+    //     success: false,
+    //     message: "Nie jesteś moderatorem tego spotkania"
+    // }
+
+    if (meeting.moderatorId !== moderator.id) throw new Error("Nie jesteś moderatorem tego spotkania")
+
+    return meeting.participants
+}

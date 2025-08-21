@@ -1,4 +1,5 @@
 import { DateValue, TimeInputValue } from "@heroui/react";
+import { City, Country, Region } from "@prisma/client";
 
 export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date {
     return new Date(
@@ -12,3 +13,37 @@ export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date 
     );
   }
   
+export const formatMeetingDate = (
+  start: Date,
+  end: Date,
+  cityId: string,
+  countries: Country[],
+  regions: Region[],
+  cities: City[]
+) => {
+  const city = cities.find(c => c.id === cityId);
+  const region = regions.find(r => r.id === city?.regionId);
+  const country = countries.find(co => co.id === region?.countryId);
+
+  const locale = country?.locale ?? "pl-PL"; // fallback na polski
+
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  const dayName = startDate.toLocaleDateString(locale, { weekday: "long" });
+  const date = startDate.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const startTime = startDate.toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endTime = endDate.toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `${dayName} ${date} ${startTime} - ${endTime}`;
+};

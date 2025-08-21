@@ -4,6 +4,7 @@ import CompleteMeetingModal from "@/components/moderator/complete-meeting-modal"
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
 import CreateMeetingModal from "@/components/moderator/create-meeting-modal";
 import EditMeetingModal from "@/components/moderator/edit-meeting-modal";
+import ShowMeetingMembersModal from "@/components/moderator/show-meeting-members-modal";
 import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { City, Circle, CircleMeeting, Country, Region, CircleMeetingStatus } from "@prisma/client";
 import { useState } from "react";
@@ -81,7 +82,7 @@ const MeetingsWrapper = ({
                         <TableColumn>Krąg</TableColumn>
                         <TableColumn>Ulica</TableColumn>
                         <TableColumn>Miasto</TableColumn>
-                        <TableColumn>Akcje</TableColumn>
+                        <TableColumn align="center">Akcje</TableColumn>
                     </TableHeader>
                     <TableBody emptyContent={"Brak zaplanowanych spotkań"}>
                         {scheduledMeetings.map((meeting) => {
@@ -111,7 +112,7 @@ const MeetingsWrapper = ({
                                         {city?.name}
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex space-x-1 items-center">
+                                        <div className="flex space-x-1 items-center justify-center">
                                             <EditMeetingModal
                                                 meeting={meeting}
                                                 meetings={meetings}
@@ -121,6 +122,13 @@ const MeetingsWrapper = ({
                                                 cities={cities}
                                             />
                                             <CompleteMeetingModal
+                                                meeting={meeting}
+                                                circle={circle}
+                                                countries={countries}
+                                                regions={regions}
+                                                cities={cities}
+                                            />
+                                            <ShowMeetingMembersModal
                                                 meeting={meeting}
                                                 circle={circle}
                                                 countries={countries}
