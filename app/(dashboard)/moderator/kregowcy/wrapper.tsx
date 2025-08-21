@@ -6,6 +6,7 @@ import { Circle, CircleMembership, CircleMembershipStatus, User } from "@prisma/
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
 import DeleteCircleMemberModal from "@/components/moderator/delete-circle-member-modal";
 import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal";
+import RestoreUserToCircleModal from "@/components/moderator/restore-user-to-circle-modal";
 
 type CirclesWithMembers = (Circle & {
     members: (CircleMembership & {
@@ -123,6 +124,7 @@ const CircleMembersWrapper = ({ circlesWithMembers }: { circlesWithMembers: Circ
                                 <TableCell><StatusChip status={item.status}/></TableCell>
                                 <TableCell>
                                     {item.status === CircleMembershipStatus.Active && <DeleteCircleMemberModal membershipId={item.membershipId} memberName={item.name} circleName={item.circleName}/>}
+                                    {item.status !== CircleMembershipStatus.Active && <RestoreUserToCircleModal member={{ id: item.id, name: item.name }} circle={{ id: item.circleId, name: item.circleName }}/>}
                                 </TableCell>
                             </TableRow>
                         )}

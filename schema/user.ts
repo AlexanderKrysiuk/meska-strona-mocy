@@ -1,6 +1,7 @@
 import * as z from 'zod'
 
 const circleId = z.string().uuid()
+const userId = z.string().uuid()
 const membershipId = z.string().uuid()
 const reason = z.string().max(500).optional().nullable()
 const name = z.string().optional().nullable()
@@ -43,4 +44,9 @@ export const AddUserToCircleSchema = RegisterSchema.extend({
 export const DeleteUserFromCircleSchema = z.object({
     membershipId,
     reason
+})
+
+export const RestoreUserToCircleSchema = z.object({
+    userId,
+    circleId
 })

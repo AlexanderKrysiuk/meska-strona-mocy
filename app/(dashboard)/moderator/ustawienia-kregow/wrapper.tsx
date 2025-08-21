@@ -1,7 +1,7 @@
 "use client"
 
 import CreateCircleModal from "@/components/moderator/create-circle-modal"
-import EditCircleForm from "@/components/moderator/moje-kregi/edit-circle-form"
+import EditCircleForm from "@/components/moderator/edit-circle-form"
 import { faGears } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Card, CardBody, CardHeader, Select, SelectItem } from "@heroui/react"

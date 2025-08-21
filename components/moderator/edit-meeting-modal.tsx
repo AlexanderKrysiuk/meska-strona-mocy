@@ -5,7 +5,7 @@ import { EditMeetingSchema } from "@/schema/meeting"
 import { combineDateAndTime } from "@/utils/date"
 import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
+import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarDate, Time, getLocalTimeZone, parseAbsoluteToLocal, today } from "@internationalized/date"
 import { City, Country, Circle, CircleMeeting, Region } from "@prisma/client"
@@ -125,15 +125,21 @@ const EditMeetingModal = ({
 
     return (
         <main>
-            <Button
+            <Tooltip
                 color="primary"
-                isIconOnly
-                onPress={onOpen}
-                variant="light"
-                radius="full"
+                placement="top"
+                content="Edytuj Spotkanie"
             >
-                <FontAwesomeIcon icon={faPen}/>
-            </Button>
+                <Button
+                    color="primary"
+                    isIconOnly
+                    onPress={onOpen}
+                    variant="light"
+                    radius="full"
+                >
+                    <FontAwesomeIcon icon={faPen}/>
+                </Button>
+            </Tooltip>
             <Modal
                 isOpen={isOpen}
                 onClose={onClose}

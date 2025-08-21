@@ -4,7 +4,7 @@ import { CompleteMeeting } from "@/actions/meeting"
 import { CompleteMeetingSchema } from "@/schema/meeting"
 import { faCalendarCheck, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, addToast, useDisclosure } from "@heroui/react"
+import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle, CircleMeeting, City, Country, Region } from "@prisma/client"
 import { useRouter } from "next/navigation"
@@ -75,15 +75,21 @@ const CompleteMeetingModal = ({
 
     return (
         <main>
-            <Button
-                color="primary"
-                isIconOnly
-                radius="full"
-                variant="light"
-                startContent={<FontAwesomeIcon icon={faCalendarCheck}/>}
-                onPress={onOpen}
-                isDisabled={meeting.endTime > date}
-            />
+            <Tooltip
+                color="success"
+                placement="top"
+                content="Zakończ spotkanie"
+            >
+                <Button
+                    color="success"
+                    isIconOnly
+                    radius="full"
+                    variant="light"
+                    startContent={<FontAwesomeIcon icon={faCalendarCheck}/>}
+                    onPress={onOpen}
+                    isDisabled={meeting.endTime > date}
+                />
+            </Tooltip>
             <Modal
                 isOpen={isOpen}
                 onClose={onClose}

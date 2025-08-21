@@ -1,11 +1,11 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { AddUserToCircleSchema, DeleteUserFromCircleSchema, RegisterSchema } from "@/schema/user"
+import { AddUserToCircleSchema, DeleteUserFromCircleSchema, RegisterSchema, RestoreUserToCircleSchema } from "@/schema/user"
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
 import { SendRegisterNewUserEmail, SendWelcomeToCircleEmail } from "./resend"
-import { CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
+import { CircleMeetingStatus, CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
 import { GetCircleById, GetCircleMembershipById } from "./circle"
 import { CheckLoginReturnUser } from "./auth"
 import { PermissionGate } from "@/utils/gate"
@@ -14,6 +14,7 @@ import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
 import { GetCircleFutureMeetingsByCircleID } from "./meeting"
 import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
 import { GetFutureMeetingsForUserInCircle } from "./meeting-participants"
+import WelcomeBackToCircleEmail from "@/components/emails/WelcomeBackToCircle"
 
 export const GetUserByEmail = async (email:string) => {
     try {
@@ -217,5 +218,94 @@ export const DeleteUserFromCircle = async (data: z.infer<typeof DeleteUserFromCi
     return {
         success: true,
         message: "Użytkownik został usunięty z kręgu"
+    }
+}
+
+export const RestoreUserToCircle = async (data: z.infer<typeof RestoreUserToCircleSchema>) => {
+    const moderator = await CheckLoginReturnUser()
+
+    if (!moderator) return {
+        success: false,
+        message: "Musisz być zalogowanym by usunąć użytkownika"
+    }
+
+    const member = await GetUserByID(data.userId)
+
+    if (!member) return {
+        success: false,
+        message: "Brak informacji o podanym kręgowcu"
+    }
+
+    const circle = await GetCircleById(data.circleId)
+
+    if (!circle) return {
+        success: false,
+        message: "Brak informacji o podanym kręgu"
+    }
+
+    if (!(moderator.roles.includes(Role.Moderator) && circle.moderatorId === moderator.id)) return { 
+        success: false, 
+        message: "Brak uprawnień do usunięcia użytkownika" 
+    }
+
+    const futureMeetings = await GetCircleFutureMeetingsByCircleID(circle.id) || []
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.circleMembership.update({
+                where: {
+                    userId_circleId: {
+                        circleId: circle.id,
+                        userId: member.id
+                    }
+                },
+                data: {
+                    status: CircleMembershipStatus.Active
+                }
+            })
+            for (const meeting of futureMeetings) {
+                await tx.circleMeetingParticipant.upsert({
+                    where: {
+                        userId_meetingId:{
+                            userId: member.id,
+                            meetingId: meeting.id
+                        }
+                    },
+                    update: {
+                        status: MeetingParticipantStatus.Pending
+                    },
+                    create: {
+                        userId: member.id,
+                        meetingId: meeting.id
+                    }
+                })
+            }
+        })
+
+        try {
+            await resend.emails.send({
+                from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+                to: member.email,
+                subject: `Witamy ponownie w kręgu - ${circle.name}`,
+                react: WelcomeBackToCircleEmail({
+                    name: member.name,
+                    circleName: circle.name,
+                    meetings: futureMeetings
+                })    
+            })
+        } catch(error) {
+            console.error(error)
+        }
+
+        return {
+            success: true,
+            message: "Przywrócono pomyślnie użytkownika do kręgu"
+        }
+    } catch (error) {
+        console.error(error)
+        return {
+            success: false,
+            message: "Nie udało się przywrócić użytkownika"
+        }
     }
 }
