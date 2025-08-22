@@ -23,6 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email, 
             name: user.name,
             image: user.image,
+            title: user.title,
             roles: user.roles.map(r => r.role)
           }  // Dodajemy rolę
       }
@@ -38,6 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.roles = user.roles as Role[]
       }
       if (user?.name) { token.name = user.name }
+      if (user?.title) { token.title = user.title }
       //console.log("TOKEN:",token)
       return token
     },
@@ -49,6 +51,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       }
       if (token?.name) { session.user.name = token.name }
+      if (token?.title) { session.user.title = token.title as string }
       //console.log("SESSION TOKEN:",token)
       //console.log("SESSION:",session)
       return session

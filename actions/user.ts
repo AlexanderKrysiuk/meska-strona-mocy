@@ -178,7 +178,7 @@ export const DeleteUserFromCircle = async (data: z.infer<typeof DeleteUserFromCi
             for (const participant of futureMeetings) {
                 await tx.circleMeetingParticipant.update({
                     where: { id: participant.id },
-                    data: { status: MeetingParticipantStatus.Removed, amountPaid: 0 },
+                    data: { status: MeetingParticipantStatus.Cancelled, amountPaid: 0 },
                 });
             }
 

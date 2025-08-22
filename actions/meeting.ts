@@ -411,7 +411,8 @@ export const GetMeetingWithMembersByMeetingID = async (meetingID:string) => {
                             id: true,
                             name: true,
                             image: true,
-                            email: true
+                            email: true,
+                            vacationDays: true
                         }
                     }
                 }

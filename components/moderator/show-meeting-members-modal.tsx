@@ -7,25 +7,26 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Alert, Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, User, useDisclosure } from "@heroui/react"
 import { Circle, CircleMeeting, City, Country, MeetingParticipantStatus, Region } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
+import SendMemberToVacationModal from "./send-member-to-vacation-modal"
   
 const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
     let message: string = status;
   
     switch (status) {
-      case MeetingParticipantStatus.Confirmed:
-        color = "success";
-        message = "Potwierdzony";
-        break;
-      case MeetingParticipantStatus.Vacation:
-        color = "warning";
-        message = "Urlop";
-        break;
-      case MeetingParticipantStatus.Pending:
-        color = "primary";
-        message = "Nieopłacony";
-        break;
-        case MeetingParticipantStatus.Removed:
+        case MeetingParticipantStatus.Confirmed:
+            color = "success";
+            message = "Potwierdzony";
+            break;
+        case MeetingParticipantStatus.Vacation:
+            color = "warning";
+            message = "Urlop";
+            break;
+        case MeetingParticipantStatus.Pending:
+            color = "primary";
+            message = "Nieopłacony";
+            break;
+        case MeetingParticipantStatus.Cancelled:
             color = "danger";
             message = "Usunięty";
             break;
@@ -49,7 +50,7 @@ const ShowMeetingMembersModal = ({
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
-    const { data, isLoading, isError, error, refetch } = useQuery({
+    const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
         queryKey: ["participants", meeting.id],
         queryFn: () => GetMeetingWithMembersByMeetingID(meeting.id),
         enabled: isOpen,
@@ -111,19 +112,20 @@ const ShowMeetingMembersModal = ({
                         </ModalBody>
                     ) : (
                         <ModalBody>
-                            {/* {data && (
+                            {data && (
                                 <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                                     {JSON.stringify(data, null, 2)}
                                 </pre>
-                            )} */}
+                            )}
                             <Table>
                                 <TableHeader>
                                     <TableColumn>Imię i Nazwisko</TableColumn>
                                     <TableColumn>E-mail</TableColumn>
                                     <TableColumn>Status</TableColumn>
+                                    <TableColumn>Akcje</TableColumn>
                                 </TableHeader>
                                 <TableBody
-                                    isLoading={isLoading}
+                                    isLoading={isLoading || isFetching}
                                     items={data || []}
                                     loadingContent={<Spinner label="Ładowanie" variant="wave"/>}
                                     emptyContent={"Brak kręgowców"}
@@ -141,6 +143,15 @@ const ShowMeetingMembersModal = ({
                                             </TableCell>
                                             <TableCell>{item.user.email}</TableCell>
                                             <TableCell><StatusChip status={item.status}/></TableCell>
+                                            <TableCell align="center">
+                                                {item.status === MeetingParticipantStatus.Vacation
+                                                    ? "Na urlopie"
+                                                    :   <SendMemberToVacationModal
+                                                            participationID={item.id}
+                                                            member={item.user}
+                                                        />
+                                                }
+                                            </TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>

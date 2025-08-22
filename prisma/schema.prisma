@@ -20,7 +20,9 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
+  title         String?
   balance       Float @default(0)
+  vacationDays  Int @default(2)
   roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]
   sessions      Session[]
@@ -185,7 +187,7 @@ enum MeetingParticipantStatus {
   Pending
   Confirmed
   Vacation
-  Removed
+  Cancelled
 }
 
 model CircleMembership {

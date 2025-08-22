@@ -1,3 +1,4 @@
+import { GetFullLocalizationByCityID } from "@/actions/city";
 import { DateValue, TimeInputValue } from "@heroui/react";
 import { City, Country, Region } from "@prisma/client";
 
@@ -12,6 +13,42 @@ export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date 
       time.millisecond ?? 0
     );
   }
+
+  export const formatedMeetingDate = async (
+    start: Date,
+    end: Date,
+    cityId: string
+  ) => {
+    const city = await GetFullLocalizationByCityID(cityId)
+  
+    const country = city?.region?.country;
+  
+    const locale = country?.locale ?? "en-US"; // neutralny fallback
+    const timeZone = country?.timeZone ?? "UTC"; // neutralna strefa czasowa
+  
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+  
+    const dayName = startDate.toLocaleDateString(locale, { weekday: "long", timeZone });
+    const date = startDate.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone
+    });
+    const startTime = startDate.toLocaleTimeString(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone
+    });
+    const endTime = endDate.toLocaleTimeString(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone
+    });
+  
+    return `${dayName} ${date} ${startTime} - ${endTime}`;
+  };
   
 export const formatMeetingDate = (
   start: Date,
