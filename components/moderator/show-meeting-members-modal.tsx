@@ -9,7 +9,7 @@ import { Circle, CircleMeeting, City, Country, MeetingParticipantStatus, Region 
 import { useQuery } from "@tanstack/react-query"
   
 const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
-    let color: "success" | "danger" | "warning" | "default" = "default";
+    let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
     let message: string = status;
   
     switch (status) {
@@ -22,9 +22,13 @@ const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
         message = "Urlop";
         break;
       case MeetingParticipantStatus.Pending:
-        color = "danger";
+        color = "primary";
         message = "Nieopłacony";
         break;
+        case MeetingParticipantStatus.Removed:
+            color = "danger";
+            message = "Usunięty";
+            break;
     }
   
     return <Chip color={color} variant="dot">{message}</Chip>;
