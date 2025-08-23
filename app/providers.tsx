@@ -17,7 +17,10 @@ export function Providers({children}: { children: React.ReactNode }) {
           <ToastProvider 
             placement="top-center"
             toastProps={{
-              variant: "bordered"
+              variant: "bordered",
+              classNames: {
+                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+              },            
             }}
           />
         </NextThemesProvider>

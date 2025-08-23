@@ -50,7 +50,7 @@ const ShowMeetingMembersModal = ({
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
-    const { data, isLoading, isError, isFetching, error, refetch } = useQuery({
+    const { data, isLoading, isError, isFetching, refetch } = useQuery({
         queryKey: ["participants", meeting.id],
         queryFn: () => GetMeetingWithMembersByMeetingID(meeting.id),
         enabled: isOpen,
@@ -71,7 +71,7 @@ const ShowMeetingMembersModal = ({
                     variant="light"
                     radius="full"
                 >
-                    <FontAwesomeIcon icon={faUserGroup}/>
+                    <FontAwesomeIcon icon={faUserGroup} size="lg"/>
                 </Button>
             </Tooltip>
             <Modal
@@ -98,7 +98,6 @@ const ShowMeetingMembersModal = ({
                             <Alert
                                 color="danger"
                                 title="Błąd ładowania danych"
-                                description={error.message}
                                 endContent={
                                     <Button
                                         color="danger"
@@ -149,6 +148,7 @@ const ShowMeetingMembersModal = ({
                                                     :   <SendMemberToVacationModal
                                                             participationID={item.id}
                                                             member={item.user}
+                                                            meetingID={item.meetingId}
                                                         />
                                                 }
                                             </TableCell>

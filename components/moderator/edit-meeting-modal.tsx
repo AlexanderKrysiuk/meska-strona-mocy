@@ -137,7 +137,7 @@ const EditMeetingModal = ({
                     variant="light"
                     radius="full"
                 >
-                    <FontAwesomeIcon icon={faPen}/>
+                    <FontAwesomeIcon icon={faPen} size="lg"/>
                 </Button>
             </Tooltip>
             <Modal

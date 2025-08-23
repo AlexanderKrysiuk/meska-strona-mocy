@@ -85,7 +85,7 @@ const CompleteMeetingModal = ({
                     isIconOnly
                     radius="full"
                     variant="light"
-                    startContent={<FontAwesomeIcon icon={faCalendarCheck}/>}
+                    startContent={<FontAwesomeIcon icon={faCalendarCheck} size="lg"/>}
                     onPress={onOpen}
                     isDisabled={meeting.endTime > date}
                 />

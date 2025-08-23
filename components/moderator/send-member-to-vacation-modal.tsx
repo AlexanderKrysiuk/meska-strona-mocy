@@ -7,15 +7,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@prisma/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
 const SendMemberToVacationModal = ({
     participationID,
+    meetingID,
     member
 } : {
     participationID: string
+    meetingID: string
     member: Pick<User, "name" | "vacationDays">
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
@@ -33,6 +35,8 @@ const SendMemberToVacationModal = ({
         mutation.mutate(data)
     }
 
+    const queryClient = useQueryClient();
+
     const mutation = useMutation<void, Error, FormFields>({
         mutationFn: SendMemberToVacation,
         onSuccess: () => {
@@ -40,6 +44,7 @@ const SendMemberToVacationModal = ({
                 title: "Pomyślnie wysłano kręgowca na urlop",
                 color: "success"
             });
+            queryClient.invalidateQueries({ queryKey: ["participants", meetingID]});
             onClose();
         },
         onError: (error) => {
