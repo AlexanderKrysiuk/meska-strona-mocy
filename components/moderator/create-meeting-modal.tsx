@@ -7,19 +7,19 @@ import { CreateMeeting, GetModeratorMeetingsByModeratorID } from "@/actions/meet
 import { GetRegions } from "@/actions/region"
 import { clientAuth } from "@/hooks/auth"
 import { CreateMeetingSchema } from "@/schema/meeting"
-import { combineDateAndTime } from "@/utils/date"
 import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
+import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date"
+import { getLocalTimeZone, today } from "@internationalized/date"
 import { Circle, CircleMeetingStatus } from "@prisma/client"
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
+import { FormError } from "@/utils/errors"
 
 export const CreateMeetingModal = ({
     circle
@@ -110,26 +110,34 @@ const CreateMeetingform = ({
     
     //if (!countries.data) return <Loader/>
 
-    const unavailableDates = useMemo(() => 
-        [scheduledMeetings, completedMeetings, ArchivedMeetings]
+    const unavailableDates = useMemo(() => [scheduledMeetings, completedMeetings, ArchivedMeetings]
             .flatMap(q => q.data ?? [])
             .map(meeting => {
                 const d = new Date(meeting.startTime);
-                // pozostawiamy tylko datę bez godziny
-                return parseDate(d.toISOString().split("T")[0]);
+                return new Date(d.getFullYear(), d.getMonth(), d.getDate()); // tylko data, bez godziny
             }),
         [scheduledMeetings, completedMeetings, ArchivedMeetings]
     );
-    
+      
+    // funkcja pomocnicza do porównywania dni
+    const isSameDay = (a: Date, b: Date) =>
+        a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+      
+    // sprawdzanie, czy data jest zajęta
     const isDateUnavailable = useCallback(
-        (date: DateValue) => unavailableDates.some(disabled => date.compare(disabled) === 0),
-        [unavailableDates]
+        (date: DateValue) => {
+            if (!date) return false;
+            const d = new Date(date.year, date.month - 1, date.day);
+            return unavailableDates.some(disabled => isSameDay(d, disabled));
+        },[unavailableDates]
     );
-
-    
+    //const schema = CreateMeetingSchema(unavailableDates);
+    //type FormFields = z.infer<typeof schema>
     type FormFields = z.infer<typeof CreateMeetingSchema>
     
-    const {handleSubmit, watch, setValue, trigger, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
+    const { clearErrors, handleSubmit, watch, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         mode: "all",
         defaultValues: {
@@ -140,22 +148,21 @@ const CreateMeetingform = ({
         }
     })
     
-    const [date, setDate] = useState<DateValue | null>()
-
-    const [startHour, setStartHour] = useState<TimeInputValue | null>()
-    const [endHour, setEndHour] = useState<TimeInputValue | null>()
+    //const [date, setDate] = useState<DateValue | null>()
     
     const [countryID, setCountryID] = useState<string | undefined>()
     const [regionID, setRegionID] = useState<string | undefined>()
 
+    const cityID = watch("cityId")
+
     useEffect(() => {
-        const city = cities.data?.find(c => c.id === watch("cityId"))
+        const city = cities.data?.find(c => c.id === cityID)
         const region = regions.data?.find(r => r.id === city?.regionId)
         const country = countries.data?.find(c => c.id === region?.countryId)
 
         setRegionID(region?.id)
         setCountryID(country?.id)
-    }, [watch, cities.data, regions.data, countries.data])
+    }, [cityID, cities.data, regions.data, countries.data])
     
     const queryClient = useQueryClient()
 
@@ -170,17 +177,27 @@ const CreateMeetingform = ({
                 queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],
             })
         },
-        onError: (result) => {
+        onError: (error) => {
             addToast({
-                title: result.message,
+                title: error.message,
                 color: "warning"
             })
+            if (error instanceof FormError) {
+                // Błędy formularza - możemy ustawić w state jeśli chcemy wyświetlać inline
+                Object.entries(error.fieldErrors).forEach(([field, message]) => {
+                    setError(field as keyof FormFields, { type: "manual", message });
+                });
+            }
         }
     })
 
     if (queries.some(q => q.isLoading || !q.data)) return <Loader/>
 
     return <Form onSubmit={handleSubmit((data) => mutation.mutateAsync(data))}>
+        <pre>
+            {JSON.stringify(watch(),null,2)}
+            {JSON.stringify(unavailableDates,null,2)}
+        </pre>
         <Select
             hideEmptyContent
             disallowEmptySelection
@@ -212,17 +229,42 @@ const CreateMeetingform = ({
             isDateUnavailable={isDateUnavailable}
             minValue={today(getLocalTimeZone()).add({days: 1})}
             onChange={(date) => {
-                setDate(date)
-                if (date && startHour) setValue("startTime", combineDateAndTime(date, startHour), {shouldValidate: true})
-                if (date && endHour) setValue("endTime", combineDateAndTime(date, endHour), {shouldValidate:true})
+                if (!date) return;
+                
+                if (isDateUnavailable(date)) {
+                    setError("date", { type: "manual", message: "W tym dniu masz już inne spotkanie" });
+                    return
+                }
+                
+                if (date < today(getLocalTimeZone()).add({days: 1})) {
+                    setError("date", { type: "manual", message: "Spotkanie możesz dodać najwcześniej jutro" });
+                    return
+                }            
+                
+                const selectedDate = new Date(date.year, date.month - 1, date.day);
+
+                setValue("date", selectedDate, { shouldValidate: true });
+                clearErrors("date");
+                // jeśli wszystko OK
+            
+                // aktualizacja start/end z zachowaniem godzin
+                const startTime = watch("startTime");
+                if (startTime) {
+                    const startDate = new Date(selectedDate);
+                    startDate.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+                    setValue("startTime", startDate);
+                }
+
+                const endTime = watch("endTime");
+                if (endTime) {
+                    const endDate = new Date(selectedDate);
+                    endDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+                    setValue("endTime", endDate);
+                }
             }}
             isRequired
-            validate={(date) => {
-                if (!date) return "Wybierz datę";
-                if (date.compare(today(getLocalTimeZone()).add({days: 1})) < 0) return "Nie można wybrać przeszłej daty";
-                if (isDateUnavailable(date)) return "Masz już spotkanie w tym terminie";
-                return true;
-            }}
+            isInvalid={!!errors.date}
+            errorMessage={errors.date?.message}
             isDisabled={isSubmitting}
         />
         <div className="flex space-x-4 w-full">
@@ -232,14 +274,27 @@ const CreateMeetingform = ({
                 variant="bordered"
                 hourCycle={24}
                 onChange={(time) => {
-                    setStartHour(time)
-                    if (date && time) {
-                        setValue("startTime", combineDateAndTime(date, time), {shouldValidate:true})
-                        if (endHour) trigger("endTime")
+                    if (!time) return;
+                
+                    const date = watch("date");
+                    const endTime = watch("endTime");
+                    if (!date) return;
+                
+                    const startDate = new Date(date);
+                    startDate.setHours(time.hour, time.minute, 0, 0);
+                
+                    // walidacja względem endTime
+                    if (endTime && startDate.getTime() >= endTime.getTime()) {
+                      setError("startTime", { type: "manual", message: "Czas rozpoczęcia musi być wcześniej niż zakończenia" });
+                    } else {
+                      clearErrors("startTime");
+                      clearErrors("endTime")
                     }
+                
+                    setValue("startTime", startDate);
                 }}
                 isRequired
-                isDisabled={isSubmitting || !date}
+                isDisabled={isSubmitting || !watch("date")}
                 isInvalid={!!errors.startTime}
                 errorMessage={errors.startTime?.message}
             />
@@ -249,11 +304,27 @@ const CreateMeetingform = ({
                 variant="bordered"
                 hourCycle={24}
                 onChange={(time) => {
-                    setEndHour(time)
-                    if (date && time) setValue("endTime", combineDateAndTime(date, time), {shouldValidate:true})
+                    if (!time) return;
+                
+                    const date = watch("date");
+                    const startTime = watch("startTime");
+                    if (!date) return;
+                
+                    const endDate = new Date(date);
+                    endDate.setHours(time.hour, time.minute, 0, 0);
+                
+                    // walidacja względem startTime
+                    if (startTime && endDate.getTime() <= startTime.getTime()) {
+                      setError("endTime", { type: "manual", message: "Czas zakończenia musi być później niż rozpoczęcia" });
+                    } else {
+                        clearErrors("endTime");
+                        clearErrors("startTime");
+                    }
+                
+                    setValue("endTime", endDate);
                 }}
                 isRequired
-                isDisabled={isSubmitting || !date || !startHour}
+                isDisabled={isSubmitting || !watch("date") || !watch("startTime")}
                 isInvalid={!!errors.endTime}
                 errorMessage={errors.endTime?.message}
             />
@@ -349,7 +420,7 @@ const CreateMeetingform = ({
             fullWidth
             type="submit"
             isLoading={isSubmitting}
-            isDisabled={isSubmitting || !isValid || (date ? isDateUnavailable(date) : false)}
+            isDisabled={isSubmitting || !isValid}
         >
             Dodaj nowe spotkanie
         </Button>

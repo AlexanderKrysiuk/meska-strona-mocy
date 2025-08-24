@@ -12,25 +12,22 @@ import { resend } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
 import { setTimeout } from "timers"
+import { FormError } from "@/utils/errors"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
     setTimeout(()=>{},10000)
     
     const user = await CheckLoginReturnUser()
-    if (!user) return { success: false, message: "Musisz być zalogowanym by utworzyć spotkanie" }
+    if (!user) throw new Error("Musisz być zalogowanym by utworzyć spotkanie");
   
-    // Sprawdzenie uprawnień
-    if (!PermissionGate(user.roles, [Role.Moderator])) {
-        return { success: false, message: "Brak uprawnień do dodania spotkania" }
-    }
-
+    
     const circle = await GetCircleById(data.circleId)
-    if (!circle) return { success: false, message: "Dana grupa nie istnieje" }
-  
-    if (user.id !== circle.moderatorId) {
-        return { success: false, message: "Brak uprawień do dodania spotkania" }
-    }
-  
+    if (!circle) throw new Error("Dana grupa nie istnieje");
+    
+    if (
+        !user.roles.includes(Role.Admin) && (user.id !== circle.moderatorId || !user.roles.includes(Role.Moderator))
+    ) throw new Error("Brak uprawnień do dodania spotkania");
+
     const activeMembers = (await GetActiveCircleMembersByCircleID(circle.id)) || []
   
     try {
@@ -45,11 +42,10 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
             },
         })
         if (overlapingMeeting) {
-            return {
-                success: false,
-                message: "Nie udało się dodać spotkania",
-                errors: { startTime: ["W tym dniu masz już inne spotkanie"] },
-            }
+            throw new FormError(
+                { startTime: "W tym dniu masz już inne spotkanie" },
+                "Nie udało się dodać spotkania"
+            );
         }
   
         const existingMeetings = await prisma.circleMeeting.count({ where: { circleId: data.circleId } })
@@ -109,11 +105,10 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         } catch (error) {
             console.error("Błąd przy wysyłce maili:", error)
         }
-  
-        return { success: true, message: "Pomyślnie dodano nowe spotkanie" }
+        return { message: "Spotkanie utworzone pomyślnie" };
     } catch (error) {
         console.error(error)
-        return { success: false, message: "Błąd połączenia z bazą danych" }
+        throw new Error("Błąd połączenia z bazą danych");
     }
 }
   

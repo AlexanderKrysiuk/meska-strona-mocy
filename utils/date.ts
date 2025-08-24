@@ -14,6 +14,18 @@ export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date 
     );
   }
 
+export function combinedDateAndTime(date: Date, time: Date): Date {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    time.getHours(),
+    time.getMinutes(),
+    time.getSeconds() ?? 0,
+    time.getMilliseconds() ?? 0
+  )
+}
+
   export const formatedMeetingDate = (
     start: Date,
     end: Date,
