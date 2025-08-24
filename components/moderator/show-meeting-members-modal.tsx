@@ -1,13 +1,13 @@
 "use client"
 
 import { GetMeetingWithMembersByMeetingID } from "@/actions/meeting"
-import { formatMeetingDate } from "@/utils/date"
 import { faArrowRotateForward, faUserGroup } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Alert, Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, User, useDisclosure } from "@heroui/react"
-import { Circle, CircleMeeting, City, Country, MeetingParticipantStatus, Region } from "@prisma/client"
+import { Circle, CircleMeeting, MeetingParticipantStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
 import SendMemberToVacationModal from "./send-member-to-vacation-modal"
+import ReturnMemberFromVacationModal from "./return-member-from-vacation-modal"
   
 const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -38,15 +38,9 @@ const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
 const ShowMeetingMembersModal = ({
     meeting,
     circle,
-    countries,
-    regions,
-    cities
 } : {
     meeting: CircleMeeting
     circle: Circle
-    countries: Country[]
-    regions: Region[]
-    cities: City[]
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
@@ -84,14 +78,15 @@ const ShowMeetingMembersModal = ({
                 <ModalContent>
                 <ModalHeader>
                     Kręgowcy {circle.name} zapisani na spotkanie: {" "}
-                        {formatMeetingDate(
+                        
+                        {/* {formatMeetingDate(
                             meeting.startTime,
                             meeting.endTime,
                             meeting.cityId,
                             countries,
                             regions,
                             cities
-                        )} 
+                        )}  */}
                 </ModalHeader>
                     {isError ? (
                         <ModalBody>
@@ -120,12 +115,12 @@ const ShowMeetingMembersModal = ({
                                 <TableHeader>
                                     <TableColumn>Imię i Nazwisko</TableColumn>
                                     <TableColumn>E-mail</TableColumn>
-                                    <TableColumn>Status</TableColumn>
-                                    <TableColumn>Akcje</TableColumn>
+                                    <TableColumn align="center">Status</TableColumn>
+                                    <TableColumn align="center">Akcje</TableColumn>
                                 </TableHeader>
                                 <TableBody
                                     isLoading={isLoading || isFetching}
-                                    items={data || []}
+                                    items={data?.participants || []}
                                     loadingContent={<Spinner label="Ładowanie" variant="wave"/>}
                                     emptyContent={"Brak kręgowców"}
                                 >
@@ -142,9 +137,12 @@ const ShowMeetingMembersModal = ({
                                             </TableCell>
                                             <TableCell>{item.user.email}</TableCell>
                                             <TableCell><StatusChip status={item.status}/></TableCell>
-                                            <TableCell align="center">
+                                            <TableCell>
                                                 {item.status === MeetingParticipantStatus.Vacation
-                                                    ? "Na urlopie"
+                                                    ?   <ReturnMemberFromVacationModal
+                                                            participationID={item.id}
+                                                            member={item.user}
+                                                        />
                                                     :   <SendMemberToVacationModal
                                                             participationID={item.id}
                                                             member={item.user}

@@ -10,6 +10,7 @@ import { parse } from "path"
 import { customAlphabet } from 'nanoid'
 import { finalSlugify, liveSlugify } from "@/utils/slug"
 import { PermissionGate } from "@/utils/gate"
+import { setTimeout } from "timers"
 
 export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => {
     const user = await CheckLoginReturnUser()
@@ -205,5 +206,17 @@ export const GetCircleMembershipById = async (id:string) => {
         return await prisma.circleMembership.findUnique({ where: { id: id }})
     } catch {
         return null
+    }
+}
+
+export const GetModeratorCircles = async (moderatorID:string) => {
+    try {
+        setTimeout(()=>{},5000)
+        return await prisma.circle.findMany({
+            where: {moderatorId: moderatorID}
+        })
+    } catch (error) {
+        console.error(error)
+        throw new Error ("Błąd połączenia z bazą danych")
     }
 }

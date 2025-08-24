@@ -7,7 +7,7 @@ import { MeetingParticipantStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { GetMeetingParticipationWithMeetingAndUserByID } from "./meeting-participants"
 import { resend } from "@/lib/resend"
-import { SendMemberToVacationEmail } from "@/components/emails/send-member-to-vacation-email"
+//import { SendMemberToVacationEmail } from "@/components/emails/send-member-to-vacation-email"
 
 export const SendMemberToVacation = async (data: z.infer<typeof SendMemberToVacationSchema>) => {
     const moderator = await CheckLoginReturnUser()
@@ -39,25 +39,25 @@ export const SendMemberToVacation = async (data: z.infer<typeof SendMemberToVaca
         throw new Error("Nie udało się wysłać użytkownika na urlop. Spróbuj ponownie."); // czytelny komunikat dla użytkownika
     }
 
-    try {
-        await resend.emails.send({
-            from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
-            to: participation.user.email,
-            subject: "Przyznano urlop",
-            react: SendMemberToVacationEmail({
-                startTime: participation.meeting.startTime,
-                endTime: participation.meeting.endTime,
-                cityId: participation.meeting.cityId,
-                circleName: participation.meeting.circle.name,
-                memberName: participation.user.name,
-                authorName: moderator.name,
-                authorAvatar: moderator.image,
-                authorTitle: moderator.title,
-                amountRefunded: participation.amountPaid
-            })
+    // try {
+    //     await resend.emails.send({
+    //         from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+    //         to: participation.user.email,
+    //         subject: "Przyznano urlop",
+    //         react: SendMemberToVacationEmail({
+    //             startTime: participation.meeting.startTime,
+    //             endTime: participation.meeting.endTime,
+    //             cityId: participation.meeting.cityId,
+    //             circleName: participation.meeting.circle.name,
+    //             memberName: participation.user.name,
+    //             authorName: moderator.name,
+    //             authorAvatar: moderator.image,
+    //             authorTitle: moderator.title,
+    //             amountRefunded: participation.amountPaid
+    //         })
 
-        })
-    } catch (error) {
-        console.error(error)
-    }
+    //     })
+    // } catch (error) {
+    //     console.error(error)
+    // }
 }

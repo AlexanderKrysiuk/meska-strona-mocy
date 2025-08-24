@@ -70,7 +70,7 @@ const SendMemberToVacationModal = ({
                     variant="light"
                     onPress={onOpen}
                 >
-                    <FontAwesomeIcon icon={faUmbrellaBeach}/>
+                    <FontAwesomeIcon icon={faUmbrellaBeach} size="xl"/>
                 </Button>
             </Tooltip>
             <Modal

@@ -1,7 +1,7 @@
 "use client"
 import { Avatar, Button, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenu, NavbarMenuItem, NavbarMenuToggle } from "@heroui/react";
 import { ThemeSwitcher } from "./theme-switcher";
-import { useCurrentUser } from "@/hooks/user";
+import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
 import { AllItems, ModeratorItems } from "./user-menu";
@@ -11,7 +11,7 @@ import { signOut } from "next-auth/react";
 import { PermissionGate } from "@/utils/gate";
 
 const Header = () => {
-    const user = useCurrentUser()
+    const user = clientAuth()
     const pathname = usePathname()
 
     return ( 

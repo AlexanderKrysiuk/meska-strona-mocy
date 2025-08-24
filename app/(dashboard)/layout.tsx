@@ -1,7 +1,7 @@
 "use client"
 
 import { ModeratorItems } from "@/components/user-menu";
-import { useCurrentUser } from "@/hooks/user";
+import { clientAuth } from "@/hooks/auth";
 import { PermissionGate } from "@/utils/gate";
 import { Listbox, ListboxItem, ListboxSection } from "@heroui/react";
 import { Role } from "@prisma/client";
@@ -12,7 +12,7 @@ const DashboadLayout = ({
 } : {
     children: React.ReactNode
 }) => {
-    const user = useCurrentUser()
+    const user = clientAuth()
     const pathname = usePathname()
     return ( 
         <main className="h-full lg:grid lg:grid-cols-5">

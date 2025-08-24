@@ -2,7 +2,6 @@
 
 import CompleteMeetingModal from "@/components/moderator/complete-meeting-modal";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
-import CreateMeetingModal from "@/components/moderator/create-meeting-modal";
 import EditMeetingModal from "@/components/moderator/edit-meeting-modal";
 import ShowMeetingMembersModal from "@/components/moderator/show-meeting-members-modal";
 import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
@@ -24,7 +23,7 @@ const MeetingsWrapper = ({
 }) => {
     const [circleId, setCircleId] = useState<Set<string>>(new Set())
 
-    const selectedCircle = circles.find((circle) => circle.id === Array.from(circleId)[0])
+    //const selectedCircle = circles.find((circle) => circle.id === Array.from(circleId)[0])
 
     const scheduledMeetings = meetings
         .filter((m) => m.status === CircleMeetingStatus.Scheduled)
@@ -62,15 +61,7 @@ const MeetingsWrapper = ({
             <Divider/>
             <div className="flex space-x-4 items-center">
                 <h6 className="w-full">Zaplanowane spotkania</h6>
-                <CreateMeetingModal
-                    circles={circles}
-                    circleId={selectedCircle?.id}
-                    meetings={meetings}
-                    //selectedCircle={selectedCircle}
-                    countries={countries}
-                    regions={regions}
-                    cities={cities}
-                />
+                
             </div>
             <div className="w-full overflow-x-auto p-2">
                 <Table 
@@ -131,9 +122,6 @@ const MeetingsWrapper = ({
                                             <ShowMeetingMembersModal
                                                 meeting={meeting}
                                                 circle={circle}
-                                                countries={countries}
-                                                regions={regions}
-                                                cities={cities}
                                             />
                                         </div>
                                     </TableCell>

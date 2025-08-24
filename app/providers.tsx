@@ -11,9 +11,12 @@ export function Providers({children}: { children: React.ReactNode }) {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <HeroUIProvider>
+      <HeroUIProvider className='h-full'>
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem={true}>
-          {children}
+          <main className='h-full'>
+            {children}
+
+          </main>
           <ToastProvider 
             placement="top-center"
             toastProps={{

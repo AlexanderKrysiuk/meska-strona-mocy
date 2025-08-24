@@ -13,3 +13,12 @@ export const GetFullLocalizationByCityID = async (ID: string) => {
         return null
     }
 }
+
+export const GetCities = async () => {
+    try {
+        return await prisma.city.findMany()
+    } catch (error) {
+        console.error(error)
+        throw new Error("Błąd połączenia z bazą danych")
+    }
+}

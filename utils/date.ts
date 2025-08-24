@@ -14,18 +14,12 @@ export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date 
     );
   }
 
-  export const formatedMeetingDate = async (
+  export const formatedMeetingDate = (
     start: Date,
     end: Date,
-    cityId: string
+    locale: string,
+    timeZone: string
   ) => {
-    const city = await GetFullLocalizationByCityID(cityId)
-  
-    const country = city?.region?.country;
-  
-    const locale = country?.locale ?? "en-US"; // neutralny fallback
-    const timeZone = country?.timeZone ?? "UTC"; // neutralna strefa czasowa
-  
     const startDate = new Date(start);
     const endDate = new Date(end);
   
@@ -49,6 +43,7 @@ export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date 
   
     return `${dayName} ${date} ${startTime} - ${endTime}`;
   };
+  
   
 export const formatMeetingDate = (
   start: Date,

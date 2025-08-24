@@ -11,8 +11,11 @@ import { GetActiveCircleMembersByCircleID } from "./circle-membership"
 import { resend } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
+import { setTimeout } from "timers"
 
 export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
+    setTimeout(()=>{},10000)
+    
     const user = await CheckLoginReturnUser()
     if (!user) return { success: false, message: "Musisz być zalogowanym by utworzyć spotkanie" }
   
@@ -404,6 +407,7 @@ export const GetMeetingWithMembersByMeetingID = async (meetingID:string) => {
     const meeting = await prisma.circleMeeting.findUnique({
         where: { id: meetingID },
         include: {
+            city: { include: { region: { include: { country: true }}}},
             participants: {
                 include: {
                     user: {
@@ -434,5 +438,35 @@ export const GetMeetingWithMembersByMeetingID = async (meetingID:string) => {
 
     if (meeting.moderatorId !== moderator.id) throw new Error("Nie jesteś moderatorem tego spotkania")
 
-    return meeting.participants
+    return meeting
+}
+
+export const GetScheduledMeetingsByModeratorID = async (moderatorID: string) => {
+    try {
+        return await prisma.circleMeeting.findMany({
+            where: {
+                moderatorId: moderatorID,
+                status: CircleMeetingStatus.Scheduled,
+            },
+            orderBy: { startTime: "asc" }
+        })
+    } catch (error) {
+        console.error(error)
+        throw new Error("Błąd połączenia z bazą danych")
+    }
+}
+
+export const GetModeratorMeetingsByModeratorID = async (moderatorID: string, status?: CircleMeetingStatus) => {
+    try {
+        return await prisma.circleMeeting.findMany({
+            where: {
+                moderatorId: moderatorID,
+                status: status
+            },
+            orderBy: { startTime: "asc" }
+        })
+    } catch (error) {
+        console.error(error)
+        throw new Error("Błąd połączenia z bazą danych")
+    }
 }
