@@ -14,6 +14,18 @@ export function combineDateAndTime(date: DateValue, time: TimeInputValue): Date 
     );
   }
 
+export function combineDateAndTimeInputValue(date: Date, time: TimeInputValue): Date {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    time.hour,
+    time.minute,
+    time.second ?? 0,
+    time.millisecond ?? 0
+  )
+}
+
 export function combinedDateAndTime(date: Date, time: Date): Date {
   return new Date(
     date.getFullYear(),

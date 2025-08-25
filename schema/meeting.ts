@@ -23,28 +23,61 @@ const date = z.date({ required_error: "Wybierz datę" })
 const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
-export const CreateMeetingSchema = z.object({
-    circleId,
-    date,
-    startTime,
-    endTime,
-    street,
-    cityId,
-    price,
-})//.refine((data) => data.startTime > new Date(), {
+// export const CreateMeetingSchema = z.object({
+//     circleId,
+//     date,
+//     startTime,
+//     endTime,
+//     street,
+//     cityId,
+//     price,
+// }).refine((data) => data.startTime > new Date(), {
 //     path: ["startTime"],
 //     message: "Czas rozpoczęcia nie może być w przeszłości",
 // }).refine((data) => !data.endTime || data.endTime > data.startTime, {
 //     path: ["endTime"],
 //     message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
-// }).refine(
-//     (data) =>
-//       !unavailableDates || !unavailableDates.some((d) => d.toDateString() === data.startTime.toDateString()),
-//     {
-//       path: ["date"],
-//       message: "W tym dniu masz już inne spotkanie",
-//     }
-//   );
+// })
+
+// początek jutrzejszego dnia
+const tomorrow = new Date();
+tomorrow.setHours(0, 0, 0, 0);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+export const CreateMeetingSchema = z.object({
+  circleId: z.string(),
+  date: z.date(),
+  startTime: z.date(),
+  endTime: z.date(),
+  street: z.string(),
+  cityId: z.string(),
+  price: z.number(),
+}).superRefine((data, ctx) => {
+    if (data.date < tomorrow) {
+        ctx.addIssue({
+            code: "custom",
+            message: "Najwcześniej możesz umówić spotkanie na jutro",
+            path: ["date"],
+        });
+    }
+    // jeśli endTime jest przed startTime
+    if (data.endTime <= data.startTime) {
+        ctx.addIssue({
+            code: "custom",
+            message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
+            path: ["endTime"],
+        });
+    }
+    // jeśli startTime jest po endTime
+    if (data.startTime >= data.endTime) {
+        ctx.addIssue({
+            code: "custom",
+            message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
+            path: ["startTime"],
+        });
+    }
+});
+
 
 export const EditMeetingSchema = z.object({
     meetingId,

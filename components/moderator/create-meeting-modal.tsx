@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
 import { FormError } from "@/utils/errors"
+import { combineDateAndTimeInputValue } from "@/utils/date"
 
 export const CreateMeetingModal = ({
     circle
@@ -52,10 +53,7 @@ export const CreateMeetingModal = ({
         >
             <ModalContent>
                 <ModalHeader>Utwórz nowe spotkanie</ModalHeader>
-                <ModalBody>
-                    <CreateMeetingform circle={circle}/>
-                </ModalBody>
-                <ModalFooter/>
+                <CreateMeetingform circle={circle}/>
             </ModalContent>
         </Modal>
     </main>
@@ -105,11 +103,8 @@ const CreateMeetingform = ({
         ]
     })
 
-    
     const [circles, scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities] = queries
     
-    //if (!countries.data) return <Loader/>
-
     const unavailableDates = useMemo(() => [scheduledMeetings, completedMeetings, ArchivedMeetings]
             .flatMap(q => q.data ?? [])
             .map(meeting => {
@@ -125,7 +120,6 @@ const CreateMeetingform = ({
         a.getMonth() === b.getMonth() &&
         a.getDate() === b.getDate();
       
-    // sprawdzanie, czy data jest zajęta
     const isDateUnavailable = useCallback(
         (date: DateValue) => {
             if (!date) return false;
@@ -133,11 +127,9 @@ const CreateMeetingform = ({
             return unavailableDates.some(disabled => isSameDay(d, disabled));
         },[unavailableDates]
     );
-    //const schema = CreateMeetingSchema(unavailableDates);
-    //type FormFields = z.infer<typeof schema>
     type FormFields = z.infer<typeof CreateMeetingSchema>
     
-    const { clearErrors, handleSubmit, watch, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
+    const { handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema),
         mode: "all",
         defaultValues: {
@@ -147,9 +139,7 @@ const CreateMeetingform = ({
             price: circle?.price ?? undefined
         }
     })
-    
-    //const [date, setDate] = useState<DateValue | null>()
-    
+        
     const [countryID, setCountryID] = useState<string | undefined>()
     const [regionID, setRegionID] = useState<string | undefined>()
 
@@ -194,235 +184,206 @@ const CreateMeetingform = ({
     if (queries.some(q => q.isLoading || !q.data)) return <Loader/>
 
     return <Form onSubmit={handleSubmit((data) => mutation.mutateAsync(data))}>
-        <pre>
-            {JSON.stringify(watch(),null,2)}
-            {JSON.stringify(unavailableDates,null,2)}
-        </pre>
-        <Select
-            hideEmptyContent
-            disallowEmptySelection
-            label="Krąg"
-            labelPlacement="outside"
-            variant="bordered"
-            placeholder="Załoga Czarnej Perły"
-            selectedKeys={[watch("circleId")]}
-            onSelectionChange={(keys) => {
-                const id = Array.from(keys)[0];
-                const circle = circles.data?.find(c => c.id === id)
-                setValue("circleId", circle?.id ?? undefined!, {shouldValidate: true})
-                setValue("street", circle?.street ?? undefined!, {shouldValidate: true})
-                setValue("cityId", circle?.cityId ?? undefined!, {shouldValidate: true})
-                setValue("price", circle?.price ?? undefined!, {shouldValidate: true})
-            }}
-            isRequired
-            isDisabled={isSubmitting}
-            isInvalid={!!errors.circleId}
-            errorMessage={errors.circleId?.message}
-            items={circles.data}
-        >
-            {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
-        </Select>
-        <DatePicker
-            label="Data spotkania"
-            labelPlacement="outside"
-            variant="bordered"
-            isDateUnavailable={isDateUnavailable}
-            minValue={today(getLocalTimeZone()).add({days: 1})}
-            onChange={(date) => {
-                if (!date) return;
-                
-                if (isDateUnavailable(date)) {
-                    setError("date", { type: "manual", message: "W tym dniu masz już inne spotkanie" });
-                    return
-                }
-                
-                if (date < today(getLocalTimeZone()).add({days: 1})) {
-                    setError("date", { type: "manual", message: "Spotkanie możesz dodać najwcześniej jutro" });
-                    return
-                }            
-                
-                const selectedDate = new Date(date.year, date.month - 1, date.day);
-
-                setValue("date", selectedDate, { shouldValidate: true });
-                clearErrors("date");
-                // jeśli wszystko OK
-            
-                // aktualizacja start/end z zachowaniem godzin
-                const startTime = watch("startTime");
-                if (startTime) {
-                    const startDate = new Date(selectedDate);
-                    startDate.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-                    setValue("startTime", startDate);
-                }
-
-                const endTime = watch("endTime");
-                if (endTime) {
-                    const endDate = new Date(selectedDate);
-                    endDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
-                    setValue("endTime", endDate);
-                }
-            }}
-            isRequired
-            isInvalid={!!errors.date}
-            errorMessage={errors.date?.message}
-            isDisabled={isSubmitting}
-        />
-        <div className="flex space-x-4 w-full">
-            <TimeInput
-                label="Godzina Rozpoczęcia"
+        <ModalBody className="w-full">
+            <Select
+                hideEmptyContent
+                disallowEmptySelection
+                label="Krąg"
                 labelPlacement="outside"
                 variant="bordered"
-                hourCycle={24}
-                onChange={(time) => {
-                    if (!time) return;
-                
-                    const date = watch("date");
-                    const endTime = watch("endTime");
-                    if (!date) return;
-                
-                    const startDate = new Date(date);
-                    startDate.setHours(time.hour, time.minute, 0, 0);
-                
-                    // walidacja względem endTime
-                    if (endTime && startDate.getTime() >= endTime.getTime()) {
-                      setError("startTime", { type: "manual", message: "Czas rozpoczęcia musi być wcześniej niż zakończenia" });
-                    } else {
-                      clearErrors("startTime");
-                      clearErrors("endTime")
-                    }
-                
-                    setValue("startTime", startDate);
+                placeholder="Załoga Czarnej Perły"
+                selectedKeys={[watch("circleId")]}
+                onSelectionChange={(keys) => {
+                    const id = Array.from(keys)[0];
+                    const circle = circles.data?.find(c => c.id === id)
+                    setValue("circleId", circle?.id ?? undefined!, {shouldValidate: true})
+                    setValue("street", circle?.street ?? undefined!, {shouldValidate: true})
+                    setValue("cityId", circle?.cityId ?? undefined!, {shouldValidate: true})
+                    setValue("price", circle?.price ?? undefined!, {shouldValidate: true})
                 }}
                 isRequired
-                isDisabled={isSubmitting || !watch("date")}
-                isInvalid={!!errors.startTime}
-                errorMessage={errors.startTime?.message}
-            />
-            <TimeInput
-                label="Godzina zakończenia"
+                isDisabled={isSubmitting}
+                isInvalid={!!errors.circleId}
+                errorMessage={errors.circleId?.message}
+                items={circles.data}
+            >
+                {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
+            </Select>
+            <DatePicker
+                label="Data spotkania"
                 labelPlacement="outside"
                 variant="bordered"
-                hourCycle={24}
-                onChange={(time) => {
-                    if (!time) return;
-                
-                    const date = watch("date");
+                isDateUnavailable={isDateUnavailable}
+                minValue={today(getLocalTimeZone()).add({days: 1})}
+                onChange={(date) => {
+                    if (!date) return;
+                    const selectedDate = new Date(date.year, date.month - 1, date.day);
+                    setValue("date", selectedDate, { shouldValidate: true });
                     const startTime = watch("startTime");
-                    if (!date) return;
-                
-                    const endDate = new Date(date);
-                    endDate.setHours(time.hour, time.minute, 0, 0);
-                
-                    // walidacja względem startTime
-                    if (startTime && endDate.getTime() <= startTime.getTime()) {
-                      setError("endTime", { type: "manual", message: "Czas zakończenia musi być później niż rozpoczęcia" });
-                    } else {
-                        clearErrors("endTime");
-                        clearErrors("startTime");
+                    const endTime = watch("endTime");    
+                    
+                    if (startTime) {
+                        const startDate = new Date(selectedDate);
+                        startDate.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
+                        setValue("startTime", startDate);
                     }
                 
-                    setValue("endTime", endDate);
+                    if (endTime) {
+                        const endDate = new Date(selectedDate);
+                        endDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
+                        setValue("endTime", endDate);
+                    }
+                
+                    if (startTime) trigger("startTime")
+                    if (endTime) trigger("endTime")
+                    if (isDateUnavailable(date)) {
+                        setError("date", { type: "manual", message: "W tym dniu masz już inne   spotkanie" });
+                        return
+                    }
+                
+                // if (date < today(getLocalTimeZone()).add({days: 1})) {
+                //     setError("date", { type: "manual", message: "Spotkanie możesz dodać najwcześniej jutro" });
+                //     return
+                // }                            
                 }}
                 isRequired
-                isDisabled={isSubmitting || !watch("date") || !watch("startTime")}
-                isInvalid={!!errors.endTime}
-                errorMessage={errors.endTime?.message}
+                isInvalid={!!errors.date}
+                errorMessage={errors.date?.message}
+                isDisabled={isSubmitting}
             />
-        </div>
-        <Input
-            label="Adres (ulica, numer)"
-            labelPlacement="outside"
-            placeholder="Tortuga 13/7"
-            variant="bordered"
-            type="text"
-            value={watch("street") ?? ""}
-            onValueChange={(value)=>{setValue("street", value, {shouldValidate: true})}}
-            isClearable
-            isRequired
-            isDisabled={isSubmitting}
-            isInvalid={!!errors.street}
-            errorMessage={errors.street?.message}
-        />
-        <Select
-            label="Kraj"
-            labelPlacement="outside"
-            placeholder="Karaiby"
-            variant="bordered"
-            selectedKeys={countryID ? [countryID] : []}
-            hideEmptyContent
-            disallowEmptySelection
-            onSelectionChange={(keys) => {
-                setCountryID(Array.from(keys)[0].toString())
-                setRegionID(undefined)                 
-                setValue("cityId", "", {shouldValidate: true})
-            }}
-            isRequired
-            isDisabled={!countries || isSubmitting}
-            items={countries.data}
-        >
-            {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
-        </Select>
-        <Select
-            label="Województwo"
-            labelPlacement="outside"
-            placeholder="Archipelag Czarnej Perły"
-            variant="bordered"
-            selectedKeys={regionID ? [regionID] : []}
-            hideEmptyContent
-            disallowEmptySelection
-            onSelectionChange={(keys) => {
-                setRegionID(Array.from(keys)[0].toString())                 
-                setValue("cityId", "", {shouldValidate: true})
-            }}
-            isRequired
-            isDisabled={!regions || isSubmitting}
-            items={regions.data?.filter(region => region.countryId === countryID)}
-        >
-            {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
-        </Select>
-        <Select
-            label="Miasto"
-            labelPlacement="outside"
-            placeholder="Isla de Muerta"
-            variant="bordered"
-            selectedKeys={[watch("cityId")]}
-            hideEmptyContent
-            disallowEmptySelection
-            onSelectionChange={(keys) => {setValue("cityId", Array.from(keys)[0] as string, {shouldValidate:true})}}
-            isRequired
-            isDisabled={!cities || isSubmitting}
-            isInvalid={!!errors.cityId}
-            errorMessage={errors.cityId?.message}
-            items={cities.data?.filter(city => city.regionId === regionID)}
-        >
-            {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
-        </Select>
-        <NumberInput
-            label="Cena"
-            labelPlacement="outside"
-            variant="bordered"
-            placeholder="150,00 zł"
-            minValue={0}
-            formatOptions={{
-                style: "currency",
-                currency: "PLN"
-            }}
-            value={watch("price")}
-            onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
-            isClearable
-            isRequired
-            isDisabled={isSubmitting}
-            isInvalid={!!errors.price}
-            errorMessage={errors.price?.message}
-        />
-        <Button
-            color="primary"
-            fullWidth
-            type="submit"
-            isLoading={isSubmitting}
-            isDisabled={isSubmitting || !isValid}
-        >
-            Dodaj nowe spotkanie
-        </Button>
+            <div className="flex space-x-4 w-full mb-4">
+                <TimeInput
+                    label="Godzina Rozpoczęcia"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    hourCycle={24}
+                    onChange={(time) => {
+                        const date = watch("date")
+                        if (!time || !date) return;
+
+                        setValue("startTime", combineDateAndTimeInputValue(date, time), {shouldValidate:true})
+                        if (watch("endTime")) trigger("endTime")
+                    }}
+                    isRequired
+                    isDisabled={isSubmitting || !watch("date")}
+                    isInvalid={!!errors.startTime}
+                    errorMessage={errors.startTime?.message}
+                />
+                <TimeInput
+                    label="Godzina zakończenia"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    hourCycle={24}
+                    onChange={(time) => {
+                        const date = watch("date")
+                        if (!time || !date) return;
+
+                        setValue("endTime", combineDateAndTimeInputValue(date, time), {shouldValidate:true})
+                        if (watch("startTime")) trigger("startTime")
+                    }}
+                    isRequired
+                    isDisabled={isSubmitting || !watch("date") || !watch("startTime")}
+                    isInvalid={!!errors.endTime}
+                    errorMessage={errors.endTime?.message}
+                />
+            </div>
+            <Input
+                label="Adres (ulica, numer)"
+                labelPlacement="outside"
+                placeholder="Tortuga 13/7"
+                variant="bordered"
+                type="text"
+                value={watch("street") ?? ""}
+                onValueChange={(value)=>{setValue("street", value, {shouldValidate: true})}}
+                isClearable
+                isRequired
+                isDisabled={isSubmitting}
+                isInvalid={!!errors.street}
+                errorMessage={errors.street?.message}
+            />
+            <Select
+                label="Kraj"
+                labelPlacement="outside"
+                placeholder="Karaiby"
+                variant="bordered"
+                selectedKeys={countryID ? [countryID] : []}
+                hideEmptyContent
+                disallowEmptySelection
+                onSelectionChange={(keys) => {
+                    setCountryID(Array.from(keys)[0].toString())
+                    setRegionID(undefined)                 
+                    setValue("cityId", "", {shouldValidate: true})
+                }}
+                isRequired
+                isDisabled={!countries || isSubmitting}
+                items={countries.data}
+            >
+                {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
+            </Select>
+            <Select
+                label="Województwo"
+                labelPlacement="outside"
+                placeholder="Archipelag Czarnej Perły"
+                variant="bordered"
+                selectedKeys={regionID ? [regionID] : []}
+                hideEmptyContent
+                disallowEmptySelection
+                onSelectionChange={(keys) => {
+                    setRegionID(Array.from(keys)[0].toString())                 
+                    setValue("cityId", "", {shouldValidate: true})
+                }}
+                isRequired
+                isDisabled={!regions || isSubmitting}
+                items={regions.data?.filter(region => region.countryId === countryID)}
+            >
+                {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
+            </Select>
+            <Select
+                label="Miasto"
+                labelPlacement="outside"
+                placeholder="Isla de Muerta"
+                variant="bordered"
+                selectedKeys={[watch("cityId")]}
+                hideEmptyContent
+                disallowEmptySelection
+                onSelectionChange={(keys) => {setValue("cityId", Array.from(keys)[0] as string, {shouldValidate:true})}}
+                isRequired
+                isDisabled={!cities || isSubmitting}
+                isInvalid={!!errors.cityId}
+                errorMessage={errors.cityId?.message}
+                items={cities.data?.filter(city => city.regionId === regionID)}
+            >
+                {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
+            </Select>
+            <NumberInput
+                label="Cena"
+                labelPlacement="outside"
+                variant="bordered"
+                placeholder="150,00 zł"
+                minValue={0}
+                formatOptions={{
+                    style: "currency",
+                    currency: "PLN"
+                }}
+                value={watch("price")}
+                onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
+                isClearable
+                isRequired
+                isDisabled={isSubmitting}
+                isInvalid={!!errors.price}
+                errorMessage={errors.price?.message}
+            />
+        </ModalBody>
+        <ModalFooter className="w-full">
+            <Button
+                color="primary"
+                fullWidth
+                type="submit"
+                isLoading={isSubmitting}
+                isDisabled={isSubmitting || !isValid}
+            >
+                {isSubmitting ? "Przetwarzanie..." : "Dodaj spotkanie"}
+            </Button>
+        </ModalFooter>
     </Form>
 }
