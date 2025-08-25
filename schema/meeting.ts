@@ -44,7 +44,10 @@ const tomorrow = new Date();
 tomorrow.setHours(0, 0, 0, 0);
 tomorrow.setDate(tomorrow.getDate() + 1);
 
-export const CreateMeetingSchema = z.object({
+export const CreateMeetingSchema = (unavailableDates: Date[]) => {
+
+
+return z.object({
   circleId: z.string(),
   date: z.date(),
   startTime: z.date(),
@@ -57,6 +60,18 @@ export const CreateMeetingSchema = z.object({
         ctx.addIssue({
             code: "custom",
             message: "Najwcześniej możesz umówić spotkanie na jutro",
+            path: ["date"],
+        });
+    }
+     // 🔹 walidacja: niedostępne daty
+     if (unavailableDates.some(d => 
+        d.getFullYear() === data.date.getFullYear() &&
+        d.getMonth() === data.date.getMonth() &&
+        d.getDate() === data.date.getDate()
+    )) {
+        ctx.addIssue({
+            code: "custom",
+            message: "W tym dniu masz już inne spotkanie",
             path: ["date"],
         });
     }
@@ -77,7 +92,7 @@ export const CreateMeetingSchema = z.object({
         });
     }
 });
-
+}
 
 export const EditMeetingSchema = z.object({
     meetingId,

@@ -127,10 +127,10 @@ const CreateMeetingform = ({
             return unavailableDates.some(disabled => isSameDay(d, disabled));
         },[unavailableDates]
     );
-    type FormFields = z.infer<typeof CreateMeetingSchema>
+    type FormFields = z.infer<ReturnType<typeof CreateMeetingSchema>>
     
     const { handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
-        resolver: zodResolver(CreateMeetingSchema),
+        resolver: zodResolver(CreateMeetingSchema(unavailableDates)),
         mode: "all",
         defaultValues: {
             circleId: circle?.id,
@@ -237,7 +237,7 @@ const CreateMeetingform = ({
                     if (startTime) trigger("startTime")
                     if (endTime) trigger("endTime")
                     if (isDateUnavailable(date)) {
-                        setError("date", { type: "manual", message: "W tym dniu masz już inne   spotkanie" });
+                        setError("date", { type: "manual", message: "W tym dniu masz już inne spotkanie" });
                         return
                     }
                 

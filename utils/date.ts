@@ -103,3 +103,30 @@ export const formatMeetingDate = (
 
   return `${dayName} ${date} ${startTime} - ${endTime}`;
 };
+
+export const formatDate = (start: Date, end: Date, locale: string) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  const sameDay =
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate();
+
+  if (sameDay) {
+    return `${startDate.toLocaleString(locale, {
+      dateStyle: "full",
+      timeStyle: "short",
+    })} - ${endDate.toLocaleTimeString(locale, {
+      timeStyle: "short",
+    })}`;
+  }
+
+  return `${startDate.toLocaleString(locale, {
+    dateStyle: "full",
+    timeStyle: "short",
+  })} - ${endDate.toLocaleString(locale, {
+    dateStyle: "full",
+    timeStyle: "short",
+  })}`;
+};

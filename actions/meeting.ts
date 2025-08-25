@@ -8,13 +8,13 @@ import { prisma } from "@/lib/prisma"
 import { GetCircleById } from "./circle"
 import { PermissionGate } from "@/utils/gate"
 import { GetActiveCircleMembersByCircleID } from "./circle-membership"
-import { resend } from "@/lib/resend"
+import { resend, sendEmail } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
 import { setTimeout } from "timers"
 import { FormError } from "@/utils/errors"
 
-export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {
+export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {
     setTimeout(()=>{},10000)
     
     const user = await CheckLoginReturnUser()
@@ -84,27 +84,27 @@ export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) =
         // Wysyłka maili w osobnym try/catch
         try {
             for (const participant of meeting.participants) {
-                await resend.emails.send({
-                    from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
-                    to: participant.user.email,
-                    subject: `Nowe spotkanie ${meeting.circle.name}`,
-                    react: MeetingInvite({
-                        userName: participant.user.name,
-                        circleName: meeting.circle.name,
-                        startTime: meeting.startTime,
-                        endTime: meeting.endTime,
-                        street: meeting.street,
-                        city: meeting.city.name,
-                        locale: meeting.city.region.country.locale,
-                        price: meeting.price,
-                        moderatorName: meeting.moderator?.name,
-                        moderatorAvatarUrl: meeting.moderator?.image,
-                    }),
-                })
+              await sendEmail({
+                to: participant.user.email,
+                subject: `Nowe spotkanie ${meeting.circle.name}`,
+                react: MeetingInvite({
+                    userName: participant.user.name,
+                    circleName: meeting.circle.name,
+                    startTime: meeting.startTime,
+                    endTime: meeting.endTime,
+                    street: meeting.street,
+                    city: meeting.city.name,
+                    locale: meeting.city.region.country.locale,
+                    price: meeting.price,
+                    moderatorName: meeting.moderator?.name,
+                    moderatorAvatarUrl: meeting.moderator?.image,
+                }),
+              });
             }
-        } catch (error) {
-            console.error("Błąd przy wysyłce maili:", error)
-        }
+          } catch (error) {
+            console.error(error);
+          }
+          
         return { message: "Spotkanie utworzone pomyślnie" };
     } catch (error) {
         console.error(error)
