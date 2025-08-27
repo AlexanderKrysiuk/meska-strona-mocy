@@ -12,14 +12,14 @@ import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, CircleMeeting, CircleMeetingStatus, Country } from "@prisma/client"
+import { Circle, CircleMeeting, CircleMeetingStatus, Country, Region } from "@prisma/client"
 import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
 import { getLocalTimeZone, today } from "@internationalized/date"
-import { combineDateAndTime, convertDateToNative, convertDateToTimeInputValue, formatShortDate, isSameDay } from "@/utils/date"
+import { combineDateAndTime, convertDateToNative, convertDateToTimeInputValue, convertDateValueToDate, formatShortDate, isSameDay } from "@/utils/date"
 
 export const EditMeetingModal = ({
     meeting,
@@ -126,7 +126,7 @@ const EditMeetingForm = ({
 
     type FormFields = z.infer<ReturnType<typeof EditMeetingSchema>>
 
-    const { handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting, isDirty } } = useForm<FormFields>({
+    const { clearErrors, handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting, isDirty } } = useForm<FormFields>({
         resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime)),
         mode: "all",
         defaultValues: {
@@ -141,8 +141,11 @@ const EditMeetingForm = ({
         }
     })
 
-    const [countryID, setCountryID] = useState<string | undefined>()
-    const [regionID, setRegionID] = useState<string | undefined>()
+    const [countryID] = useState<string | undefined>()
+    const [regionID] = useState<string | undefined>()
+
+    const [country, setCountry] = useState<Country | undefined>()
+    const [region, setRegion] = useState<Region | undefined>()
 
     const cityID = watch("cityId")
 
@@ -151,8 +154,8 @@ const EditMeetingForm = ({
         const region = regions.data?.find(r => r.id === city?.regionId)
         const country = countries.data?.find(c => c.id === region?.countryId)
 
-        setRegionID(region?.id)
-        setCountryID(country?.id)
+        setRegion(region)
+        setCountry(country)
     }, [cityID, cities.data, regions.data, countries.data])
 
     const queryClient = useQueryClient()
@@ -195,26 +198,15 @@ const EditMeetingForm = ({
                 minValue={today(getLocalTimeZone()).add({days: 1})}
                 onChange={(date) => {
                     if (!date) return;
-                    const selectedDate = new Date(date.year, date.month - 1, date.day);
-                    setValue("date", selectedDate, { shouldValidate: true, shouldDirty: true });
+                    setValue("date", convertDateValueToDate(date), { shouldValidate: true, shouldDirty: true });
                     const startTime = watch("startTime");
-                    const endTime = watch("endTime");    
+                    const endTime = watch("endTime");
                     
-                    if (startTime) {
-                        const startDate = new Date(selectedDate);
-                        startDate.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-                        setValue("startTime", startDate);
-                    }
-                
-                    if (endTime) {
-                        const endDate = new Date(selectedDate);
-                        endDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
-                        setValue("endTime", endDate);
-                    }
+                    if (startTime) setValue("startTime", combineDateAndTime(date, startTime), {shouldDirty: true});
+                    if (endTime) setValue("endTime", combineDateAndTime(date, endTime), {shouldDirty: true});
                 
                     if (startTime) trigger("startTime")
-                    if (endTime) trigger("endTime")
-                                      
+                    if (endTime) trigger("endTime")          
                 }}
                 isRequired
                 isInvalid={!!errors.date}
@@ -231,8 +223,7 @@ const EditMeetingForm = ({
                     onChange={(time) => {
                         const date = watch("date")
                         if (!time || !date) return;
-
-                        setValue("startTime", combineDateAndTime(date, time), {shouldValidate:true, shouldDirty: true})
+                        setValue("startTime", combineDateAndTime(date, time), {shouldValidate:true, shouldDirty:true})
                         if (watch("endTime")) trigger("endTime")
                     }}
                     isRequired
@@ -249,7 +240,6 @@ const EditMeetingForm = ({
                     onChange={(time) => {
                         const date = watch("date")
                         if (!time || !date) return;
-
                         setValue("endTime", combineDateAndTime(date, time), {shouldValidate:true, shouldDirty:true})
                         if (watch("startTime")) trigger("startTime")
                     }}
@@ -278,13 +268,15 @@ const EditMeetingForm = ({
                 labelPlacement="outside"
                 placeholder="Karaiby"
                 variant="bordered"
-                selectedKeys={countryID ? [countryID] : []}
+                selectedKeys={country ? [country.id] : []}
                 hideEmptyContent
                 disallowEmptySelection
                 onSelectionChange={(keys) => {
-                    setCountryID(Array.from(keys)[0].toString())
-                    setRegionID(undefined)                 
-                    setValue("cityId", "", {shouldValidate: true, shouldDirty:true})
+                    const ID = Array.from(keys)[0].toString()
+                    const country = countries.data?.find(c => c.id === ID)
+                    setCountry(country)
+                    setRegion(undefined)
+                    setValue("cityId", undefined!)
                 }}
                 isRequired
                 isDisabled={!countries || isSubmitting}
@@ -297,12 +289,15 @@ const EditMeetingForm = ({
                 labelPlacement="outside"
                 placeholder="Archipelag Czarnej Perły"
                 variant="bordered"
-                selectedKeys={regionID ? [regionID] : []}
+                selectedKeys={region ? [region.id] : []}
                 hideEmptyContent
                 disallowEmptySelection
                 onSelectionChange={(keys) => {
-                    setRegionID(Array.from(keys)[0].toString())                 
-                    setValue("cityId", "", {shouldValidate: true, shouldDirty:true})
+                    const ID = Array.from(keys)[0].toString()
+                    const region = regions.data?.find(r => r.id === ID)
+                    setRegion(region)
+                    setValue("cityId", undefined!)
+                    clearErrors("cityId")
                 }}
                 isRequired
                 isDisabled={!regions || isSubmitting}

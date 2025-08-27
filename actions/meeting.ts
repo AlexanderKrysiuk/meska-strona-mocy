@@ -34,8 +34,8 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             where: {
                 moderatorId: user.id,
                 AND: [
-                    { startTime: { lt: data.endTime } },
-                    { endTime: { gt: data.startTime } },
+                    { startTime: { lt: data.TimeRangeSchema.endTime } },
+                    { endTime: { gt: data.TimeRangeSchema.startTime } },
                 ],
             },
         })
@@ -61,8 +61,8 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
         const meeting = await prisma.circleMeeting.create({
             data: {
                 status: CircleMeetingStatus.Scheduled,
-                startTime: data.startTime,
-                endTime: data.endTime,
+                startTime: data.TimeRangeSchema.startTime,
+                endTime: data.TimeRangeSchema.endTime,
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
