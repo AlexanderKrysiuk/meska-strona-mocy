@@ -14,9 +14,7 @@ import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
 import { setTimeout } from "timers"
 import { FormError } from "@/utils/errors"
 
-export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {
-    setTimeout(()=>{},10000)
-    
+export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {    
     const user = await CheckLoginReturnUser()
     if (!user) throw new Error("Musisz być zalogowanym by utworzyć spotkanie");
   
@@ -127,7 +125,7 @@ async function RefreshMeetingsNumbering (circleId: string) {
     return meetings.length
 }
 
-export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
+export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSchema>>) => {
     const user = await CheckLoginReturnUser()
 
     if (!user) return {
@@ -458,7 +456,11 @@ export const GetModeratorMeetingsByModeratorID = async (moderatorID: string, sta
                 moderatorId: moderatorID,
                 status: status
             },
-            orderBy: { startTime: "asc" }
+            orderBy: { startTime: "asc" },
+            include: { 
+                city : { include: { region: {include: {country:true}}}},
+                circle:true
+            }
         })
     } catch (error) {
         console.error(error)

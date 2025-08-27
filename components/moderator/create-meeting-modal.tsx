@@ -13,14 +13,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getLocalTimeZone, today } from "@internationalized/date"
-import { Circle, CircleMeetingStatus } from "@prisma/client"
+import { Circle, CircleMeetingStatus, Country, Region } from "@prisma/client"
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
 import { FormError } from "@/utils/errors"
-import { combineDateAndTimeInputValue } from "@/utils/date"
+import { combineDateAndTime, convertDateValueToDate, isSameDay } from "@/utils/date"
 
 export const CreateMeetingModal = ({
     circle
@@ -114,12 +114,6 @@ const CreateMeetingform = ({
         [scheduledMeetings, completedMeetings, ArchivedMeetings]
     );
       
-    // funkcja pomocnicza do porównywania dni
-    const isSameDay = (a: Date, b: Date) =>
-        a.getFullYear() === b.getFullYear() &&
-        a.getMonth() === b.getMonth() &&
-        a.getDate() === b.getDate();
-      
     const isDateUnavailable = useCallback(
         (date: DateValue) => {
             if (!date) return false;
@@ -129,7 +123,7 @@ const CreateMeetingform = ({
     );
     type FormFields = z.infer<ReturnType<typeof CreateMeetingSchema>>
     
-    const { handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
+    const { reset, clearErrors, handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
         resolver: zodResolver(CreateMeetingSchema(unavailableDates)),
         mode: "all",
         defaultValues: {
@@ -140,8 +134,8 @@ const CreateMeetingform = ({
         }
     })
         
-    const [countryID, setCountryID] = useState<string | undefined>()
-    const [regionID, setRegionID] = useState<string | undefined>()
+    const [country, setCountry] = useState<Country | undefined>()
+    const [region, setRegion] = useState<Region | undefined>()
 
     const cityID = watch("cityId")
 
@@ -150,8 +144,8 @@ const CreateMeetingform = ({
         const region = regions.data?.find(r => r.id === city?.regionId)
         const country = countries.data?.find(c => c.id === region?.countryId)
 
-        setRegionID(region?.id)
-        setCountryID(country?.id)
+        setRegion(region)
+        setCountry(country)
     }, [cityID, cities.data, regions.data, countries.data])
     
     const queryClient = useQueryClient()
@@ -185,6 +179,12 @@ const CreateMeetingform = ({
 
     return <Form onSubmit={handleSubmit((data) => mutation.mutateAsync(data))}>
         <ModalBody className="w-full">
+            {/* <pre>
+                WATCH: {JSON.stringify(watch(),null,2)}<br/>
+                COUNTRY: {JSON.stringify(country,null,2)}<br/>
+                REGION: {JSON.stringify(region,null,2)}<br/>
+                CITYID: {JSON.stringify(watch("cityId"),null,2)}
+            </pre> */}
             <Select
                 hideEmptyContent
                 disallowEmptySelection
@@ -196,10 +196,16 @@ const CreateMeetingform = ({
                 onSelectionChange={(keys) => {
                     const id = Array.from(keys)[0];
                     const circle = circles.data?.find(c => c.id === id)
-                    setValue("circleId", circle?.id ?? undefined!, {shouldValidate: true})
-                    setValue("street", circle?.street ?? undefined!, {shouldValidate: true})
-                    setValue("cityId", circle?.cityId ?? undefined!, {shouldValidate: true})
-                    setValue("price", circle?.price ?? undefined!, {shouldValidate: true})
+
+                    reset({
+                        circleId: circle?.id ?? undefined,
+                        date: watch("date"),
+                        startTime: watch("startTime"),
+                        endTime: watch("endTime"),
+                        street: circle?.street ?? undefined,
+                        cityId: circle?.cityId ?? undefined,
+                        price: circle?.price ?? undefined,
+                    })
                 }}
                 isRequired
                 isDisabled={isSubmitting}
@@ -217,34 +223,15 @@ const CreateMeetingform = ({
                 minValue={today(getLocalTimeZone()).add({days: 1})}
                 onChange={(date) => {
                     if (!date) return;
-                    const selectedDate = new Date(date.year, date.month - 1, date.day);
-                    setValue("date", selectedDate, { shouldValidate: true });
+                    setValue("date", convertDateValueToDate(date), { shouldValidate: true });
                     const startTime = watch("startTime");
                     const endTime = watch("endTime");    
                     
-                    if (startTime) {
-                        const startDate = new Date(selectedDate);
-                        startDate.setHours(startTime.getHours(), startTime.getMinutes(), 0, 0);
-                        setValue("startTime", startDate);
-                    }
-                
-                    if (endTime) {
-                        const endDate = new Date(selectedDate);
-                        endDate.setHours(endTime.getHours(), endTime.getMinutes(), 0, 0);
-                        setValue("endTime", endDate);
-                    }
+                    if (startTime) setValue("startTime", combineDateAndTime(date, startTime));
+                    if (endTime) setValue("endTime", combineDateAndTime(date, endTime));
                 
                     if (startTime) trigger("startTime")
-                    if (endTime) trigger("endTime")
-                    if (isDateUnavailable(date)) {
-                        setError("date", { type: "manual", message: "W tym dniu masz już inne spotkanie" });
-                        return
-                    }
-                
-                // if (date < today(getLocalTimeZone()).add({days: 1})) {
-                //     setError("date", { type: "manual", message: "Spotkanie możesz dodać najwcześniej jutro" });
-                //     return
-                // }                            
+                    if (endTime) trigger("endTime")          
                 }}
                 isRequired
                 isInvalid={!!errors.date}
@@ -260,8 +247,7 @@ const CreateMeetingform = ({
                     onChange={(time) => {
                         const date = watch("date")
                         if (!time || !date) return;
-
-                        setValue("startTime", combineDateAndTimeInputValue(date, time), {shouldValidate:true})
+                        setValue("startTime", combineDateAndTime(date, time), {shouldValidate:true})
                         if (watch("endTime")) trigger("endTime")
                     }}
                     isRequired
@@ -277,8 +263,7 @@ const CreateMeetingform = ({
                     onChange={(time) => {
                         const date = watch("date")
                         if (!time || !date) return;
-
-                        setValue("endTime", combineDateAndTimeInputValue(date, time), {shouldValidate:true})
+                        setValue("endTime", combineDateAndTime(date, time), {shouldValidate:true})
                         if (watch("startTime")) trigger("startTime")
                     }}
                     isRequired
@@ -306,13 +291,19 @@ const CreateMeetingform = ({
                 labelPlacement="outside"
                 placeholder="Karaiby"
                 variant="bordered"
-                selectedKeys={countryID ? [countryID] : []}
+                selectedKeys={country ? [country.id] : []}
                 hideEmptyContent
                 disallowEmptySelection
                 onSelectionChange={(keys) => {
-                    setCountryID(Array.from(keys)[0].toString())
-                    setRegionID(undefined)                 
-                    setValue("cityId", "", {shouldValidate: true})
+                    const ID = Array.from(keys)[0].toString()
+                    const country = countries.data?.find(c => c.id === ID)
+                    setCountry(country)
+                    setRegion(undefined)
+                    setValue("cityId", undefined!)
+                    clearErrors("cityId")
+                    // setCountryID(Array.from(keys)[0].toString())
+                    // setRegionID(undefined)                 
+                    // setValue("cityId", "", {shouldValidate: true})
                 }}
                 isRequired
                 isDisabled={!countries || isSubmitting}
@@ -325,16 +316,19 @@ const CreateMeetingform = ({
                 labelPlacement="outside"
                 placeholder="Archipelag Czarnej Perły"
                 variant="bordered"
-                selectedKeys={regionID ? [regionID] : []}
+                selectedKeys={region ? [region.id] : []}
                 hideEmptyContent
                 disallowEmptySelection
                 onSelectionChange={(keys) => {
-                    setRegionID(Array.from(keys)[0].toString())                 
-                    setValue("cityId", "", {shouldValidate: true})
+                    const ID = Array.from(keys)[0].toString()
+                    const region = regions.data?.find(r => r.id === ID)
+                    setRegion(region)
+                    setValue("cityId", undefined!)
+                    clearErrors("cityId")
                 }}
                 isRequired
-                isDisabled={!regions || isSubmitting}
-                items={regions.data?.filter(region => region.countryId === countryID)}
+                isDisabled={!regions || isSubmitting || !country}
+                items={regions.data?.filter(region => region.countryId === country?.id)}
             >
                 {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
             </Select>
@@ -348,10 +342,10 @@ const CreateMeetingform = ({
                 disallowEmptySelection
                 onSelectionChange={(keys) => {setValue("cityId", Array.from(keys)[0] as string, {shouldValidate:true})}}
                 isRequired
-                isDisabled={!cities || isSubmitting}
+                isDisabled={!cities || isSubmitting || !region}
                 isInvalid={!!errors.cityId}
                 errorMessage={errors.cityId?.message}
-                items={cities.data?.filter(city => city.regionId === regionID)}
+                items={cities.data?.filter(city => city.regionId === region?.id)}
             >
                 {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
             </Select>

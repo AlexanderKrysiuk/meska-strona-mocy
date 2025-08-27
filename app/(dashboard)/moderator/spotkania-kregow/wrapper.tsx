@@ -2,7 +2,6 @@
 
 import CompleteMeetingModal from "@/components/moderator/complete-meeting-modal";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
-import EditMeetingModal from "@/components/moderator/edit-meeting-modal";
 import ShowMeetingMembersModal from "@/components/moderator/show-meeting-members-modal";
 import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { City, Circle, CircleMeeting, Country, Region, CircleMeetingStatus } from "@prisma/client";
@@ -104,14 +103,7 @@ const MeetingsWrapper = ({
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex space-x-1 items-center justify-center">
-                                            <EditMeetingModal
-                                                meeting={meeting}
-                                                meetings={meetings}
-                                                circle={circle}
-                                                countries={countries}
-                                                regions={regions}
-                                                cities={cities}
-                                            />
+                                            
                                             <CompleteMeetingModal
                                                 meeting={meeting}
                                                 circle={circle}

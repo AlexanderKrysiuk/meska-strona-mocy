@@ -10,6 +10,7 @@ import { ModeratorQueries } from "@/utils/query";
 import { CreateMeetingModal } from "@/components/moderator/create-meeting-modal";
 import Loader from "@/components/loader";
 import { Circle } from "@prisma/client";
+import { ScheduledMeetingsTable } from "@/components/moderator/scheduled-meetings-table";
 
 const MeetingsPage = () => {
     const [selectedCircle, setSelectedCircle] = useState<Circle | undefined>()
@@ -75,10 +76,10 @@ const MeetingsPage = () => {
                 <h6 className="w-full">Zaplanowane spotkania</h6>
                 <CreateMeetingModal circle={selectedCircle}/>
             </div>
+            <ScheduledMeetingsTable/>
             <Divider/>
             <pre>
                 {JSON.stringify(selectedCircle,null,2)}
-
             </pre>
                 {/* <pre>{JSON.stringify(circles,null,2)}</pre> */}
         </main>
