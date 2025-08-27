@@ -2,6 +2,17 @@
 import React from "react";
 import { Html, Head, Body, Container, Section, Text, Img } from "@react-email/components";
 
+export function getTextColor(bgColor: string | undefined) {
+  if (!bgColor) return "#111"; // domyślnie ciemny tekst
+  // prosta heurystyka jasności: jeśli tło ciemne → tekst jasny, jeśli tło jasne → tekst ciemny
+  const c = bgColor.replace("#", "");
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 128 ? "#111" : "#fff";
+}
+
 // --- CENTRALNE STYLE ---
 export const emailStyles = {
   main: {
@@ -52,11 +63,14 @@ export function Button({ children, href, style }: { children: React.ReactNode; h
 }
 
 export function EmailLayout({ children }: { children: React.ReactNode }) {
+  const bg = emailStyles.container.backgroundColor; // #1e1e1e
+  const color = getTextColor(bg);
+
   return (
     <Html>
       <Head />
-      <Body style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#f4f4f4", margin: 0, padding: 0 }}>
-        <Container style={emailStyles.container}>
+      <Body style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#f4f4f4", margin: 0, padding: 0, color }}>
+        <Container style={{ ...emailStyles.container, color }}>
           {children}
           <Text style={emailStyles.footerText}>© 2025 Męska Strona Mocy</Text>
         </Container>
@@ -64,6 +78,7 @@ export function EmailLayout({ children }: { children: React.ReactNode }) {
     </Html>
   );
 }
+
 
 export function Header({ title = "Męska Strona Mocy", logoUrl }: { title?: string; logoUrl?: string }) {
   return (

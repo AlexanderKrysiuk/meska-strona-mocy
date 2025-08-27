@@ -2,7 +2,7 @@
 
 import { GetModeratorMeetingsByModeratorID } from "@/actions/meeting"
 import { clientAuth } from "@/hooks/auth"
-import { formatShortDate } from "@/utils/date"
+import { formatedDate } from "@/utils/date"
 import { ModeratorQueries } from "@/utils/query"
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Circle, CircleMeetingStatus } from "@prisma/client"
@@ -43,7 +43,7 @@ export const ScheduledMeetingsTable = ({
             >
                 {(item) => (
                     <TableRow key={item.id}>
-                        <TableCell>{formatShortDate(item.startTime, item.endTime, item.city.region.country.locale)}</TableCell>
+                        <TableCell>{formatedDate(item.startTime, item.endTime)}</TableCell>
                         <TableCell>{item.circle.name}</TableCell>
                         <TableCell>{item.street}</TableCell>
                         <TableCell>{item.city.name}</TableCell>
@@ -51,7 +51,6 @@ export const ScheduledMeetingsTable = ({
                             <EditMeetingModal
                                 meeting={item}
                                 circle={item.circle}
-                                country={item.city.region.country}
                             />
                         </TableCell>
                     </TableRow>

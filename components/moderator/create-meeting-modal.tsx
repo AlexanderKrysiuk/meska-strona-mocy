@@ -10,17 +10,16 @@ import { CreateMeetingSchema } from "@/schema/meeting"
 import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, addToast, useDisclosure } from "@heroui/react"
+import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getLocalTimeZone, today } from "@internationalized/date"
 import { Circle, CircleMeetingStatus, Country, Region } from "@prisma/client"
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useMemo, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
-import { FormError } from "@/utils/errors"
-import { combineDateAndTime, convertDateValueToDate, isSameDay } from "@/utils/date"
+import { combineDateAndTime, isSameDay } from "@/utils/date"
 
 export const CreateMeetingModal = ({
     circle
@@ -134,43 +133,46 @@ const CreateMeetingform = ({
         }
     })
     
-    const defaultCity = cities.data?.find(c => c.id === watch("cityId"))
-    const defaultRegion = regions.data?.find(r => r.id === defaultCity?.regionId)
-    const defaultCountry = countries.data?.find(c => c.id === defaultRegion?.countryId)
-
-    const [region, setRegion] = useState<Region | undefined>(defaultRegion)
-    const [country, setCountry] = useState<Country | undefined>(defaultCountry)
+    const [region, setRegion] = useState<Region | undefined>();
+    const [country, setCountry] = useState<Country | undefined>();
+    const [startHour, setStartHour] = useState<TimeInputValue | null>()
+    const [endHour, setEndHour] = useState<TimeInputValue | null>()
+    
+    useEffect(() => {
+      if (!cities.data || !regions.data || !countries.data) return;
+    
+      const defaultCity = cities.data.find(c => c.id === circle?.cityId);
+      const defaultRegion = regions.data.find(r => r.id === defaultCity?.regionId);
+      const defaultCountry = countries.data.find(c => c.id === defaultRegion?.countryId);
+    
+      setRegion(defaultRegion);
+      setCountry(defaultCountry);
+    }, [cities.data, regions.data, countries.data, circle]);
 
     const queryClient = useQueryClient()
 
-    const mutation = useMutation({
-        mutationFn: (data: FormFields) => CreateMeeting(data),
-        onSuccess: (result) => {
-            addToast({
-                title: result.message,
-                color: "success"
-            })
-            queryClient.invalidateQueries({
-                queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],
-            })
-        },
-        onError: (error) => {
-            addToast({
-                title: error.message,
-                color: "warning"
-            })
-            if (error instanceof FormError) {
-                // Błędy formularza - możemy ustawić w state jeśli chcemy wyświetlać inline
-                Object.entries(error.fieldErrors).forEach(([field, message]) => {
+    const submit: SubmitHandler<FormFields> = async(data) => {
+        const result = await CreateMeeting(data)
+
+        addToast({
+            title: result.message,
+            color: result.success ? "success" : "danger"
+        })
+
+        if (result.success) {
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],})
+        } else {
+            if (result.fieldErrors) {
+                Object.entries(result.fieldErrors).forEach(([field, message]) => {
                     setError(field as keyof FormFields, { type: "manual", message });
                 });
             }
         }
-    })
+    }
 
     if (queries.some(q => q.isLoading || !q.data)) return <Loader/>
 
-    return <Form onSubmit={handleSubmit((data) => mutation.mutateAsync(data))}>
+    return <Form onSubmit={handleSubmit(submit)}>
         <ModalBody className="w-full">
             {/* <pre>
                 WATCH: {JSON.stringify(watch(),null,2)}<br/>
@@ -189,7 +191,6 @@ const CreateMeetingform = ({
                 onSelectionChange={(keys) => {
                     const id = Array.from(keys)[0];
                     const circle = circles.data?.find(c => c.id === id)
-
                     reset(
                         {
                             circleId: circle?.id ?? undefined,
@@ -224,16 +225,17 @@ const CreateMeetingform = ({
                 label="Data spotkania"
                 labelPlacement="outside"
                 variant="bordered"
+                description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
                 isDateUnavailable={isDateUnavailable}
-                minValue={today(getLocalTimeZone()).add({days: 1})}
+                minValue={country?.timeZone ? today(country.timeZone).add({ days: 1 }) : today(getLocalTimeZone()).add({days: 1})}
                 onChange={(date) => {
                     if (!date) return;
-                    setValue("date", convertDateValueToDate(date), { shouldValidate: true });
+                    setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true });
                     const startTime = watch("TimeRangeSchema.startTime");
                     const endTime = watch("TimeRangeSchema.endTime");    
                     
-                    if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime));
-                    if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime));
+                    if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone));
+                    if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone));
                 
                     if (startTime) trigger("TimeRangeSchema.startTime")
                     if (endTime) trigger("TimeRangeSchema.endTime")          
@@ -249,10 +251,12 @@ const CreateMeetingform = ({
                     labelPlacement="outside"
                     variant="bordered"
                     hourCycle={24}
+                    value={startHour}
                     onChange={(time) => {
+                        setStartHour(time)
                         const date = watch("date")
                         if (!time || !date) return;
-                        setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time), {shouldValidate:true})
+                        setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true})
                         if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
                     }}
                     isRequired
@@ -266,9 +270,10 @@ const CreateMeetingform = ({
                     variant="bordered"
                     hourCycle={24}
                     onChange={(time) => {
+                        setEndHour(time)
                         const date = watch("date")
                         if (!time || !date) return;
-                        setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time), {shouldValidate:true})
+                        setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true})
                         if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
                     }}
                     isRequired
@@ -304,17 +309,20 @@ const CreateMeetingform = ({
                     const country = countries.data?.find(c => c.id === ID)
                     setCountry(country)
                     setRegion(undefined)
-                    reset({
-                        circleId: watch("circleId"),
-                        date: watch("date"),
-                        TimeRangeSchema: {
-                            startTime: watch("TimeRangeSchema.startTime"),
-                            endTime: watch("TimeRangeSchema.endTime")
+                    reset(
+                        {
+                            circleId: watch("circleId"),
+                            date: combineDateAndTime(watch("date"), undefined, country?.timeZone),
+                            TimeRangeSchema: {
+                                startTime: combineDateAndTime(watch("date"), startHour, country?.timeZone),
+                                endTime: combineDateAndTime(watch("date"), endHour, country?.timeZone),
+                            },
+                            street: watch("street"),
+                            cityId: undefined,
+                            price: watch("price")
                         },
-                        street: watch("street"),
-                        cityId: undefined,
-                        price: watch("price")
-                    });
+                        {keepErrors: true}
+                    );
                     // setCountryID(Array.from(keys)[0].toString())
                     // setRegionID(undefined)                 
                     // setValue("cityId", "", {shouldValidate: true})
@@ -337,17 +345,20 @@ const CreateMeetingform = ({
                     const ID = Array.from(keys)[0].toString()
                     const region = regions.data?.find(r => r.id === ID)
                     setRegion(region)
-                    reset({
-                        circleId: watch("circleId"),
-                        date: watch("date"),
-                        TimeRangeSchema: {
-                            startTime: watch("TimeRangeSchema.startTime"),
-                            endTime: watch("TimeRangeSchema.endTime")
+                    reset(
+                        {
+                            circleId: watch("circleId"),
+                            date: watch("date"),
+                            TimeRangeSchema: {
+                                startTime: watch("TimeRangeSchema.startTime"),
+                                endTime: watch("TimeRangeSchema.endTime")
+                            },
+                            street: watch("street"),
+                            cityId: undefined,
+                            price: watch("price")
                         },
-                        street: watch("street"),
-                        cityId: undefined,
-                        price: watch("price")
-                    });
+                        {keepErrors: true}
+                    );
                 }}
                 isRequired
                 isDisabled={!regions || isSubmitting || !country}

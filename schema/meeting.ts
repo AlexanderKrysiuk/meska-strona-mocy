@@ -13,47 +13,40 @@ const price = z.coerce.number({required_error: "Pole nie może być puste",inval
 
 const date = z.date({ required_error: "Wybierz datę" })
 
-export const CreateMeetingDateSchema = (unavailableDates: Date[]) => z.date().refine(date => !isBeforeDay(date, tomorrow), {message: "Najwcześniej możesz umówić spotkanie na jutro",}).refine(date => !unavailableDates.some(d => isSameDay(d, date)), {message: "W tym dniu masz już inne spotkanie",});
+// początek jutrzejszego dnia
+const tomorrow = new Date();
+tomorrow.setHours(0, 0, 0, 0);
+tomorrow.setDate(tomorrow.getDate() + 1);
 
-export const TimeRangeSchema = z
-  .object({
-    startTime: z.coerce.date({ message: "Nieprawidłowy format godziny rozpoczęcia" }),
-    endTime: z.coerce.date({ message: "Nieprawidłowy format godziny zakończenia" }),
-  })
-  .superRefine((data, ctx) => {
-    if (data.endTime <= data.startTime) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
-        path: ["endTime"],
-      });
-    }
+const CreateMeetingDateSchema = (unavailableDates: Date[]) => 
+  z.date()
+    .refine(date => !isBeforeDay(date, tomorrow), {message: "Najwcześniej możesz umówić spotkanie na jutro",})
+    .refine(date => !unavailableDates.some(d => isSameDay(d, date)), {message: "W tym dniu masz już inne spotkanie",});
 
-    if (data.startTime >= data.endTime) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
-        path: ["startTime"],
-      });
-    }
-  });
+const EditMeetingDateSchema = (unavailableDates: Date[], startTime: Date) => {
+  const minDate = startTime > tomorrow ? tomorrow : startTime
+  return z.date()
+    .refine(date => !isBeforeDay(date, minDate), {message: `Najwcześniej możesz umówić spotkanie na ${minDate.toLocaleDateString()}`,})
+    //.refine(date => !unavailableDates.some(d => isSameDay(d, date)), {message: "W tym dniu masz już inne spotkanie",});
+    .refine(date => {
+      return !unavailableDates.some(d => isSameDay(d, date) && !isSameDay(d, startTime));
+    }, {
+      message: "W tym dniu masz już inne spotkanie",
+    });
+}
+
+export const TimeRangeSchema = z.object({startTime: z.coerce.date({ message: "Nieprawidłowy format godziny rozpoczęcia" }),endTime: z.coerce.date({ message: "Nieprawidłowy format godziny zakończenia" }),}).superRefine((data, ctx) => { if (data.endTime <= data.startTime) {ctx.addIssue({code: "custom",message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",path: ["endTime"],});} if (data.startTime >= data.endTime) {ctx.addIssue({code: "custom", message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",path: ["startTime"],});}});
 
 const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
 const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
-// początek jutrzejszego dnia
-const tomorrow = new Date();
-tomorrow.setHours(0, 0, 0, 0);
-tomorrow.setDate(tomorrow.getDate() + 1);
 
 export const CreateMeetingSchema = (unavailableDates: Date[]) => {
     return z
         .object({
             circleId,
             date: CreateMeetingDateSchema(unavailableDates),
-            //startTime,
-            //endTime,
             street,
             cityId,
             price,
@@ -61,108 +54,57 @@ export const CreateMeetingSchema = (unavailableDates: Date[]) => {
         })
 };
 
-// export const CreateMeetingSchema = (unavailableDates: Date[]) => {
-//     return z.object({
-//         circleId,
-//         date,
-//         startTime,
-//         endTime,
-//         street,
-//         cityId,
-//         price,
-//     }).superRefine((data, ctx) => {
-//         if (data.date < tomorrow) {
-//             ctx.addIssue({
-//                 code: "custom",
-//                 message: "Najwcześniej możesz umówić spotkanie na jutro",
-//                 path: ["date"],
-//             });
-//         }
-//         // 🔹 walidacja: niedostępne daty
-//         if (unavailableDates.some(d => 
-//             d.getFullYear() === data.date.getFullYear() &&
-//             d.getMonth() === data.date.getMonth() &&
-//             d.getDate() === data.date.getDate()
-//         )) {
-//             ctx.addIssue({
-//                 code: "custom",
-//                 message: "W tym dniu masz już inne spotkanie",
-//                 path: ["date"],
-//             });
-//         }
-//         // jeśli endTime jest przed startTime
-//         if (data.endTime <= data.startTime) {
-//             ctx.addIssue({
-//                 code: "custom",
-//                 message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
-//                 path: ["endTime"],
-//             });
-//         }
-//         // jeśli startTime jest po endTime
-//         if (data.startTime >= data.endTime) {
-//             ctx.addIssue({
-//                 code: "custom",
-//                 message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
-//                 path: ["startTime"],
-//             });
-//         }
-//     });
-// }
-
-export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {
-    const minDate = originalStartTime > tomorrow ? tomorrow : originalStartTime;
-  
+export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {  
     return z
       .object({
         meetingId,
         circleId,
-        date,
-        startTime,
-        endTime,
+        date: EditMeetingDateSchema(unavailableDates, originalStartTime),
+        TimeRangeSchema,
         street,
         cityId,
         price,
       })
-      .superRefine((data, ctx) => {
+      //.superRefine((data, ctx) => {
         // 🔹 minimalna data
-        if (isBeforeDay(data.date, minDate)) {
-          ctx.addIssue({
-            code: "custom",
-            message: `Najwcześniej możesz umówić spotkanie na ${minDate.toLocaleDateString("pl-PL")}`,
-            path: ["date"],
-          });
-        }
+        // if (isBeforeDay(data.date, minDate)) {
+        //   ctx.addIssue({
+        //     code: "custom",
+        //     message: `Najwcześniej możesz umówić spotkanie na ${minDate.toLocaleDateString("pl-PL")}`,
+        //     path: ["date"],
+        //   });
+        // }
   
         // 🔹 walidacja niedostępnych dat (ignorujemy aktualną datę spotkania)
-        if (
-          unavailableDates.some(
-            (d) => isSameDay(d, data.date) && !isSameDay(d, originalStartTime)
-          )
-        ) {
-          ctx.addIssue({
-            code: "custom",
-            message: "W tym dniu masz już inne spotkanie",
-            path: ["date"],
-          });
-        }
+        // if (
+        //   unavailableDates.some(
+        //     (d) => isSameDay(d, data.date) && !isSameDay(d, originalStartTime)
+        //   )
+        // ) {
+        //   ctx.addIssue({
+        //     code: "custom",
+        //     message: "W tym dniu masz już inne spotkanie",
+        //     path: ["date"],
+        //   });
+        // }
   
         // 🔹 czas zakończenia vs rozpoczęcia
-        if (data.endTime <= data.startTime) {
-          ctx.addIssue({
-            code: "custom",
-            message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
-            path: ["endTime"],
-          });
-        }
+        // if (data.endTime <= data.startTime) {
+        //   ctx.addIssue({
+        //     code: "custom",
+        //     message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
+        //     path: ["endTime"],
+        //   });
+        // }
   
-        if (data.startTime >= data.endTime) {
-          ctx.addIssue({
-            code: "custom",
-            message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
-            path: ["startTime"],
-          });
-        }
-      });
+      //   if (data.startTime >= data.endTime) {
+      //     ctx.addIssue({
+      //       code: "custom",
+      //       message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
+      //       path: ["startTime"],
+      //     });
+      //   }
+      // });
   };
   
 
