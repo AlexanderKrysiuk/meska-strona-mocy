@@ -150,6 +150,35 @@ return sameDay
   : `${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${dateFormatter.format(endDate)}, ${timeFormatter.format(endDate)}`;
 }
 
+export function formatMeetingDate(
+  start: Date,
+  end: Date,
+  format: "default" | "onlyDays" | "withDay" = "default",
+  timeZone?: string,
+  locale: string = Intl.DateTimeFormat().resolvedOptions().locale
+): string {
+  const sameDay = isSameDay(start, end);
+
+  const dateFormatter = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric", timeZone });
+  const dayFormatter = new Intl.DateTimeFormat(locale, { weekday: "long", timeZone });
+  const timeFormatter = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit", hour12: false, timeZone });
+
+  switch (format) {
+    case "onlyDays":
+      return sameDay
+        ? dateFormatter.format(start)
+        : `${dateFormatter.format(start)} - ${dateFormatter.format(end)}`;
+    case "withDay":
+      return sameDay
+        ? `${dayFormatter.format(start)}, ${dateFormatter.format(start)}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`
+        : `${dayFormatter.format(start)}, ${dateFormatter.format(start)}, ${timeFormatter.format(start)} - ${dayFormatter.format(end)}, ${dateFormatter.format(end)}, ${timeFormatter.format(end)}`;
+    default:
+      return sameDay
+        ? `${dateFormatter.format(start)}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`
+        : `${dateFormatter.format(start)}, ${timeFormatter.format(start)} - ${dateFormatter.format(end)}, ${timeFormatter.format(end)}`;
+  }
+}
+
 
 // funkcja pomocnicza do porównywania dni
 export const isSameDay = (a: Date, b: Date) =>

@@ -8,6 +8,7 @@ import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRo
 import { Circle, CircleMeetingStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
 import { EditMeetingModal } from "./edit-meeting-modal"
+import { CompleteMeetingModal } from "./complete-meeting-modal"
 
 export const ScheduledMeetingsTable = ({
     circle
@@ -47,8 +48,12 @@ export const ScheduledMeetingsTable = ({
                         <TableCell>{item.circle.name}</TableCell>
                         <TableCell>{item.street}</TableCell>
                         <TableCell>{item.city.name}</TableCell>
-                        <TableCell>
+                        <TableCell className="flex">
                             <EditMeetingModal
+                                meeting={item}
+                                circle={item.circle}
+                            />
+                            <CompleteMeetingModal
                                 meeting={item}
                                 circle={item.circle}
                             />

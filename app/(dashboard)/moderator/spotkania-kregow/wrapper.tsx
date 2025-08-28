@@ -1,23 +1,21 @@
 "use client"
 
-import CompleteMeetingModal from "@/components/moderator/complete-meeting-modal";
+import { CompleteMeetingModal } from "@/components/moderator/complete-meeting-modal";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
 import ShowMeetingMembersModal from "@/components/moderator/show-meeting-members-modal";
 import { Divider, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import { City, Circle, CircleMeeting, Country, Region, CircleMeetingStatus } from "@prisma/client";
+import { City, Circle, CircleMeeting, Country, CircleMeetingStatus } from "@prisma/client";
 import { useState } from "react";
 
 const MeetingsWrapper = ({
     circles,
     meetings,
-    countries,
-    regions,
+    
     cities
 } : {
     circles: Circle[]
     meetings: CircleMeeting[]
     countries: Country[]
-    regions: Region[]
     cities: City[]
 }) => {
     const [circleId, setCircleId] = useState<Set<string>>(new Set())
@@ -107,9 +105,7 @@ const MeetingsWrapper = ({
                                             <CompleteMeetingModal
                                                 meeting={meeting}
                                                 circle={circle}
-                                                countries={countries}
-                                                regions={regions}
-                                                cities={cities}
+                                                
                                             />
                                             <ShowMeetingMembersModal
                                                 meeting={meeting}
