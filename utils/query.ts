@@ -1,5 +1,6 @@
 export enum ModeratorQueries {
     Circles = "Moderator-Circles",
+    CircleMembers = "Moderator-Circle-Members",
     Meetings = "Moderator-Meetings",
     ScheduledMeetings = "Moderator-Scheduled-Meetings",
     CompletedMeetings = "Moderator-Completed-Meetings",

@@ -1,4 +1,5 @@
 import { isSameDay, isBeforeDay } from '@/utils/date';
+import { Currency } from '@prisma/client';
 import * as z from 'zod'
 
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
@@ -12,6 +13,8 @@ const cityId = z.string().min(1,"Wybierz miasto")
 const price = z.coerce.number({required_error: "Pole nie może być puste",invalid_type_error: "Pole nie moze być puste"}).refine(price => price === 0 || price >= 10, {message: "spotkanie może być darmowe lub płatne co najmniej 10 zł",});
 
 const date = z.date({ required_error: "Wybierz datę" })
+
+const currency = z.nativeEnum(Currency)
 
 // początek jutrzejszego dnia
 const tomorrow = new Date();
@@ -41,6 +44,24 @@ const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny
 
 const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
+export const EditPriceSchema = (
+  originalPrice: number,
+  originalCurrency: Currency
+) => z.object({
+  price,
+  currency
+}).superRefine((data, ctx) => {
+  if (data.currency === originalCurrency) {
+    if (data.price > originalPrice && data.price < originalPrice + 10) {
+      ctx.addIssue({
+        code: "custom",
+        message: `Minimalna podwyżka ceny to 10 ${originalCurrency} (obecnie ${originalPrice} ${originalCurrency})`,
+        path: ["price"],
+      });
+    }
+  }
+})
+
 
 export const CreateMeetingSchema = (unavailableDates: Date[]) => {
     return z
@@ -50,62 +71,22 @@ export const CreateMeetingSchema = (unavailableDates: Date[]) => {
             street,
             cityId,
             price,
+            currency,
             TimeRangeSchema
         })
 };
 
-export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {  
-    return z
-      .object({
-        meetingId,
-        circleId,
-        date: EditMeetingDateSchema(unavailableDates, originalStartTime),
-        TimeRangeSchema,
-        street,
-        cityId,
-        price,
-      })
-      //.superRefine((data, ctx) => {
-        // 🔹 minimalna data
-        // if (isBeforeDay(data.date, minDate)) {
-        //   ctx.addIssue({
-        //     code: "custom",
-        //     message: `Najwcześniej możesz umówić spotkanie na ${minDate.toLocaleDateString("pl-PL")}`,
-        //     path: ["date"],
-        //   });
-        // }
-  
-        // 🔹 walidacja niedostępnych dat (ignorujemy aktualną datę spotkania)
-        // if (
-        //   unavailableDates.some(
-        //     (d) => isSameDay(d, data.date) && !isSameDay(d, originalStartTime)
-        //   )
-        // ) {
-        //   ctx.addIssue({
-        //     code: "custom",
-        //     message: "W tym dniu masz już inne spotkanie",
-        //     path: ["date"],
-        //   });
-        // }
-  
-        // 🔹 czas zakończenia vs rozpoczęcia
-        // if (data.endTime <= data.startTime) {
-        //   ctx.addIssue({
-        //     code: "custom",
-        //     message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
-        //     path: ["endTime"],
-        //   });
-        // }
-  
-      //   if (data.startTime >= data.endTime) {
-      //     ctx.addIssue({
-      //       code: "custom",
-      //       message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
-      //       path: ["startTime"],
-      //     });
-      //   }
-      // });
-  };
+export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date, originalPrice: number, originalCurrency: Currency) => {  
+  return z.object({
+    meetingId,
+    circleId,
+    date: EditMeetingDateSchema(unavailableDates, originalStartTime),
+    TimeRangeSchema,
+    street,
+    cityId,
+    priceCurrency: EditPriceSchema(originalPrice, originalCurrency)
+  })
+};
   
 
 // export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {

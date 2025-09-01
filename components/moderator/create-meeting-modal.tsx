@@ -13,7 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getLocalTimeZone, today } from "@internationalized/date"
-import { Circle, CircleMeetingStatus, Country, Region } from "@prisma/client"
+import { Circle, CircleMeetingStatus, Country, Currency, Region } from "@prisma/client"
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -129,7 +129,8 @@ const CreateMeetingform = ({
             circleId: circle?.id,
             street: circle?.street ?? undefined,
             cityId: circle?.cityId ?? undefined,
-            price: circle?.price ?? undefined
+            price: circle?.price ?? undefined,
+            currency: circle?.currency ?? undefined
         }
     })
     
@@ -245,7 +246,7 @@ const CreateMeetingform = ({
                 errorMessage={errors.date?.message}
                 isDisabled={isSubmitting}
             />
-            <div className="flex space-x-4 w-full mb-4">
+            <div className="flex space-x-4 w-full my-4">
                 <TimeInput
                     label="Godzina Rozpoczęcia"
                     labelPlacement="outside"
@@ -389,12 +390,22 @@ const CreateMeetingform = ({
                 variant="bordered"
                 placeholder="150,00 zł"
                 minValue={0}
-                formatOptions={{
-                    style: "currency",
-                    currency: "PLN"
-                }}
                 value={watch("price")}
                 onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
+                endContent={
+                    <select
+                        value={watch("currency") ?? ""}
+                        onChange={(event) => {
+                            const val = event.target.value;
+                            setValue("currency", val === "" ? undefined! : (val as Currency), { shouldValidate: true });
+                        }}
+                    >
+                        <option value="">Brak</option> {/* opcja brak */}
+                        {Object.values(Currency).map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+                }
                 isClearable
                 isRequired
                 isDisabled={isSubmitting}

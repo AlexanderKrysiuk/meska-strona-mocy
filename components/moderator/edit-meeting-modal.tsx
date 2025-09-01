@@ -11,7 +11,7 @@ import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, CircleMeeting, CircleMeetingStatus, Country, Region } from "@prisma/client"
+import { Circle, CircleMeeting, CircleMeetingStatus, Country, Currency, Region } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -128,7 +128,7 @@ const EditMeetingForm = ({
     type FormFields = z.infer<ReturnType<typeof EditMeetingSchema>>
 
     const { handleSubmit, watch, trigger, reset, setValue, setError, formState: { errors, isValid, isSubmitting, isDirty } } = useForm<FormFields>({
-        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime)),
+        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime, meeting.price, meeting.currency)),
         mode: "all",
         defaultValues: {
             meetingId: meeting.id,
@@ -140,7 +140,10 @@ const EditMeetingForm = ({
             },
             street: meeting.street,
             cityId: meeting.cityId,
-            price: meeting.price,
+            priceCurrency: {
+                price: meeting.price,
+                currency: meeting.currency
+            }
         }
     })
 
@@ -193,6 +196,7 @@ const EditMeetingForm = ({
                 label="Data spotkania"
                 labelPlacement="outside"
                 variant="bordered"
+                description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
                 defaultValue={convertDateToNative(meeting.startTime)}
                 isDateUnavailable={isDateUnavailable}
                 minValue={
@@ -221,7 +225,7 @@ const EditMeetingForm = ({
                 errorMessage={errors.date?.message}
                 isDisabled={isSubmitting}
             />
-            <div className="flex space-x-4 w-full mb-4">
+            <div className="flex space-x-4 w-full my-4">
                 <TimeInput
                     label="Godzina Rozpoczęcia"
                     labelPlacement="outside"
@@ -297,7 +301,10 @@ const EditMeetingForm = ({
                             },
                             street: watch("street"),
                             cityId: undefined,
-                            price: watch("price")
+                            priceCurrency: {
+                                price: watch("priceCurrency.price"),
+                                currency: watch("priceCurrency.currency")
+                            }
                         },
                         {keepErrors: true}
                     );                
@@ -331,7 +338,10 @@ const EditMeetingForm = ({
                             },
                             street: watch("street"),
                             cityId: undefined,
-                            price: watch("price")
+                            priceCurrency: {
+                                price: watch("priceCurrency.price"),
+                                currency: watch("priceCurrency.currency")
+                            }                        
                         },
                         {keepErrors: true}
                     );
@@ -365,17 +375,26 @@ const EditMeetingForm = ({
                 variant="bordered"
                 placeholder="150,00 zł"
                 minValue={0}
-                formatOptions={{
-                    style: "currency",
-                    currency: "PLN"
-                }}
-                value={watch("price")}
-                onValueChange={(value) => {setValue("price", value, {shouldValidate: true, shouldDirty:true})}}
+                value={watch("priceCurrency.price")}
+                onValueChange={(value) => {setValue("priceCurrency.price", value, {shouldValidate: true, shouldDirty:true})}}
+                endContent={
+                    <select
+                        value={watch("priceCurrency.currency") ?? ""}
+                        onChange={(event) => {
+                            const val = event.target.value;
+                            setValue("priceCurrency.currency", val as Currency, { shouldValidate: true, shouldDirty: true });
+                        }}
+                    >
+                        {Object.values(Currency).map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                        ))}
+                    </select>
+                }
                 isClearable
                 isRequired
                 isDisabled={isSubmitting}
-                isInvalid={!!errors.price}
-                errorMessage={errors.price?.message}
+                isInvalid={!!errors.priceCurrency?.price}
+                errorMessage={errors.priceCurrency?.price?.message}
             />
         </ModalBody>
         <ModalFooter className="w-full">

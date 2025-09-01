@@ -72,6 +72,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
+                currency: data.currency,
                 circleId: data.circleId,
                 moderatorId: user.id,
                 number: existingMeetings + 1,
@@ -109,7 +110,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             }
         }
           
-        return { message: "Spotkanie utworzone pomyślnie" };
+        return { success: true, message: "Spotkanie utworzone pomyślnie" };
     } catch (error) {
         console.error(error)
         return { success: false, message: "Błąd połączenia z bazą danych" }
@@ -145,6 +146,14 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
       return { success: false, message: "Brak uprawnień do edycji spotkania" }
     }
   
+    // 🔹 Sprawdzamy minimalną podwyżkę ceny
+    if (data.priceCurrency.currency === meeting.currency && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) {
+        return {
+            success: false,
+            message: `Minimalna podwyżka ceny to 10 ${meeting.currency} (obecnie ${meeting.price} ${meeting.currency})`
+        };
+    }
+
     // Sprawdzanie konfliktu spotkań
     let overlappingMeeting: CircleMeeting | null
     try {
@@ -172,20 +181,45 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
     }
   
     try {
-      const updatedMeeting = await prisma.circleMeeting.update({
-        where: { id: data.meetingId },
-        data: {
-          startTime: data.TimeRangeSchema.startTime,
-          endTime: data.TimeRangeSchema.endTime,
-          price: data.price,
-          street: data.street,
-          cityId: data.cityId
-        },
-        include: { 
-          participants: { include: { user: true } },
-          city: { include: { region: { include: { country:true }}}}
-        }
-      })
+        const updatedMeeting = await prisma.$transaction(async (prismaTx) => {
+            const updatedMeeting = await prisma.circleMeeting.update({
+              where: { id: data.meetingId },
+              data: {
+                startTime: data.TimeRangeSchema.startTime,
+                endTime: data.TimeRangeSchema.endTime,
+                price: data.priceCurrency.price,
+                currency: data.priceCurrency.currency,
+                street: data.street,
+                cityId: data.cityId
+              },
+              include: { 
+                participants: { include: { user: true } },
+                city: { include: { region: { include: { country:true }}}}
+              }
+            })
+
+            for (const participant of updatedMeeting.participants) {
+              let refundAmount = 0 
+              if (data.priceCurrency.currency === meeting.currency) {
+                  if (data.priceCurrency.price < meeting.price) {
+                      refundAmount = meeting.price - data.priceCurrency.price
+                  }
+              } else {
+                  refundAmount = meeting.price
+              }
+      
+              if (refundAmount > 0) {
+                  await prisma.balance.upsert({
+                      where: {userId_currency: { userId: participant.userId, currency: meeting.currency }},
+                      update: { amount: { increment: refundAmount }},
+                      create: { userId: participant.userId, currency: meeting.currency, amount: refundAmount}
+                  })
+              }
+            }
+            
+            return updatedMeeting
+        })
+
   
       await sortMeetings(meeting.circleId)
   
@@ -205,6 +239,8 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                   street: meeting.street,
                   city: meeting.city.name,
                   price: meeting.price,
+                  currency: meeting.currency,
+                  locale: meeting.city.region.country.locale,
                   timeZone: meeting.city.region.country.timeZone
                 },
                 newMeeting: {
@@ -213,6 +249,8 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                   street: updatedMeeting.street,
                   city: updatedMeeting.city.name,
                   price: updatedMeeting.price,
+                  currency: updatedMeeting.currency,
+                  locale: meeting.city.region.country.locale,
                   timeZone: updatedMeeting.city.region.country.timeZone
                 },
                 moderatorName: user.name

@@ -2,11 +2,13 @@
 
 import { AddNewUserToCircle } from "@/actions/user"
 import { AddUserToCircleSchema } from "@/schema/user"
+import { ModeratorQueries } from "@/utils/query"
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle } from "@prisma/client"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -15,15 +17,13 @@ import { z } from "zod"
 
 
 const AddCircleMemberModal = ({
-    defaultCircleId,
+    circle,
     circles
 } : {
-    defaultCircleId?: string
+    circle?: Circle
     circles: Circle[]
 }) => {
     type FormFields = z.infer<typeof AddUserToCircleSchema>
-
-    const router = useRouter()
 
     const {isOpen, onOpen, onClose} = useDisclosure()
     
@@ -32,8 +32,10 @@ const AddCircleMemberModal = ({
     })
 
     useEffect(() => {
-        setValue("circleId", defaultCircleId!)
-    }, [defaultCircleId, setValue, isOpen])
+        setValue("circleId", circle?.id!)
+    }, [circle, setValue, isOpen])
+
+    const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
         const result = await AddNewUserToCircle(data)
@@ -44,7 +46,7 @@ const AddCircleMemberModal = ({
         })
 
         if (result.success) {
-            router.refresh()
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.CircleMembers, data.circleId]})
             onClose()
         }
     }
@@ -55,7 +57,7 @@ const AddCircleMemberModal = ({
                 color="primary"
                 startContent={<FontAwesomeIcon icon={faUserPlus}/>}
                 onPress={onOpen}
-                isDisabled={!circles}
+                isDisabled={circles.length < 1}
             >
                 Dodaj nowego kręgowca
             </Button>

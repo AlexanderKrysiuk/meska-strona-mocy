@@ -1,6 +1,7 @@
 import { Preview, Section, Text } from "@react-email/components";
 import { EmailLayout, Header, emailStyles, getTextColor } from "./Components";
 import { formatedDate } from "@/utils/date";
+import { Currency } from "@prisma/client";
 
 interface MeetingUpdatedEmailProps {
   userName?: string | null;
@@ -11,6 +12,8 @@ interface MeetingUpdatedEmailProps {
     street: string;
     city: string;
     price: number;
+    currency: Currency;
+    locale: string;
     timeZone?: string;
   };
   newMeeting: {
@@ -19,6 +22,8 @@ interface MeetingUpdatedEmailProps {
     street: string;
     city: string;
     price: number;
+    currency: Currency;
+    locale: string;
     timeZone?: string;
   };
   moderatorName?: string | null;
@@ -33,8 +38,8 @@ export default function MeetingUpdatedEmail({
 }: MeetingUpdatedEmailProps) {
   const textColor = getTextColor(emailStyles.container.backgroundColor);
 
-  const oldDate = formatedDate(oldMeeting.startTime, oldMeeting.endTime, oldMeeting.timeZone);
-  const newDate = formatedDate(newMeeting.startTime, newMeeting.endTime, newMeeting.timeZone);
+  const oldDate = formatedDate(oldMeeting.startTime, oldMeeting.endTime, oldMeeting.timeZone, "default", oldMeeting.locale);
+  const newDate = formatedDate(newMeeting.startTime, newMeeting.endTime, newMeeting.timeZone, "default", newMeeting.locale);
 
   const oldStyle = { color: "#ff5555", textDecoration: "line-through", marginRight: "4px" };
   const newStyle = { color: "#55ff55", fontWeight: "bold" };
@@ -86,16 +91,12 @@ export default function MeetingUpdatedEmail({
           <strong>Cena:</strong>{" "}
           {oldMeeting.price !== newMeeting.price ? (
             <>
-              <span style={oldStyle}>❌ {oldMeeting.price.toFixed(2)} PLN</span>
-              <span style={newStyle}>✅ {newMeeting.price.toFixed(2)} PLN</span>
+              <span style={oldStyle}>❌ {(oldMeeting.price/100).toFixed(2)} {oldMeeting.currency}</span>
+              <span style={newStyle}>✅ {(newMeeting.price/100).toFixed(2)} {newMeeting.currency}</span>
             </>
           ) : (
             <span>{newMeeting.price.toFixed(2)} PLN</span>
           )}
-        </Text>
-
-        <Text style={{ fontSize: "12px", color: "#888", marginTop: "16px" }}>
-          Ta wiadomość jest generowana automatycznie, prosimy na nią nie odpowiadać.
         </Text>
       </Section>
     </EmailLayout>
