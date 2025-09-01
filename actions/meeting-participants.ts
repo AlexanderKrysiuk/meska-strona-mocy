@@ -6,8 +6,9 @@ import { z } from "zod"
 import { CheckLoginReturnUser } from "./auth"
 import { GetMeetingById } from "./meeting"
 import { PermissionGate } from "@/utils/gate"
-import { Role } from "@prisma/client"
+import { CircleMeeting, Role } from "@prisma/client"
 import { GetUserByID } from "./user"
+import { clientAuth } from "@/hooks/auth"
 
 export const GetFutureMeetingsForUserInCircle = async (userID:string, circleID: string) => {
     return await prisma.circleMeetingParticipant.findMany({
@@ -75,3 +76,24 @@ export const GetMeetingParticipationWithMeetingAndUserByID = async (ID: string) 
 //         }        
 //     }
 // }
+
+export const GetMeetingParticipantsByMeeting = async (meetingID: string) => {
+    try {
+        return await prisma.circleMeetingParticipant.findMany({
+            where: {meetingId: meetingID},
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        image: true,
+                        name: true,
+                        email: true,
+                    }
+                }
+            }
+        })
+    } catch (error) {
+        console.log(error)
+        return []
+    }
+}

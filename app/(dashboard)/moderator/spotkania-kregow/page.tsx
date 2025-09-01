@@ -76,10 +76,12 @@ const MeetingsPage = () => {
                 <h6 className="w-full">Zaplanowane spotkania</h6>
                 <CreateMeetingModal circle={selectedCircle}/>
             </div>
-            <ScheduledMeetingsTable/>
+            <ScheduledMeetingsTable
+                circle={selectedCircle}
+            />
             <Divider/>
             <pre>
-                {JSON.stringify(selectedCircle,null,2)}
+                {/* {JSON.stringify(selectedCircle,null,2)} */}
             </pre>
                 {/* <pre>{JSON.stringify(circles,null,2)}</pre> */}
         </main>

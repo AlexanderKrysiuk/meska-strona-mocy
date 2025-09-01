@@ -11,7 +11,7 @@ interface MeetingUpdatedEmailProps {
     street: string;
     city: string;
     price: number;
-    locale?: string;
+    timeZone?: string;
   };
   newMeeting: {
     startTime: Date;
@@ -19,10 +19,9 @@ interface MeetingUpdatedEmailProps {
     street: string;
     city: string;
     price: number;
-    locale?: string;
+    timeZone?: string;
   };
   moderatorName?: string | null;
-  timeZone?: string;
 }
 
 export default function MeetingUpdatedEmail({
@@ -34,8 +33,8 @@ export default function MeetingUpdatedEmail({
 }: MeetingUpdatedEmailProps) {
   const textColor = getTextColor(emailStyles.container.backgroundColor);
 
-  const oldDate = formatedDate(oldMeeting.startTime, oldMeeting.endTime, { locale: oldMeeting.locale });
-  const newDate = formatedDate(newMeeting.startTime, newMeeting.endTime, { locale: newMeeting.locale });
+  const oldDate = formatedDate(oldMeeting.startTime, oldMeeting.endTime, oldMeeting.timeZone);
+  const newDate = formatedDate(newMeeting.startTime, newMeeting.endTime, newMeeting.timeZone);
 
   const oldStyle = { color: "#ff5555", textDecoration: "line-through", marginRight: "4px" };
   const newStyle = { color: "#55ff55", fontWeight: "bold" };

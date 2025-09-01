@@ -1,54 +1,64 @@
 "use client"
 
-import { EditCircle } from "@/actions/circle"
+import { EditCircle, GetModeratorCircles } from "@/actions/circle"
+import { GetCities } from "@/actions/city"
+import { GetCountries } from "@/actions/country"
+import { GetRegions } from "@/actions/region"
+import { clientAuth } from "@/hooks/auth"
 import { EditCircleSchema } from "@/schema/circle"
+import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { liveSlugify } from "@/utils/slug"
 import { Button, Form, Input, NumberInput, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { City, Country, Circle, Region } from "@prisma/client"
+import { Country, Region, Currency } from "@prisma/client"
+import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
+import Loader from "../loader"
+import CreateCircleModal from "./create-circle-modal"
 
-const EditCircleForm = ({
-    circle,
-    countries,
-    regions,
-    cities
-} : {
-    circle?: Circle
-    countries: Country[]
-    regions: Region[]
-    cities: City[]
-}) => {
-    const router = useRouter()
+const EditCircleForm = () => {
+    const moderator = clientAuth()
 
-    const city = cities.find(city => city.id === circle?.cityId)
-    const region = regions.find(region => region.id === city?.regionId)
-    const country = countries.find(country => country.id === region?.countryId)
+    const queries = useQueries({
+        queries: [
+            {
+                queryKey: [ModeratorQueries.Circles, moderator?.id],
+                queryFn: () => GetModeratorCircles(moderator!.id),
+                enabled: !!moderator
+            },
+            {
+                queryKey: [GeneralQueries.Countries],
+                queryFn: () => GetCountries()
+            },
+            {
+                queryKey: [GeneralQueries.Regions],
+                queryFn: () => GetRegions(),
+            },
+            {
+                queryKey: [GeneralQueries.Cities],
+                queryFn: () => GetCities()
+            }
+        ]
+    })
 
-    const [regionId, setRegionId] = useState(region?.id || "")
-    const [countryId, setCountryId] = useState(country?.id || "")
+    const [circles, countries, regions, cities] = queries
+
+    const [region, setRegion] = useState<Region | undefined>();
+    const [country, setCountry] = useState<Country | undefined>();
 
     type FormFields = z.infer<typeof EditCircleSchema>
 
     const { reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid }} = useForm<FormFields>({
         resolver: zodResolver(EditCircleSchema),
-        mode: "all",
-        defaultValues: {
-            circleId: circle?.id,
-            name: circle?.name,
-            slug: circle?.slug,
-            maxMembers: circle?.maxMembers,
-            street: circle?.street,
-            cityId: circle?.cityId,
-            price: circle?.price
-        }
+        mode: "all"
     })
 
+    const queryClient = useQueryClient()
+
     const submit: SubmitHandler<FormFields> = async (data) => {
-        if (!circle) return
 
         const result = await EditCircle(data)
 
@@ -57,24 +67,58 @@ const EditCircleForm = ({
             color: result.success ? "success" : "danger",
         })
 
-        if (result.errors) {
-            Object.entries(result.errors).forEach(([field, messages]) => {
-                setError(field as keyof FormFields, { message: messages.join(", ") })
-            })
-        } else {
+        if (result.success) {
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.Circles, moderator?.id]})
             reset(data)
-            router.refresh()
+        } else {
+            if (result.fieldErrors) {
+                Object.entries(result.fieldErrors).forEach(([field, message]) => {
+                    setError(field as keyof FormFields, { type: "manual", message })
+                })
+            }
         }      
     }
 
+    if (queries.some(q => q.isLoading || !q.data)) return <Loader/>
+
     return (
-        <main className="space-y-4">
             <Form onSubmit={handleSubmit(submit)}>
-                {/* <pre>
-                    {JSON.stringify(watch(),null,2)}<br/>
-                    Valid: {JSON.stringify(isValid,null,2)}<br/>
-                    Dirty: {JSON.stringify(isDirty,null,2)}<br/>
-                </pre> */}
+                <div className="flex space-x-4 items-center w-full">
+                <Select
+                    label="Krąg"
+                    items={circles.data}
+                    placeholder="Wybierz krąg"
+                    variant="bordered"
+                    onSelectionChange={(keys) => {
+                        const id = Array.from(keys)[0];
+                        const circle = circles.data?.find(c => c.id === id)
+                        reset (
+                            {
+                                circleId: circle?.id,
+                                name: circle?.name,
+                                slug: circle?.slug,
+                                maxMembers: circle?.maxMembers,
+                                street: circle?.street,
+                                cityId: circle?.cityId,
+                                price: circle?.price,
+                                currency: circle?.currency
+                            },
+                            {keepErrors: true}
+                        )
+                        const city = cities.data?.find(c => c.id === watch("cityId"))
+                        const region = regions.data?.find(r => r.id === city?.regionId)
+                        const country = countries.data?.find(c => c.id === region?.countryId)
+    
+                        setRegion(region)
+                        setCountry(country)                
+                    }}
+                    isDisabled={!circles.data || circles.data?.length < 1}
+                    hideEmptyContent
+                >
+                    {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
+                </Select>
+                <CreateCircleModal/>
+            </div>
                 <Input
                     label="Nazwa grupy"
                     labelPlacement="outside"
@@ -88,7 +132,7 @@ const EditCircleForm = ({
                     }}
                     isClearable
                     isRequired
-                    isDisabled={!circle || isSubmitting}
+                    isDisabled={!watch("circleId") || isSubmitting}
                     isInvalid={!!errors.name}
                     errorMessage={errors.name?.message}
                 />
@@ -102,7 +146,7 @@ const EditCircleForm = ({
                     onValueChange={(value) => {setValue("slug", liveSlugify(value), {shouldDirty: true ,shouldValidate: true})}}
                     isClearable
                     isRequired
-                    isDisabled={!circle || isSubmitting}
+                    isDisabled={!watch("circleId") || isSubmitting}
                     isInvalid={!!errors.slug}
                     errorMessage={errors.slug?.message}
                 />
@@ -118,7 +162,7 @@ const EditCircleForm = ({
                     onValueChange={(value) => {setValue("maxMembers", value, {shouldDirty:true, shouldValidate: true})}}
                     isClearable
                     isRequired
-                    isDisabled={!circle || isSubmitting}
+                    isDisabled={!watch("circleId") || isSubmitting}
                     isInvalid={!!errors.maxMembers}
                     errorMessage={errors.maxMembers?.message}
                 />
@@ -131,7 +175,7 @@ const EditCircleForm = ({
                     value={watch("street") || ""}
                     onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
                     isClearable
-                    isDisabled={!circle || isSubmitting}
+                    isDisabled={!watch("circleId") || isSubmitting}
                     isInvalid={!!errors.street}
                     errorMessage={errors.street?.message}
                 />
@@ -140,15 +184,30 @@ const EditCircleForm = ({
                     labelPlacement="outside"
                     placeholder="Karaiby"
                     variant="bordered"
+                    selectedKeys={country ? [country.id] : []}
                     hideEmptyContent
-                    selectedKeys={[countryId]}
-                    onChange={(event) => {
-                        setCountryId(event.target.value)
-                        setRegionId("")
-                        setValue("cityId", null, { shouldDirty: true })
-                    }}
-                    isDisabled={!circle || isSubmitting}
-                    items={countries}
+                    disallowEmptySelection
+                    onSelectionChange={(keys) => {
+                        const ID = Array.from(keys)[0].toString()
+                        const country = countries.data?.find(c => c.id === ID)
+                        setCountry(country)
+                        setRegion(undefined)
+                        reset (
+                            {
+                                circleId: watch("circleId"),
+                                name: watch("name"),
+                                slug: watch("slug"),
+                                maxMembers: watch("maxMembers"),
+                                street: watch("street"),
+                                cityId: null,
+                                price: watch("price"),
+                                currency: watch("currency")
+                            },
+                            {keepErrors: true}
+                        )
+                    }}  
+                    isDisabled={!watch("circleId") || isSubmitting}
+                    items={countries.data}
                     >
                     {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
                 </Select>
@@ -157,13 +216,29 @@ const EditCircleForm = ({
                     labelPlacement="outside"
                     placeholder="Archipelag Czarnej Perły"
                     variant="bordered"
-                    selectedKeys={[regionId]}
-                    onChange={(event) => {
-                        setRegionId(event.target.value)
-                        setValue("cityId", null, { shouldDirty: true })
-                    }}
-                    isDisabled={!circle || isSubmitting || !countryId}
-                    items={regions.filter(region => region.countryId === countryId)}
+                    selectedKeys={region ? [region.id] : []}
+                    hideEmptyContent
+                    disallowEmptySelection
+                    onSelectionChange={(keys) => {
+                        const ID = Array.from(keys)[0].toString()
+                        const region = regions.data?.find(r => r.id === ID)
+                        setRegion(region)
+                        reset (
+                            {
+                                circleId: watch("circleId"),
+                                name: watch("name"),
+                                slug: watch("slug"),
+                                maxMembers: watch("maxMembers"),
+                                street: watch("street"),
+                                cityId: null,
+                                price: watch("price"),
+                                currency: watch("currency")
+                            },
+                            {keepErrors: true}
+                        )
+                    }}  
+                    isDisabled={!watch("circleId") || isSubmitting || !country}
+                    items={regions.data?.filter(region => region.countryId === country?.id)}
                     >
                     {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
                 </Select>
@@ -173,13 +248,13 @@ const EditCircleForm = ({
                     variant="bordered"
                     placeholder="Isla de Muerta"
                     selectedKeys={[watch("cityId")!]}
-                    onChange={(event) => {
-                        setValue("cityId", event.target.value || null, { shouldDirty: true })
-                    }}
-                    isDisabled={!circle || isSubmitting || !countryId || !regionId}
+                    hideEmptyContent
+                    disallowEmptySelection
+                    onSelectionChange={(keys) => {setValue("cityId", Array.from(keys)[0].toString(), {shouldValidate: true, shouldDirty: true})}}
+                    isDisabled={!watch("circleId") || !region || !country || isSubmitting}
                     isInvalid={!!errors.cityId}
                     errorMessage={errors.cityId?.message}
-                    items={cities.filter(city => city.regionId === regionId)}
+                    items={cities.data?.filter(city => city.regionId === region?.id)}
                     >
                     {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
                 </Select>
@@ -189,27 +264,36 @@ const EditCircleForm = ({
                     variant="bordered"
                     placeholder="150"
                     minValue={0}
-                    formatOptions={{
-                        style: "currency",
-                        currency: "PLN"
-                    }}
                     value={watch("price")!}
                     onValueChange={(value) => {setValue("price", value ?? null, {shouldDirty:true, shouldValidate: true})}}
+                    endContent={
+                        <select
+                            value={watch("currency") ?? ""}
+                            onChange={(event) => {
+                                const val = event.target.value;
+                                setValue("currency", val === "" ? null : (val as Currency), { shouldValidate: true, shouldDirty: true });
+                            }}
+                        >
+                            <option value="">Brak</option> {/* opcja brak */}
+                            {Object.values(Currency).map((c) => (
+                                <option key={c} value={c}>{c}</option>
+                            ))}
+                        </select>
+                    }
                     isClearable
-                    isDisabled={!circle || isSubmitting}
+                    isDisabled={!watch("circleId") || isSubmitting}
                     isInvalid={!!errors.price}
                     errorMessage={errors.price?.message}    
                 />
                 <Button
                     type="submit"
                     color="primary"
-                    isDisabled={!circle || isSubmitting || !isDirty || !isValid}
+                    isDisabled={!watch("circleId") || isSubmitting || !isDirty || !isValid}
                     isLoading={isSubmitting}
                 >
                     {isSubmitting ? "Przetwarzanie..." : "Zmień dane kręgu"}
                 </Button>
             </Form>
-        </main>
     )
 }
 

@@ -3,7 +3,9 @@ export enum ModeratorQueries {
     Meetings = "Moderator-Meetings",
     ScheduledMeetings = "Moderator-Scheduled-Meetings",
     CompletedMeetings = "Moderator-Completed-Meetings",
-    ArchivedMeetings = "Moderator-Archived-Meetings"
+    ArchivedMeetings = "Moderator-Archived-Meetings",
+    MeetingParticipants = "Moderator-Meeting-Participants",
+    MemberCircleMembership = "Moderator-Member-CircleMembership"
 }
 
 export enum GeneralQueries {

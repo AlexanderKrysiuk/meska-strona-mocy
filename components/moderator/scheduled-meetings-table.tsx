@@ -9,6 +9,7 @@ import { Circle, CircleMeetingStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
 import { EditMeetingModal } from "./edit-meeting-modal"
 import { CompleteMeetingModal } from "./complete-meeting-modal"
+import ShowMeetingMembersModal from "./show-meeting-members-modal"
 
 export const ScheduledMeetingsTable = ({
     circle
@@ -23,6 +24,11 @@ export const ScheduledMeetingsTable = ({
         enabled: !!moderator
     })
 
+    // Filtrujemy tylko spotkania dla wybranego kręgu
+    const filteredMeetings = circle
+        ? (meetings ?? []).filter(m => m.circle.id === circle.id)
+        : meetings ?? []
+
     //if (isLoading) return null
 
     return <main>
@@ -34,10 +40,10 @@ export const ScheduledMeetingsTable = ({
                 <TableColumn>Krąg</TableColumn>
                 <TableColumn>Ulica</TableColumn>
                 <TableColumn>Miasto</TableColumn>
-                <TableColumn>Akcje</TableColumn>
+                <TableColumn align="center">Akcje</TableColumn>
             </TableHeader>
             <TableBody
-                items={meetings ?? []}
+                items={filteredMeetings}
                 isLoading={isLoading}
                 loadingContent={<Spinner label="Ładowanie danych" variant="wave"/>}
                 emptyContent={"Brak planowanych spotkań"}
@@ -48,14 +54,20 @@ export const ScheduledMeetingsTable = ({
                         <TableCell>{item.circle.name}</TableCell>
                         <TableCell>{item.street}</TableCell>
                         <TableCell>{item.city.name}</TableCell>
-                        <TableCell className="flex">
+                        <TableCell className="flex justify-center">
                             <EditMeetingModal
                                 meeting={item}
                                 circle={item.circle}
+                                country={item.city.region.country}
                             />
                             <CompleteMeetingModal
                                 meeting={item}
                                 circle={item.circle}
+                            />
+                            <ShowMeetingMembersModal
+                                meeting={item}
+                                circle={item.circle}
+                                country={item.city.region.country}
                             />
                         </TableCell>
                     </TableRow>
@@ -64,7 +76,7 @@ export const ScheduledMeetingsTable = ({
         </Table>
         <pre>
             {/* {JSON.stringify(meetings,null,2)} */}
-            {JSON.stringify(circle,null,2)}
+            {/* {JSON.stringify(circle,null,2)} */}
         </pre>
     </main>
 }

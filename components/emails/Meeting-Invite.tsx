@@ -11,7 +11,7 @@ interface MeetingInviteProps {
   endTime: Date;
   street: string;
   city: string;
-  locale: string;
+  timeZone: string;
   price: number;
   moderatorName?: string | null;
   moderatorAvatarUrl?: string | null;
@@ -24,7 +24,7 @@ export function MeetingInvite({
   endTime,
   street,
   city,
-  locale,
+  timeZone,
   price,
   moderatorName,
   moderatorAvatarUrl,
@@ -42,7 +42,7 @@ export function MeetingInvite({
         </Text>
 
         <Text style={{ ...emailStyles.paragraph, color: textColor }}>
-          <strong>Data:</strong> {formatedDate(startTime, endTime, { locale })}
+          <strong>Data:</strong> {formatedDate(startTime, endTime, timeZone)}
         </Text>
         <Text style={{ ...emailStyles.paragraph, color: textColor }}>
           <strong>Miejsce:</strong> {street}, {city}

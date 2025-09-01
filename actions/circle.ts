@@ -67,11 +67,6 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Musisz być zalogowanym aby edytować grupę"
     }
 
-    if (!PermissionGate(user.roles, [Role.Moderator])) return {
-        success: false,
-        message: "Brak uprawień do edycji grupy"
-    }
-
     const circle = await GetCircleById(data.circleId)
 
     if (!circle) return {
@@ -79,9 +74,9 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Dana grupa nie istnieje"
     }
 
-    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== circle.moderatorId) return {
+    if (!(user.roles.includes(Role.Admin) || (user.roles.includes(Role.Moderator) && user.id === circle.moderatorId))) return {
         success: false,
-        message: "Brak uprawnień do edycji grupy"
+        message: "Brak uprawień do edycji grupy"
     }
 
     if (circle.slug !== data.slug) {
@@ -90,9 +85,7 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         if (existingSlug) return {
             success: false,
             message: "Nie udało się zaktualizować grupy",
-            errors: {
-                slug: ["Podany odnośnik jest już zajęty"]
-            }
+            fieldErrors: { slug: "Podany odnośnik jest już zajęty"}
         }
     }
 
@@ -105,7 +98,8 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
                 maxMembers: data.maxMembers,
                 street: data.street,
                 cityId: data.cityId,
-                price: data.price
+                price: data.price,
+                currency: data.currency
             }
         })
     } catch {

@@ -17,15 +17,14 @@ export function Providers({children}: { children: React.ReactNode }) {
             {children}
 
           </main>
-          <ToastProvider 
-            placement="top-center"
-            toastProps={{
-              variant: "bordered",
-              classNames: {
-                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-              },            
-            }}
-          />
+          <div className='absolute z-[9999999999999]'>
+            <ToastProvider 
+              placement="top-center"
+              toastProps={{
+                variant: "bordered"        
+              }}
+            />
+          </div>
         </NextThemesProvider>
       </HeroUIProvider>
     </QueryClientProvider>

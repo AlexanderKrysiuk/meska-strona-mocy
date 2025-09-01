@@ -23,9 +23,11 @@ import { combineDateAndTime, convertDateToNative, convertDateToTimeInputValue, f
 export const EditMeetingModal = ({
     meeting,
     circle,
+    country
 } : {
     meeting: CircleMeeting
     circle: Circle
+    country: Country
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
@@ -54,7 +56,7 @@ export const EditMeetingModal = ({
         >
             <ModalContent>
                 <ModalHeader>
-                    Edytujesz spotkanie z dnia: {formatedDate(meeting.startTime, meeting.endTime, {onlyDays: true})}<br/>
+                    Edytujesz spotkanie z dnia: {formatedDate(meeting.startTime, meeting.endTime, country.timeZone, "onlyDays")}<br/>
                     Dla kręgu: {circle.name}
                 </ModalHeader>
                 <EditMeetingForm meeting={meeting} onClose={onClose}/>

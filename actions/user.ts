@@ -9,7 +9,7 @@ import { CircleMeetingStatus, CircleMembershipStatus, MeetingParticipantStatus, 
 import { GetCircleById, GetCircleMembershipById } from "./circle"
 import { CheckLoginReturnUser } from "./auth"
 import { PermissionGate } from "@/utils/gate"
-import { resend } from "@/lib/resend"
+import { resend, sendEmail } from "@/lib/resend"
 import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
 import { GetCircleFutureMeetingsByCircleID } from "./meeting"
 import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
@@ -80,7 +80,19 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
     const circle = await GetCircleById(data.circleId)
     if (!circle) return { success: false, message: "Podany krąg nie został znaleziony"}
 
+    const moderator = await GetUserByID(circle.moderatorId)
+    if (!moderator) return { success: false, message: "Nie znaleziono moderatora"}
+
     const futureMeetings = await GetCircleFutureMeetingsByCircleID(circle.id) || []
+
+    const formattedMeetings = futureMeetings.map(m => ({
+        id: m.id,
+        startTime: m.startTime,
+        endTime: m.endTime,
+        timeZone: m.city.region.country.timeZone,
+        street: m.street,
+        city: m.city.name,
+      }));
 
     try {
         await prisma.circleMembership.create({
@@ -102,18 +114,26 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
         }
 
         try {
-            await resend.emails.send({
-                from: "Męska Strona Mocy <info@meska-strona-mocy.pl>",
+            await sendEmail({
                 to: user.email,
                 subject: `Witamy w kręgu - ${circle.name}`,
                 react: WelcomeToCircleEmail({
-                    name: user.name,
-                    circleName: circle.name,
-                    meetings: futureMeetings
-                })    
+                    member: {
+                        name: user.name
+                    },
+                    moderator: {
+                        name: moderator.name,
+                        avatarUrl: moderator.image,
+                        title: moderator.title
+                    },
+                    circle: {
+                        name: circle.name
+                    },
+                    meetings: formattedMeetings
+                })   
             })
         } catch(error) {
-            console.log(error)
+            console.error(error)
         }
 
         return {

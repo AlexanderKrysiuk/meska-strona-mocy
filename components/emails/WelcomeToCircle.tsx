@@ -1,96 +1,93 @@
-import { Html, Head, Preview, Body, Container, Section, Text } from "@react-email/components";
-import { Header } from "./components/Header";
-import { Footer } from "./components/Footer";
-import { Button } from "./components/Button";
-import { CircleMeeting, City, Country, Region } from "@prisma/client";
-
-type MeetingWithCity = CircleMeeting & { city: City & { region: Region & { country: Country }} }
+// WelcomeToCircleEmail.tsx
+import React from "react";
+import { Html, Head, Preview, Section, Text } from "@react-email/components";
+import { EmailLayout, Header, emailStyles, Sign } from "./Components";
+import { formatedDate } from "@/utils/date";
 
 interface WelcomeToCircleEmailProps {
-  name?: string | null;
-  circleName: string;
-  circleUrl?: string;
-  meetings?: MeetingWithCity[];
+  member: {
+    name: string | null;
+  };
+  moderator: {
+    name: string | null;
+    avatarUrl: string | null;
+    title: string | null;
+  };
+  circle: {
+    name: string;
+  };
+  meetings?: {
+    id: string;
+    startTime: Date;
+    endTime: Date;
+    timeZone: string;
+    street: string;
+    city: string;
+  }[];
 }
 
-export default function WelcomeToCircleEmail({ 
-  name, 
-  circleName, 
-  circleUrl,
-  meetings = []
+export default function WelcomeToCircleEmail({
+  member,
+  moderator,
+  circle,
+  meetings = [],
 }: WelcomeToCircleEmailProps) {
   return (
     <Html>
       <Head />
-      <Preview>Witaj w kręgu {circleName} – Męska Strona Mocy</Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Header title={`Witaj w kręgu ${circleName}`} />
+      <Preview>Witaj w kręgu {circle.name} – Męska Strona Mocy</Preview>
+      <EmailLayout
+        sign={
+          <Sign
+            name={moderator?.name}
+            avatarUrl={moderator?.avatarUrl}
+            title={moderator?.title}
+          />
+        }
+      >
+        <Header title={`Witaj w kręgu ${circle.name}`} />
 
-          <Section style={{ marginBottom: "32px" }}>
-            <Text style={paragraph}>
-              {name ? `Cześć ${name},` : "Cześć!"} Zostałeś dodany do kręgu <strong>{circleName}</strong> w serwisie Męska Strona Mocy.
-            </Text>
-            <Text style={paragraph}>
-              Cieszymy się, że do nas dołączyłeś! Możesz teraz brać udział w spotkaniach, dyskusjach i poznawać innych członków.
-            </Text>
+        <Section style={{ marginBottom: "32px" }}>
+          <Text style={emailStyles.paragraph}>
+            {member?.name ? `Cześć ${member.name},` : "Cześć!"} Zostałeś
+            dodany do kręgu <strong>{circle.name}</strong> w serwisie Męska
+            Strona Mocy.
+          </Text>
+          <Text style={emailStyles.paragraph}>
+            Cieszymy się, że do nas dołączyłeś! Możesz teraz brać udział w
+            spotkaniach, dyskusjach i poznawać innych członków.
+          </Text>
 
-            {circleUrl && (
-              <Button href={circleUrl} style={{ marginBottom: "20px" }}>
-                Przejdź do kręgu
-              </Button>
-            )}
+          {/* {circle.url && (
+            <Button href={circle.url} style={{ marginBottom: "20px" }}>
+              Przejdź do kręgu
+            </Button>
+          )} */}
 
-            {meetings.length > 0 && (
-              <Section style={{ marginTop: "32px" }}>
-                <Text style={{ ...paragraph, fontWeight: "bold" }}>
-                  Najbliższe spotkania:
+          {meetings.length > 0 && (
+            <Section style={{ marginTop: "32px" }}>
+              <Text style={emailStyles.headings.h2}>
+                Najbliższe spotkania:
+              </Text>
+              {meetings.map((m) => (
+                <Text
+                  key={m.id}
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: "20px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  📅{" "}
+                  {formatedDate(m.startTime, m.endTime, m.timeZone, "withDay",)}
+                  <br />
+                  📍 {m.city}, {m.street}
                 </Text>
-                {meetings.map((m) => {
-                  const locale = m.city.region.country.locale;
-                  const start = new Date(m.startTime);
-                  const end = new Date(m.endTime);
-
-                  return (
-                    <Text key={m.id} style={paragraph}>
-                      📅 {start.toLocaleString(locale, { dateStyle: "full", timeStyle: "short" })}
-                         - {end.toLocaleTimeString(locale, { timeStyle: "short" })}<br />
-                      📍 {m.city.name}, {m.street}
-                    </Text>
-                  );
-                })}
-              </Section>
-            )}
-
-            <Text style={{ ...paragraph, fontSize: "12px", color: "#888" }}>
-              Ta wiadomość jest generowana automatycznie, prosimy na nią nie odpowiadać.
-            </Text>
-          </Section>
-
-          <Footer />
-        </Container>
-      </Body>
+              ))}
+            </Section>
+          )}
+        </Section>
+      </EmailLayout>
     </Html>
   );
 }
-
-const main = {
-  backgroundColor: "#121212",
-  color: "#fff",
-  fontFamily: "Arial, sans-serif",
-  padding: "40px 0",
-} as const;
-
-const container = {
-  backgroundColor: "#1e1e1e",
-  borderRadius: "8px",
-  padding: "32px",
-  maxWidth: "500px",
-  margin: "0 auto",
-} as const;
-
-const paragraph = {
-  fontSize: "14px",
-  lineHeight: "20px",
-  marginBottom: "20px",
-} as const;

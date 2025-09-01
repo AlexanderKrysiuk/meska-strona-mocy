@@ -106,56 +106,56 @@ interface FormatMeetingDateOptions {
   withDay?: boolean;   // dzień tygodnia + daty + godziny
 }
 
+// export function formatedDate(
+//   start: Date,
+//   end: Date,
+//   { locale, onlyDays = false, withDay = false }: FormatMeetingDateOptions = {}
+// ): string {
+//   const startDate = new Date(start);
+//   const endDate = new Date(end);
+
+//   const sameDay = isSameDay(startDate, endDate);
+
+//   const dateFormatter = new Intl.DateTimeFormat(locale, {
+//     day: "2-digit",
+//     month: "2-digit",
+//     year: "numeric",
+//   });
+
+//   const dayFormatter = new Intl.DateTimeFormat(locale, { weekday: "long" });
+
+//   const timeFormatter = new Intl.DateTimeFormat(locale, {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//     hour12: false,
+//   });
+
+// // --- ONLY DAYS ---
+// if (onlyDays) {
+//   return sameDay
+//     ? dateFormatter.format(startDate)
+//     : `${dateFormatter.format(startDate)} - ${dateFormatter.format(endDate)}`;
+// }
+
+// // --- WITH DAY ---
+// if (withDay) {
+//   return sameDay
+//     ? `${dayFormatter.format(startDate)}, ${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${timeFormatter.format(endDate)}`
+//     : `${dayFormatter.format(startDate)}, ${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${dayFormatter.format(endDate)}, ${dateFormatter.format(endDate)}, ${timeFormatter.format(endDate)}`;
+// }
+
+// // --- DEFAULT ---
+// return sameDay
+//   ? `${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${timeFormatter.format(endDate)}`
+//   : `${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${dateFormatter.format(endDate)}, ${timeFormatter.format(endDate)}`;
+// }
+
 export function formatedDate(
   start: Date,
   end: Date,
-  { locale, onlyDays = false, withDay = false }: FormatMeetingDateOptions = {}
-): string {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-
-  const sameDay = isSameDay(startDate, endDate);
-
-  const dateFormatter = new Intl.DateTimeFormat(locale, {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  const dayFormatter = new Intl.DateTimeFormat(locale, { weekday: "long" });
-
-  const timeFormatter = new Intl.DateTimeFormat(locale, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
-// --- ONLY DAYS ---
-if (onlyDays) {
-  return sameDay
-    ? dateFormatter.format(startDate)
-    : `${dateFormatter.format(startDate)} - ${dateFormatter.format(endDate)}`;
-}
-
-// --- WITH DAY ---
-if (withDay) {
-  return sameDay
-    ? `${dayFormatter.format(startDate)}, ${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${timeFormatter.format(endDate)}`
-    : `${dayFormatter.format(startDate)}, ${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${dayFormatter.format(endDate)}, ${dateFormatter.format(endDate)}, ${timeFormatter.format(endDate)}`;
-}
-
-// --- DEFAULT ---
-return sameDay
-  ? `${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${timeFormatter.format(endDate)}`
-  : `${dateFormatter.format(startDate)}, ${timeFormatter.format(startDate)} - ${dateFormatter.format(endDate)}, ${timeFormatter.format(endDate)}`;
-}
-
-export function formatMeetingDate(
-  start: Date,
-  end: Date,
-  format: "default" | "onlyDays" | "withDay" = "default",
   timeZone?: string,
-  locale: string = Intl.DateTimeFormat().resolvedOptions().locale
+  format: "default" | "onlyDays" | "withDay" = "default",
+  locale: string = Intl.DateTimeFormat().resolvedOptions().locale,
 ): string {
   const sameDay = isSameDay(start, end);
 

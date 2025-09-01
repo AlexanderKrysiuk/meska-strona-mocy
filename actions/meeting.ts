@@ -98,7 +98,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                         endTime: meeting.endTime,
                         street: meeting.street,
                         city: meeting.city.name,
-                        locale: meeting.city.region.country.locale,
+                        timeZone: meeting.city.region.country.timeZone,
                         price: meeting.price,
                         moderatorName: meeting.moderator?.name,
                         moderatorAvatarUrl: meeting.moderator?.image,
@@ -205,7 +205,7 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                   street: meeting.street,
                   city: meeting.city.name,
                   price: meeting.price,
-                  locale: meeting.city.region.country.locale
+                  timeZone: meeting.city.region.country.timeZone
                 },
                 newMeeting: {
                   startTime: updatedMeeting.startTime,
@@ -213,7 +213,7 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                   street: updatedMeeting.street,
                   city: updatedMeeting.city.name,
                   price: updatedMeeting.price,
-                  locale: updatedMeeting.city.region.country.locale
+                  timeZone: updatedMeeting.city.region.country.timeZone
                 },
                 moderatorName: user.name
               })
@@ -369,64 +369,6 @@ export const GetCircleFutureMeetingsByCircleID = async (ID:string) => {
         console.error(error)
         return null
     }
-}
-
-export const GetMeetingWithMembersByMeetingID = async (meetingID:string) => {
-
-    // opóźnienie 11 sekund
-    //await new Promise(resolve => setTimeout(resolve, 11000));
-
-    const moderator = await CheckLoginReturnUser() 
-        
-    // if (!moderator) return {
-    //     success: false,
-    //     message: "Musisz być zalogowanym by otrzymać dane o spotkaniu"
-    // }
-    
-    if (!moderator) throw new Error("Musisz być zalogowany")
-            
-    //     if (!PermissionGate(moderator.roles, [Role.Moderator])) return {
-    //     success: false,
-    //     message: "Nie jesteś moderatorem"
-    // }
-    
-    if (!PermissionGate(moderator.roles, [Role.Moderator])) throw new Error("Nie jesteś moderatorem")
-        
-    const meeting = await prisma.circleMeeting.findUnique({
-        where: { id: meetingID },
-        include: {
-            city: { include: { region: { include: { country: true }}}},
-            participants: {
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            image: true,
-                            email: true,
-                            vacationDays: true
-                        }
-                    }
-                }
-            }
-        }
-    })
-
-    // if (!meeting) return {
-    //     success: false,
-    //     message: "Podane spotkanie nie istnieje"
-    // }
-
-    if (!meeting) throw new Error("Podane spotkanie nie istnieje")
-
-    // if (meeting.moderatorId !== moderator.id) return {
-    //     success: false,
-    //     message: "Nie jesteś moderatorem tego spotkania"
-    // }
-
-    if (meeting.moderatorId !== moderator.id) throw new Error("Nie jesteś moderatorem tego spotkania")
-
-    return meeting
 }
 
 export const GetScheduledMeetingsByModeratorID = async (moderatorID: string) => {

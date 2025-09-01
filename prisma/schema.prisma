@@ -21,8 +21,7 @@ model User {
   password      String?
   image         String?
   title         String?
-  balance       Float @default(0)
-  vacationDays  Int @default(2)
+  balances      Balance[]
   roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]
   sessions      Session[]
@@ -38,6 +37,26 @@ model User {
 
   meetings        CircleMeetingParticipant[]
   moderatedMeetings CircleMeeting[] @relation("Moderator")
+}
+
+model Balance {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount Int @default(0)
+  currency Currency
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, currency])
+}
+
+enum Currency {
+  PLN
+  EUR
+  USD
 }
 
 model UserRole {
@@ -124,7 +143,8 @@ model Circle {
   cityId String?
   city   City? @relation(fields: [cityId], references: [id])
 
-  price Float?
+  price Int?
+  currency Currency?
 
   meetings CircleMeeting[]
   members  CircleMembership[]
@@ -145,7 +165,9 @@ model CircleMeeting {
   city City @relation(fields: [cityId], references: [id])
 
   number Int
-  price  Float
+  
+  price  Int
+  currency Currency
 
   circleId      String
   circle        Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
@@ -193,6 +215,7 @@ enum MeetingParticipantStatus {
 model CircleMembership {
   id String @id @default(uuid())
   status CircleMembershipStatus
+  vacationDays  Int @default(2)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
