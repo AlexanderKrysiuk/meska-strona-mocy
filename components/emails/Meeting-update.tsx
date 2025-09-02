@@ -91,8 +91,8 @@ export default function MeetingUpdatedEmail({
           <strong>Cena:</strong>{" "}
           {oldMeeting.price !== newMeeting.price ? (
             <>
-              <span style={oldStyle}>❌ {(oldMeeting.price/100).toFixed(2)} {oldMeeting.currency}</span>
-              <span style={newStyle}>✅ {(newMeeting.price/100).toFixed(2)} {newMeeting.currency}</span>
+              <span style={oldStyle}>❌ {oldMeeting.price.toFixed(2)} {oldMeeting.currency}</span>
+              <span style={newStyle}>✅ {newMeeting.price.toFixed(2)} {newMeeting.currency}</span>
             </>
           ) : (
             <span>{newMeeting.price.toFixed(2)} PLN</span>

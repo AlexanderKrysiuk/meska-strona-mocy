@@ -182,8 +182,8 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
     }
   
     try {
-        const updatedMeeting = await prisma.$transaction(async (prismaTx) => {
-            const updatedMeeting = await prisma.circleMeeting.update({
+        const updatedMeeting = await prisma.$transaction(async (tx) => {
+            const updatedMeeting = await tx.circleMeeting.update({
               where: { id: data.meetingId },
               data: {
                 startTime: data.TimeRangeSchema.startTime,
@@ -200,24 +200,37 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
             })
 
             for (const participant of updatedMeeting.participants) {
-              let refundAmount = 0 
-              if (data.priceCurrency.currency === meeting.currency) {
-                  if (data.priceCurrency.price < meeting.price) {
-                      refundAmount = meeting.price - data.priceCurrency.price
-                  }
-              } else {
-                  refundAmount = meeting.price
-              }
-      
-              if (refundAmount > 0) {
-                  await prisma.balance.upsert({
-                      where: {userId_currency: { userId: participant.userId, currency: meeting.currency }},
-                      update: { amount: { increment: refundAmount }},
-                      create: { userId: participant.userId, currency: meeting.currency, amount: refundAmount}
-                  })
-              }
+                if (data.priceCurrency.currency === meeting.currency) {
+                    if (participant.amountPaid > updatedMeeting.price) {
+                        const difference = participant.amountPaid - updatedMeeting.price
+                        await tx.circleMeetingParticipant.update({
+                            where: {id: participant.id},
+                            data: {
+                                amountPaid: updatedMeeting.price
+                            }
+                        })
+                        await tx.balance.upsert({
+                            where: { userId_currency: { userId: participant.userId, currency: participant.currency }},
+                            update: { amount: { increment: difference }},
+                            create: { userId: participant.userId, amount: difference, currency: participant.currency }
+                        })
+                    }
+                } else {
+                    await tx.circleMeetingParticipant.update({
+                        where: {id: participant.id},
+                        data: {
+                            amountPaid: 0,
+                            currency: updatedMeeting.currency
+                        }
+                    })
+
+                    await tx.balance.upsert({
+                        where: { userId_currency: { userId: participant.userId, currency: participant.currency }},
+                        update: { amount: { increment: participant.amountPaid }},
+                        create: { userId: participant.userId, amount: participant.amountPaid, currency: participant.currency }
+                    })
+                }
             }
-            
             return updatedMeeting
         })
 
@@ -225,50 +238,51 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
       await sortMeetings(meeting.circleId)
   
       // wysyłka maili do uczestników jeśli spotkanie w przyszłości
-      if (updatedMeeting.startTime > new Date()) {
-        for (const participant of updatedMeeting.participants) {
-          try {
-            await sendEmail({
-              to: participant.user.email,
-              subject: `Zmiana spotkania w kręgu ${meeting.circle.name}`,
-              react: MeetingUpdatedEmail({
-                userName: participant.user.name,
-                circleName: meeting.circle.name,
-                oldMeeting: {
-                  startTime: meeting.startTime,
-                  endTime: meeting.endTime,
-                  street: meeting.street,
-                  city: meeting.city.name,
-                  price: meeting.price,
-                  currency: meeting.currency,
-                  locale: meeting.city.region.country.locale,
-                  timeZone: meeting.city.region.country.timeZone
-                },
-                newMeeting: {
-                  startTime: updatedMeeting.startTime,
-                  endTime: updatedMeeting.endTime,
-                  street: updatedMeeting.street,
-                  city: updatedMeeting.city.name,
-                  price: updatedMeeting.price,
-                  currency: updatedMeeting.currency,
-                  locale: meeting.city.region.country.locale,
-                  timeZone: updatedMeeting.city.region.country.timeZone
-                },
-                moderatorName: user.name
-              })
-            })
-          } catch (error) {
-            console.error(error)
-          }
+        if (updatedMeeting.startTime > new Date()) {
+            for (const participant of updatedMeeting.participants) {
+                if (participant.status === MeetingParticipantStatus.Active) {
+                    try {
+                        await sendEmail({
+                            to: participant.user.email,
+                            subject: `Zmiana spotkania w kręgu ${meeting.circle.name}`,
+                            react: MeetingUpdatedEmail({
+                                userName: participant.user.name,
+                                circleName: meeting.circle.name,
+                                oldMeeting: {
+                                    startTime: meeting.startTime,
+                                    endTime: meeting.endTime,
+                                    street: meeting.street,
+                                    city: meeting.city.name,
+                                    price: meeting.price,
+                                    currency: meeting.currency,
+                                    locale: meeting.city.region.country.locale,
+                                    timeZone: meeting.city.region.country.timeZone
+                                },
+                                newMeeting: {
+                                    startTime: updatedMeeting.startTime,
+                                    endTime: updatedMeeting.endTime,
+                                    street: updatedMeeting.street,
+                                    city: updatedMeeting.city.name,
+                                    price: updatedMeeting.price,
+                                    currency: updatedMeeting.currency,
+                                    locale: meeting.city.region.country.locale,
+                                    timeZone: updatedMeeting.city.region.country.timeZone
+                                },
+                                moderatorName: user.name
+                            })
+                        })
+                    } catch (error) {
+                        console.error(error)
+                    }
+                }
+            }
         }
-      }
-  
-      return { success: true, message: "Pomyślnie zmieniono dane spotkania" }
+    return { success: true, message: "Pomyślnie zmieniono dane spotkania" }
     } catch(error) {
-      console.error(error)
-      return { success: false, message: "Błąd połączenia z bazą danych" }
+        console.error(error)
+        return { success: false, message: "Błąd połączenia z bazą danych" }
     }
-  }
+}
   
 
 // export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {

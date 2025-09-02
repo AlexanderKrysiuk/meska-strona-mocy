@@ -96,6 +96,7 @@ const ShowMeetingMembersModal = ({
                             <TableHeader>
                                 <TableColumn>Imię i Nazwisko</TableColumn>
                                 <TableColumn>E-mail</TableColumn>
+                                <TableColumn>Wpłata</TableColumn>
                                 <TableColumn align="center">Status</TableColumn>
                                 <TableColumn align="center">Akcje</TableColumn>
                             </TableHeader>
@@ -117,6 +118,7 @@ const ShowMeetingMembersModal = ({
                                             />
                                         </TableCell>
                                         <TableCell>{item.user.email}</TableCell>
+                                        <TableCell>{item.amountPaid}/{meeting.price} {meeting.currency}</TableCell>
                                         <TableCell><StatusChip status={item.status}/></TableCell>
                                         <TableCell>
                                             {item.status === MeetingParticipantStatus.Vacation ? (
