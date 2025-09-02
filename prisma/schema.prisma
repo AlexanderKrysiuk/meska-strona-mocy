@@ -196,7 +196,9 @@ model CircleMeetingParticipant {
   meeting    CircleMeeting @relation(fields: [meetingId], references: [id])
 
   status     MeetingParticipantStatus @default(Pending)
-  amountPaid Float    @default(0)
+  amountPaid Int    @default(0)
+  currency   Currency
+
   paymentDate DateTime?
 
   createdAt  DateTime @default(now())

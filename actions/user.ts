@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma"
 import { AddUserToCircleSchema, DeleteUserFromCircleSchema, RegisterSchema, RestoreUserToCircleSchema } from "@/schema/user"
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
-import { SendRegisterNewUserEmail, SendWelcomeToCircleEmail } from "./resend"
-import { CircleMeetingStatus, CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
 import { GetCircleById, GetCircleMembershipById } from "./circle"
 import { CheckLoginReturnUser } from "./auth"
 import { PermissionGate } from "@/utils/gate"
@@ -15,6 +13,9 @@ import { GetCircleFutureMeetingsByCircleID } from "./meeting"
 import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
 import { GetFutureMeetingsForUserInCircle } from "./meeting-participants"
 import WelcomeBackToCircleEmail from "@/components/emails/WelcomeBackToCircle"
+import WelcomeEmail from "@/components/emails/Welcome"
+import { CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
+import { SendRegisterNewUserEmail } from "./resend"
 
 export const GetUserByEmail = async (email:string) => {
     try {
@@ -71,12 +72,51 @@ export const RegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
 }
 
 export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSchema>) => {
-    const result = await RegisterNewUser({ email: data.email, name: data.name})
-    if (!result.success) return result
+    //const result = await RegisterNewUser({ email: data.email, name: data.name})
+    //if (!result.success) return result
 
-    const user = await GetUserByEmail(data.email)
-    if (!user) return { success: false, message: "Nie znaleziono użytkownika" }
+    let user = await GetUserByEmail(data.email)
+    if (!user) { //return { success: false, message: "Nie znaleziono użytkownika" }
+        try {
+            user = await prisma.user.create({
+                data: {
+                    name: data.name,
+                    email: data.email
+                }
+            })
+        } catch (error) {
+            console.error(error)
+            return {
+                success: false,
+                message: "Rejestracja nie powiodła się. Spróbuj ponownie."
+            }
+        }
+    }
 
+    if (!user.emailVerified) {
+        try {
+            const token = await GenerateVerificationToken(user.email)
+            if (!token) return {
+                success: false,
+                message: "Rejestracja nie powiodła się. Spróbuj ponownie."
+            }
+            await sendEmail({
+                to: user.email,
+                subject: "Witamy - Męska Strona Mocy",
+                react: WelcomeEmail({
+                    token: token,
+                    name: user.name
+                })
+            })
+        } catch (error) {
+            console.error(error)
+            return {
+                success: false,
+                message: "Rejestracja nie powiodła się. Spróbuj ponownie."
+            }
+        }
+    }
+    
     const circle = await GetCircleById(data.circleId)
     if (!circle) return { success: false, message: "Podany krąg nie został znaleziony"}
 
@@ -89,9 +129,11 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
         id: m.id,
         startTime: m.startTime,
         endTime: m.endTime,
+        locale: m.city.region.country.locale,
         timeZone: m.city.region.country.timeZone,
         street: m.street,
         city: m.city.name,
+        currency: m.currency
       }));
 
     try {

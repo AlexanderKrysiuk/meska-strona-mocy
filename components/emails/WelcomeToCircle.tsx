@@ -20,6 +20,7 @@ interface WelcomeToCircleEmailProps {
     id: string;
     startTime: Date;
     endTime: Date;
+    locale: string;
     timeZone: string;
     street: string;
     city: string;
@@ -79,7 +80,7 @@ export default function WelcomeToCircleEmail({
                   }}
                 >
                   📅{" "}
-                  {formatedDate(m.startTime, m.endTime, m.timeZone, "withDay",)}
+                  {formatedDate(m.startTime, m.endTime, m.timeZone, "withDay", m.locale)}
                   <br />
                   📍 {m.city}, {m.street}
                 </Text>

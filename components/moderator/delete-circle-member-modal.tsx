@@ -1,38 +1,41 @@
 "use client"
 
-import { DeleteUserFromCircle } from "@/actions/user";
-import { DeleteUserFromCircleSchema } from "@/schema/user";
+import { DeleteMemberFromCircle } from "@/actions/member";
+import { DeleteMemberFromCircleSchema } from "@/schema/member";
+import { ModeratorQueries } from "@/utils/query";
 import { faCheck, faTrashCan, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea, Tooltip, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { CircleMembership } from "@prisma/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
 const DeleteCircleMemberModal = ({
-    membershipId,
+    membership,
     memberName,
     circleName
 } : {
-    membershipId: string
+    membership: CircleMembership
     memberName?: string | null
     circleName: string | null
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const router = useRouter()
 
-    type FormFields = z.infer<typeof DeleteUserFromCircleSchema>
+    type FormFields = z.infer<typeof DeleteMemberFromCircleSchema>
 
     const {handleSubmit, watch, setValue, formState: {errors, isSubmitting, isValid}} = useForm<FormFields>({
-        resolver: zodResolver(DeleteUserFromCircleSchema),
+        resolver: zodResolver(DeleteMemberFromCircleSchema),
         defaultValues: {
-            membershipId: membershipId
+            membershipId: membership.id
         }
     })
 
+    const queryClient = useQueryClient()
+
     const submit: SubmitHandler<FormFields> = async(data) => {
-        const result = await DeleteUserFromCircle(data)
+        const result = await DeleteMemberFromCircle(data)
 
         addToast({
             title: result.message,
@@ -40,7 +43,7 @@ const DeleteCircleMemberModal = ({
         })
 
         if (result.success) {
-            router.refresh()
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.CircleMembers, membership.circleId]})
             onClose()
         }
     }
@@ -59,7 +62,7 @@ const DeleteCircleMemberModal = ({
                     radius="full"
                     variant="light"
                 >
-                    <FontAwesomeIcon icon={faTrashCan}/>
+                    <FontAwesomeIcon icon={faTrashCan} size="xl"/>
                 </Button>
             </Tooltip>
             <Modal
@@ -72,7 +75,7 @@ const DeleteCircleMemberModal = ({
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody>
                             <div>
-                                Czy na pewno chcesz usunąć użytkownika <strong>{memberName}</strong> z kręgu <strong>{circleName}</strong> ?
+                                Czy na pewno chcesz usunąć użytkownika <strong>{memberName}</strong><br/> z kręgu <strong>{circleName}</strong> ?
                             </div>
                             {/* {JSON.stringify(watch(),null,2)} */}
                             <Textarea
@@ -88,6 +91,7 @@ const DeleteCircleMemberModal = ({
                         </ModalBody>
                         <ModalFooter className="w-full">
                             <Button
+                                fullWidth
                                 color="primary"
                                 startContent={isSubmitting ? undefined : <FontAwesomeIcon icon={faCheck}/>}
                                 type="submit"
@@ -97,6 +101,7 @@ const DeleteCircleMemberModal = ({
                                 {isSubmitting ? "Przetwarzanie..." : "Usuń"}
                             </Button>
                             <Button
+                                fullWidth
                                 color="danger"
                                 startContent={<FontAwesomeIcon icon={faXmark}/>}
                                 onPress={onClose}

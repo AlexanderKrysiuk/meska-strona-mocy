@@ -6,6 +6,7 @@ import { ModeratorQueries } from "@/utils/query";
 import { Chip, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@heroui/react";
 import { Circle, CircleMembershipStatus } from "@prisma/client";
 import { useQueries } from "@tanstack/react-query";
+import DeleteCircleMemberModal from "./delete-circle-member-modal";
 
 const StatusChip = ({ status }: { status: CircleMembershipStatus }) => {
     let color: "success" | "danger" | "default" = "default";
@@ -92,15 +93,23 @@ const CircleMembersTable = ({
                                 <TableCell>{item.user.email}</TableCell>
                                 <TableCell>{item.circle.name}</TableCell>
                                 <TableCell><StatusChip status={item.status}/></TableCell>
-                                <TableCell align="center">123</TableCell>
+                                <TableCell align="center">
+                                    {item.status === CircleMembershipStatus.Active && (
+                                        <DeleteCircleMemberModal
+                                            membership={item}
+                                            memberName={item.user.name}
+                                            circleName={item.circle.name}
+                                        />
+                                    )}
+                                </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
-            <pre>
+            {/* <pre>
                 {JSON.stringify(CircleMembers.data,null,2)}
-            </pre>
+            </pre> */}
         </main>
     );
 }

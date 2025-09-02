@@ -40,7 +40,7 @@ export const CreateMeetingModal = ({
             color="primary"
             startContent={<FontAwesomeIcon icon={faCalendarPlus}/>}
             onPress={onOpen}
-            isDisabled={!circles}
+            isDisabled={circles && circles?.length < 1}
         >
             Utwórz nowe spotkanie
         </Button>

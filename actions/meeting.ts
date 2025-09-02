@@ -3,7 +3,7 @@
 import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
 import { date, z } from "zod"
 import { CheckLoginReturnUser } from "./auth"
-import { CircleMeeting, CircleMeetingStatus, CircleMembershipStatus, MeetingParticipantStatus, Role } from "@prisma/client"
+import { CircleMeeting, CircleMeetingStatus, CircleMembershipStatus, Currency, MeetingParticipantStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { GetCircleById } from "./circle"
 import { PermissionGate } from "@/utils/gate"
@@ -60,6 +60,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             ? activeMembers.filter(m => m.user).map(m => ({
                 user: { connect: { id: m.user.id } },
                 status: MeetingParticipantStatus.Pending,
+                currency: data.currency
             }))
             : undefined
   
