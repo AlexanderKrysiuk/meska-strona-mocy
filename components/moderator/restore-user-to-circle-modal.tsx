@@ -1,38 +1,41 @@
 "use client"
 
-import { RestoreUserToCircle } from "@/actions/user"
-import { RestoreUserToCircleSchema } from "@/schema/user"
+import { RestoreMemberToCircle } from "@/actions/member"
+import { RestoreMemberToCircleSchema } from "@/schema/member"
+import { ModeratorQueries } from "@/utils/query"
 import { faArrowRotateBack, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, User } from "@prisma/client"
-import { useRouter } from "next/navigation"
+import { Circle, CircleMembership, User } from "@prisma/client"
+import { useQueryClient } from "@tanstack/react-query"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
 const RestoreUserToCircleModal = ({
+    membership,
     member,
     circle
 } : {
+    membership: CircleMembership
     member: Pick<User, "id" | "name">
     circle: Pick<Circle, "id" | "name">
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const router = useRouter()
 
-    type FormFields = z.infer<typeof RestoreUserToCircleSchema>
+    type FormFields = z.infer<typeof RestoreMemberToCircleSchema>
 
     const { handleSubmit, formState: {isSubmitting} } = useForm<FormFields>({
-        resolver: zodResolver(RestoreUserToCircleSchema),
+        resolver: zodResolver(RestoreMemberToCircleSchema),
         defaultValues: {
-            userId: member.id,
-            circleId: circle.id
+            membershipId: membership.id
         }
     })
 
+    const queryClient = useQueryClient()
+
     const submit: SubmitHandler<FormFields> = async(data) => {
-        const result = await RestoreUserToCircle(data)
+        const result = await RestoreMemberToCircle(data)
 
         addToast({
             title: result.message,
@@ -40,7 +43,7 @@ const RestoreUserToCircleModal = ({
         })
 
         if (result.success) {
-            router.refresh()
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.CircleMembers, circle.id]})
             onClose()
         }
     }
@@ -60,7 +63,7 @@ const RestoreUserToCircleModal = ({
                     variant="light"
                     onPress={onOpen}
                 >
-                    <FontAwesomeIcon icon={faArrowRotateBack}/>
+                    <FontAwesomeIcon icon={faArrowRotateBack} size="xl"/>
                 </Button>
             </Tooltip>
             <Modal
@@ -72,12 +75,13 @@ const RestoreUserToCircleModal = ({
                     <ModalHeader>Przywróć kręgowca</ModalHeader>
                     <ModalBody>
                         <div>
-                            Czy na pewno chcesz przywrócić kręgowca <strong>{` ${member.name} `}</strong> do kręgu <strong>{` ${circle.name}`}</strong>?
+                            Czy na pewno chcesz przywrócić kręgowca <strong>{` ${member.name} `}</strong> <br/> do kręgu <strong>{` ${circle.name}`}</strong>?
                         </div>
                     </ModalBody>
-                    <ModalFooter>
-                        <Form onSubmit={handleSubmit(submit)}>
+                    <Form onSubmit={handleSubmit(submit)}>
+                        <ModalFooter className="w-full">
                             <Button
+                                fullWidth
                                 color="primary"
                                 startContent={isSubmitting ? undefined : <FontAwesomeIcon icon={faCheck}/>}
                                 type="submit"
@@ -86,16 +90,17 @@ const RestoreUserToCircleModal = ({
                             >
                                 {isSubmitting ? "Przywracanie..." : "Przwróć"}
                             </Button>
-                        </Form>
-                        <Button
-                            color="danger"
-                            startContent={<FontAwesomeIcon icon={faXmark}/>}
-                            onPress={onClose}
-                            isDisabled={isSubmitting}
-                        >
-                            Anuluj
-                        </Button>
-                    </ModalFooter>
+                            <Button
+                                fullWidth
+                                color="danger"
+                                startContent={<FontAwesomeIcon icon={faXmark}/>}
+                                onPress={onClose}
+                                isDisabled={isSubmitting}
+                            >
+                                Anuluj
+                            </Button>
+                        </ModalFooter>
+                    </Form>
                 </ModalContent>
             </Modal>
         </main>

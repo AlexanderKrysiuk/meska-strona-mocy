@@ -41,10 +41,7 @@ export const AddUserToCircleSchema = RegisterSchema.extend({
     circleId
 })
 
-export const DeleteUserFromCircleSchema = z.object({
-    membershipId,
-    reason
-})
+
 
 export const RestoreUserToCircleSchema = z.object({
     userId,

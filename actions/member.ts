@@ -4,11 +4,14 @@ import { SendMemberToVacationSchema } from "@/schema/moderator"
 import { z } from "zod"
 import { CheckLoginReturnUser } from "./auth"
 import { prisma } from "@/lib/prisma"
-import { DeleteMemberFromCircleSchema } from "@/schema/member"
+import { DeleteMemberFromCircleSchema, RestoreMemberToCircleSchema } from "@/schema/member"
 import { CircleMembershipStatus, Currency, MeetingParticipantStatus, Role } from "@prisma/client"
 import { GetFutureMeetingsForUserInCircle } from "./meeting-participants"
 import { sendEmail } from "@/lib/resend"
 import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
+import { GetCircleById } from "./circle"
+import { GetCircleFutureMeetingsByCircleID } from "./meeting"
+import WelcomeBackToCircleEmail from "@/components/emails/WelcomeBackToCircle"
 
 export const SendMemberToVacation = async (data: z.infer<typeof SendMemberToVacationSchema>) => {
     const user = await CheckLoginReturnUser()
@@ -33,6 +36,7 @@ export const GetCircleMembersByCircleID = async (ID:string) => {
             include: {
                 user: {
                     select: {
+                        id: true,
                         name: true,
                         image: true,
                         email: true,
@@ -40,6 +44,7 @@ export const GetCircleMembersByCircleID = async (ID:string) => {
                 },
                 circle: {
                     select: {
+                        id: true,
                         name: true
                     }
                 }
@@ -89,7 +94,7 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
     const futureMeetings = await GetFutureMeetingsForUserInCircle(membership.user.id, membership.circle.id)
 
     try {
-        const totalRefund = futureMeetings.reduce((sum, p) => sum + p.amountPaid, 0);
+        //const totalRefund = futureMeetings.reduce((sum, p) => sum + p.amountPaid, 0);
 
         await prisma.$transaction(async (tx) => {
             // 1. Zmieniamy status członkostwa
@@ -165,4 +170,95 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
 
 export const GetMemberWithMeetingAndCircleByParticipationID = async (ID:string) => {
     
+}
+
+export const RestoreMemberToCircle = async (data: z.infer<typeof RestoreMemberToCircleSchema>) => {
+    const user = await CheckLoginReturnUser()
+
+    if (!user) return {
+        success: false,
+        message: "Musisz być zalogowanym by usunąć użytkownika"
+    }
+
+    const membership = await GetCircleMembershipByID(data.membershipId)
+
+    if (!membership) return {
+        success: false,
+        message: "Nie znaleziono informacji o członkostwie"
+    }
+
+    // const member = await GetUserByID(data.userId)
+
+    // if (!member) return {
+    //     success: false,
+    //     message: "Brak informacji o podanym kręgowcu"
+    // }
+
+    // const circle = await GetCircleById(data.me)
+
+    // if (!circle) return {
+    //     success: false,
+    //     message: "Brak informacji o podanym kręgu"
+    // }
+
+    if (!(user.roles.includes(Role.Moderator) && membership.circle.moderatorId === user.id)) return { 
+        success: false, 
+        message: "Brak uprawnień do usunięcia użytkownika" 
+    }
+
+    const futureMeetings = await GetCircleFutureMeetingsByCircleID(membership.circle.id) || []
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.circleMembership.update({
+                where: { id: membership.id },
+                data: {
+                    status: CircleMembershipStatus.Active
+                }
+            })
+            for (const meeting of futureMeetings) {
+                await tx.circleMeetingParticipant.upsert({
+                    where: {
+                        userId_meetingId:{
+                            userId: membership.user.id,
+                            meetingId: meeting.id
+                        }
+                    },
+                    update: {
+                        status: MeetingParticipantStatus.Pending
+                    },
+                    create: {
+                        userId: membership.user.id,
+                        meetingId: meeting.id,
+                        currency: meeting.currency
+                    }
+                })
+            }
+        })
+
+        try {
+            await sendEmail({
+                to: membership.user.email,
+                subject: `Witamy ponownie w kręgu - ${membership.circle.name}`,
+                react: WelcomeBackToCircleEmail({
+                    name: membership.user.name,
+                    circleName: membership.circle.name,
+                    meetings: futureMeetings
+                })
+            })
+        } catch(error) {
+            console.error(error)
+        }
+
+        return {
+            success: true,
+            message: "Przywrócono pomyślnie użytkownika do kręgu"
+        }
+    } catch (error) {
+        console.error(error)
+        return {
+            success: false,
+            message: "Nie udało się przywrócić użytkownika"
+        }
+    }
 }

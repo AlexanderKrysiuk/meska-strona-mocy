@@ -7,6 +7,7 @@ import { Chip, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, T
 import { Circle, CircleMembershipStatus } from "@prisma/client";
 import { useQueries } from "@tanstack/react-query";
 import DeleteCircleMemberModal from "./delete-circle-member-modal";
+import RestoreUserToCircleModal from "./restore-user-to-circle-modal";
 
 const StatusChip = ({ status }: { status: CircleMembershipStatus }) => {
     let color: "success" | "danger" | "default" = "default";
@@ -56,7 +57,6 @@ const CircleMembersTable = ({
         ? allMembers.filter(m => m.circleId === circle.id)
         : allMembers;
 
-    const [CircleMembers] = queries
     
     return (
         <main>
@@ -79,7 +79,7 @@ const CircleMembersTable = ({
                         {(item) => (
                             <TableRow 
                                 key={item.id}
-                                className={item.status === CircleMembershipStatus.Active ? "" : "opacity-50"}
+                                className={item.status === CircleMembershipStatus.Active ? "" : "opacity-60"}
                             >
                                 <TableCell>
                                     <User
@@ -99,6 +99,13 @@ const CircleMembersTable = ({
                                             membership={item}
                                             memberName={item.user.name}
                                             circleName={item.circle.name}
+                                        />
+                                    )}
+                                    {item.status !== CircleMembershipStatus.Active && (
+                                        <RestoreUserToCircleModal
+                                            membership={item}
+                                            member={item.user}
+                                            circle={item.circle}
                                         />
                                     )}
                                 </TableCell>
