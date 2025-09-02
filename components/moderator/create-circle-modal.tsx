@@ -4,13 +4,11 @@ import { CreateCircle } from "@/actions/circle";
 import { clientAuth } from "@/hooks/auth";
 import { CreateCircleSchema } from "@/schema/circle";
 import { ModeratorQueries } from "@/utils/query";
-//import { finalSlugify, liveSlugify } from "@/utils/slug";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -18,7 +16,6 @@ const CreateCircleModal = () => {
     const moderator = clientAuth()
     
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const router = useRouter()
     
     type FormFields = z.infer<typeof CreateCircleSchema>
 

@@ -8,8 +8,8 @@ import bcrypt from "bcryptjs"
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { GenerateVerificationToken } from "./tokens";
-import { SendResetPasswordEmail } from "./resend";
 import { GetUserByEmail } from "./user";
+import { SendResetPasswordEmail } from "./resend";
 
 export const NEWRegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
     

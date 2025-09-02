@@ -99,6 +99,7 @@ const SendParticipantToVatacionForm = ({
 
         if (result.success) {
             queryClient.invalidateQueries({queryKey: [ModeratorQueries.MeetingParticipants, participation.meetingId]})
+            onClose()
         }
     }
 

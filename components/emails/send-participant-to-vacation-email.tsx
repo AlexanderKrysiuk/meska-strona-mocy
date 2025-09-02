@@ -27,7 +27,7 @@ export default function SendParticipantToVacationEmail({
                 </Text>
 
                 <Text style={emailStyles.paragraph}>
-                    Za spotkanie, które przypadało w dniach <strong>{formatedDate(meeting.startTime, meeting.endTime, meeting.city.region.country.timeZone, "withDay", meeting.city.region.country.locale)}</strong>, zwróciliśmy Ci kwotę <strong>{participation.amountPaid} {participation.currency}</strong> na Twoje saldo.
+                    Za spotkanie, które przypadało w dniu: <strong>{formatedDate(meeting.startTime, meeting.endTime, meeting.city.region.country.timeZone, "withDay", meeting.city.region.country.locale)}</strong>, zwróciliśmy Ci kwotę <strong>{participation.amountPaid} {participation.currency}</strong> na Twoje saldo.
                 </Text>
 
             </Section>

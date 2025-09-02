@@ -1,16 +1,15 @@
 "use client"
 
-import { faArrowRotateForward, faUserGroup } from "@fortawesome/free-solid-svg-icons"
+import { faUserGroup } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Alert, Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, User, useDisclosure } from "@heroui/react"
+import { Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, User, useDisclosure } from "@heroui/react"
 import { Circle, CircleMeeting, Country, MeetingParticipantStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
-import ReturnMemberFromVacationModal from "./return-member-from-vacation-modal"
 import { ModeratorQueries } from "@/utils/query"
 import { GetMeetingParticipantsByMeeting } from "@/actions/meeting-participants"
-import { formatDate } from "@/lib/format"
 import { formatedDate } from "@/utils/date"
 import { SendParticipantToVacationModal } from "./send-participant-to-vacation-modal"
+import ReturnParticipantFromVacationModal from "./return-participant-from-vacation-modal"
   
 const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -121,9 +120,9 @@ const ShowMeetingMembersModal = ({
                                         <TableCell><StatusChip status={item.status}/></TableCell>
                                         <TableCell>
                                             {item.status === MeetingParticipantStatus.Vacation ? (
-                                                <ReturnMemberFromVacationModal
-                                                    participationID={item.id}
-                                                    member={item.user}
+                                                <ReturnParticipantFromVacationModal
+                                                    participation={item}
+                                                    user={item.user}
                                                 />
                                             ) : (
                                                 item.status === MeetingParticipantStatus.Active && ( // tylko aktywni mogą iść na wakacje

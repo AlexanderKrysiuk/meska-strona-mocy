@@ -9,7 +9,6 @@ import { Button, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, Modal
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle } from "@prisma/client"
 import { useQueryClient } from "@tanstack/react-query"
-import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
@@ -17,11 +16,11 @@ import { z } from "zod"
 
 
 const AddCircleMemberModal = ({
+    circles,
     circle,
-    circles
 } : {
-    circle?: Circle
     circles: Circle[]
+    circle?: Circle
 }) => {
     type FormFields = z.infer<typeof AddUserToCircleSchema>
 
@@ -32,8 +31,8 @@ const AddCircleMemberModal = ({
     })
 
     useEffect(() => {
-        setValue("circleId", circle?.id!)
-    }, [circle, setValue, isOpen])
+        setValue("circleId", circle?.id ?? "");
+    }, [circle, setValue, isOpen]);  
 
     const queryClient = useQueryClient()
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { GetModeratorCircles } from "@/actions/circle";
-import { GetModeratorMeetingsByModeratorID } from "@/actions/meeting";
 import Loader from "@/components/loader";
 import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal";
 import CircleMembersTable from "@/components/moderator/circle-members-table";
@@ -10,7 +9,7 @@ import { clientAuth } from "@/hooks/auth";
 import { ModeratorQueries } from "@/utils/query";
 import { Divider, Select, SelectItem } from "@heroui/react";
 import { Circle } from "@prisma/client";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 const CircleMembersPage = () => {

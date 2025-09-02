@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { AddUserToCircleSchema, RegisterSchema, RestoreUserToCircleSchema } from "@/schema/user"
+import { AddUserToCircleSchema, RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
 import { GetCircleById, GetCircleMembershipById } from "./circle"

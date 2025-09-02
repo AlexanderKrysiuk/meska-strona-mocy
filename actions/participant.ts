@@ -1,12 +1,13 @@
 "use server"
 
-import { SendParticipantToVacationSchema } from "@/schema/participant"
+import { ReturnParticipantFromVacationSchema, SendParticipantToVacationSchema } from "@/schema/participant"
 import { z } from "zod"
 import { CheckLoginReturnUser } from "./auth"
 import { prisma } from "@/lib/prisma"
-import { MeetingParticipantStatus, Role } from "@prisma/client"
+import { CircleMeetingStatus, MeetingParticipantStatus, Role } from "@prisma/client"
 import { sendEmail } from "@/lib/resend"
 import SendParticipantToVacationEmail from "@/components/emails/send-participant-to-vacation-email"
+import ReturnParticipantFromVacationEmail from "@/components/emails/return-participant-from-vacation-email"
 
 export const SendParticipantToVacation = async (data: z.infer<typeof SendParticipantToVacationSchema>) => {
     const user = await CheckLoginReturnUser()
@@ -16,6 +17,8 @@ export const SendParticipantToVacation = async (data: z.infer<typeof SendPartici
     if (!participation) return { success: false, message: "Nie znaleziono danych o uczestnictwie"}
 
     if (!(user.roles.includes(Role.Admin) || (user.roles.includes(Role.Moderator) && user.id === participation.meeting.moderatorId))) return { success: false, message: "Brak uprawnień do wykonania tej czynności"}
+
+    if (participation.meeting.status === CircleMeetingStatus.Completed) return { success: false, message: "Nie możesz edytować zakończonych spotkań"}
 
     try {
         await prisma.$transaction(async (tx) => {
@@ -61,6 +64,56 @@ export const SendParticipantToVacation = async (data: z.infer<typeof SendPartici
     return {
         success: true,
         message: "Pomyślnie wysłano kręgowca na urlop"
+    }
+}
+
+export const ReturnParticipantFromVacation = async (data: z.infer<typeof ReturnParticipantFromVacationSchema>) => {
+    const user = await CheckLoginReturnUser()
+    if (!user) return { success: false, message: "Musisz być zalogowanym by utworzyć spotkanie" }
+
+    const participation = await GetParticipationByID(data.participationID)
+    if (!participation) return { success: false, message: "Nie znaleziono danych o uczestnictwie"}
+
+    if (!(user.roles.includes(Role.Admin) || (user.roles.includes(Role.Moderator) && user.id === participation.meeting.moderatorId))) return { success: false, message: "Brak uprawnień do wykonania tej czynności"}
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.circleMeetingParticipant.update({
+                where: { id: participation.id },
+                data: { status: MeetingParticipantStatus.Active }
+            })
+
+            await tx.circleMembership.update({
+                where: { userId_circleId: { userId: participation.userId, circleId: participation.meeting.circle.id }},
+                data: { vacationDays: { increment: 1 }}
+            })
+        })
+    } catch (error) {
+        console.error(error)
+        return {
+            success: false,
+            message: "Błąd połączenia z bazą danych"
+        }
+    }
+
+    try {
+        await sendEmail({
+            to: participation.user.email,
+            subject: `Powrót z urlopu w ${participation.meeting.circle.name}`,
+            react: ReturnParticipantFromVacationEmail({
+                user: participation.user,
+                circle: participation.meeting.circle,
+                meeting: participation.meeting,
+                participation: participation
+            })
+        })
+    } catch (error) {
+        console.error(error)
+    }
+
+    return {
+        success: true,
+        message: "Pomyślnie przywrócono kręgowca z urlopu"
     }
 }
 

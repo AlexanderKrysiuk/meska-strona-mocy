@@ -1,5 +1,5 @@
 import { Section, Text } from "@react-email/components";
-import { EmailLayout, Header, Button, Footer, emailStyles } from "./Components";
+import { EmailLayout, Header, Button, emailStyles } from "./Components";
 import { CircleMeeting, City, Country, Region } from "@prisma/client";
 import { formatedDate } from "@/utils/date";
 

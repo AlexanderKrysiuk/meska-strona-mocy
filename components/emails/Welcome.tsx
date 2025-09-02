@@ -4,7 +4,7 @@ import { EmailLayout, Header, Button, emailStyles } from "./Components";
 
 interface WelcomeEmailProps {
   token: VerificationToken;
-  name: string | null;
+  name?: string | null;
 }
 
 export default function WelcomeEmail({ token, name }: WelcomeEmailProps) {
