@@ -8,27 +8,27 @@ import { useQuery } from "@tanstack/react-query"
 import ReturnMemberFromVacationModal from "./return-member-from-vacation-modal"
 import { ModeratorQueries } from "@/utils/query"
 import { GetMeetingParticipantsByMeeting } from "@/actions/meeting-participants"
-import { SendMemberToVacationModal } from "./send-member-to-vacation-modal"
 import { formatDate } from "@/lib/format"
 import { formatedDate } from "@/utils/date"
+import { SendParticipantToVacationModal } from "./send-participant-to-vacation-modal"
   
 const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
     let message: string = status;
   
     switch (status) {
-        case MeetingParticipantStatus.Confirmed:
+        case MeetingParticipantStatus.Active:
             color = "success";
-            message = "Potwierdzony";
+            message = "Aktywny";
             break;
         case MeetingParticipantStatus.Vacation:
             color = "warning";
             message = "Urlop";
             break;
-        case MeetingParticipantStatus.Pending:
-            color = "primary";
-            message = "Nieopłacony";
-            break;
+        // case MeetingParticipantStatus.Pending:
+        //     color = "primary";
+        //     message = "Nieopłacony";
+        //     break;
         case MeetingParticipantStatus.Cancelled:
             color = "danger";
             message = "Usunięty";
@@ -120,18 +120,20 @@ const ShowMeetingMembersModal = ({
                                         <TableCell>{item.user.email}</TableCell>
                                         <TableCell><StatusChip status={item.status}/></TableCell>
                                         <TableCell>
-                                            {item.status === MeetingParticipantStatus.Vacation
-                                                ?   <ReturnMemberFromVacationModal
-                                                        participationID={item.id}
-                                                        member={item.user}
-                                                    />
-                                                :   
-                                                    <SendMemberToVacationModal
-                                                        member={item.user}
+                                            {item.status === MeetingParticipantStatus.Vacation ? (
+                                                <ReturnMemberFromVacationModal
+                                                    participationID={item.id}
+                                                    member={item.user}
+                                                />
+                                            ) : (
+                                                item.status === MeetingParticipantStatus.Active && ( // tylko aktywni mogą iść na wakacje
+                                                    <SendParticipantToVacationModal
+                                                        user={item.user}
                                                         circle={circle}
                                                         participation={item}
                                                     />
-                                                }
+                                                )
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 )}

@@ -59,7 +59,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             activeMembers.length > 0
             ? activeMembers.filter(m => m.user).map(m => ({
                 user: { connect: { id: m.user.id } },
-                status: MeetingParticipantStatus.Pending,
+                status: MeetingParticipantStatus.Active,
                 currency: data.currency
             }))
             : undefined

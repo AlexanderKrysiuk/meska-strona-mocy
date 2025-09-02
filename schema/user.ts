@@ -40,10 +40,3 @@ export const ResetPasswordSchema = z.object({
 export const AddUserToCircleSchema = RegisterSchema.extend({
     circleId
 })
-
-
-
-export const RestoreUserToCircleSchema = z.object({
-    userId,
-    circleId
-})

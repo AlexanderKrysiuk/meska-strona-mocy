@@ -225,7 +225,7 @@ export const RestoreMemberToCircle = async (data: z.infer<typeof RestoreMemberTo
                         }
                     },
                     update: {
-                        status: MeetingParticipantStatus.Pending
+                        status: MeetingParticipantStatus.Active
                     },
                     create: {
                         userId: membership.user.id,

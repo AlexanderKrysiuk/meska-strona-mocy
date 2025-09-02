@@ -1,26 +1,26 @@
 "use client"
 
-import { SendMemberToVacation } from "@/actions/moderator";
 import { SendMemberToVacationSchema } from "@/schema/moderator";
 import { ModeratorQueries } from "@/utils/query";
-import { faArrowRightRotate, faCheck, faRotate, faUmbrellaBeach, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faRotate, faUmbrellaBeach, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Alert, Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Circle, CircleMeetingParticipant, User } from "@prisma/client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import Loader from "../loader";
 import { GetCricleMembershipByUserAndCirlceIDs } from "@/actions/circle-membership";
+import { SendParticipantToVacation } from "@/actions/participant";
 
 
-export const SendMemberToVacationModal = ({
-    member,
+export const SendParticipantToVacationModal = ({
+    user,
     circle,
     participation,
 } : {
-    member: Pick<User, "id" | "name">
+    user: Pick<User, "id" | "name">
     circle: Circle
     participation: CircleMeetingParticipant
 }) => {
@@ -50,9 +50,9 @@ export const SendMemberToVacationModal = ({
             scrollBehavior="outside"
         >
             <ModalContent>
-                <ModalHeader>Wyślij {member.name} na urlop</ModalHeader>
-                <SendMemberToVatacionForm 
-                    member={member}
+                <ModalHeader>Wyślij {user.name} na urlop</ModalHeader>
+                <SendParticipantToVatacionForm 
+                    user={user}
                     circle={circle}
                     participation={participation}
                     onClose={onClose}
@@ -62,20 +62,20 @@ export const SendMemberToVacationModal = ({
     </main>
 }
 
-const SendMemberToVatacionForm = ({
-    member,
+const SendParticipantToVatacionForm = ({
+    user,
     circle,
     participation,
     onClose
 } : {
-    member: Pick<User, "id" | "name">
+    user: Pick<User, "id" | "name">
     circle: Circle
     participation: CircleMeetingParticipant
     onClose: () => void
 }) => {
     const { data: circleMembership, isLoading, refetch } = useQuery({
-        queryKey: [ModeratorQueries.MemberCircleMembership, member.id, circle.id],
-        queryFn: () => GetCricleMembershipByUserAndCirlceIDs(member.id, circle.id),
+        queryKey: [ModeratorQueries.MemberCircleMembership, user.id, circle.id],
+        queryFn: () => GetCricleMembershipByUserAndCirlceIDs(user.id, circle.id),
     })
 
     type FormFields = z.infer<typeof SendMemberToVacationSchema>
@@ -85,12 +85,21 @@ const SendMemberToVatacionForm = ({
         defaultValues: {
             participationID: participation.id,
         }
-    })    
+    })   
+    
+    const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
+        const result = await SendParticipantToVacation(data)
+
         addToast({
-            title: data.participationID
+            title: result.message,
+            color: result.success ? "success" : "danger"
         })
+
+        if (result.success) {
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.MeetingParticipants, participation.meetingId]})
+        }
     }
 
     if (isLoading) return <Loader/>

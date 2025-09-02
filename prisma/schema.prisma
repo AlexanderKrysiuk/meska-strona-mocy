@@ -195,7 +195,7 @@ model CircleMeetingParticipant {
   user       User     @relation(fields: [userId], references: [id])
   meeting    CircleMeeting @relation(fields: [meetingId], references: [id])
 
-  status     MeetingParticipantStatus @default(Pending)
+  status     MeetingParticipantStatus @default(Active)
   amountPaid Int    @default(0)
   currency   Currency
 
@@ -208,8 +208,7 @@ model CircleMeetingParticipant {
 }
 
 enum MeetingParticipantStatus {
-  Pending
-  Confirmed
+  Active
   Vacation
   Cancelled
 }
