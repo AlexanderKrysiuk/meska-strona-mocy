@@ -68,6 +68,7 @@ export const ScheduledMeetingsTable = ({
                                 meeting={item}
                                 circle={item.circle}
                                 country={item.city.region.country}
+                                currency={item.currency}
                             />
                         </TableCell>
                     </TableRow>

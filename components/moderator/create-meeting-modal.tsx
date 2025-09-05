@@ -13,13 +13,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getLocalTimeZone, today } from "@internationalized/date"
-import { Circle, CircleMeetingStatus, Country, Currency, Region } from "@prisma/client"
+import { Circle, CircleMeetingStatus, Country, Region } from "@prisma/client"
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
 import { combineDateAndTime, isSameDay } from "@/utils/date"
+import { GetCurrencies } from "@/actions/currency"
 
 export const CreateMeetingModal = ({
     circle
@@ -98,11 +99,15 @@ const CreateMeetingform = ({
             { 
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
+            },
+            {
+                queryKey: [GeneralQueries.Currencies],
+                queryFn: () => GetCurrencies()
             }
         ]
     })
 
-    const [circles, scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities] = queries
+    const [circles, scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities, currencies] = queries
     
     const unavailableDates = useMemo(() => [scheduledMeetings, completedMeetings, ArchivedMeetings]
             .flatMap(q => q.data ?? [])
@@ -130,7 +135,7 @@ const CreateMeetingform = ({
             street: circle?.street ?? undefined,
             cityId: circle?.cityId ?? undefined,
             price: circle?.price ?? undefined,
-            currency: circle?.currency ?? undefined
+            currencyId: circle?.currencyId ?? undefined
         }
     })
     
@@ -394,15 +399,15 @@ const CreateMeetingform = ({
                 onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
                 endContent={
                     <select
-                        value={watch("currency") ?? ""}
+                        value={watch("currencyId") ?? ""}
                         onChange={(event) => {
                             const val = event.target.value;
-                            setValue("currency", val === "" ? undefined! : (val as Currency), { shouldValidate: true });
+                            setValue("currencyId", val, { shouldValidate: true });
                         }}
                     >
                         <option value="">Brak</option> {/* opcja brak */}
-                        {Object.values(Currency).map((c) => (
-                            <option key={c} value={c}>{c}</option>
+                        {currencies.data?.map((c)=>(
+                            <option key={c.id} value={c.id}>{c.code}</option>
                         ))}
                     </select>
                 }

@@ -1,7 +1,6 @@
 import { Preview, Section, Text } from "@react-email/components";
 import { EmailLayout, Header, emailStyles, getTextColor } from "./Components";
 import { formatedDate } from "@/utils/date";
-import { Currency } from "@prisma/client";
 
 interface MeetingUpdatedEmailProps {
   userName?: string | null;
@@ -12,7 +11,7 @@ interface MeetingUpdatedEmailProps {
     street: string;
     city: string;
     price: number;
-    currency: Currency;
+    currencyCode: string;
     locale: string;
     timeZone?: string;
   };
@@ -22,7 +21,7 @@ interface MeetingUpdatedEmailProps {
     street: string;
     city: string;
     price: number;
-    currency: Currency;
+    currencyCode: string;
     locale: string;
     timeZone?: string;
   };
@@ -91,8 +90,8 @@ export default function MeetingUpdatedEmail({
           <strong>Cena:</strong>{" "}
           {oldMeeting.price !== newMeeting.price ? (
             <>
-              <span style={oldStyle}>❌ {oldMeeting.price.toFixed(2)} {oldMeeting.currency}</span>
-              <span style={newStyle}>✅ {newMeeting.price.toFixed(2)} {newMeeting.currency}</span>
+              <span style={oldStyle}>❌ {oldMeeting.price.toFixed(2)} {oldMeeting.currencyCode}</span>
+              <span style={newStyle}>✅ {newMeeting.price.toFixed(2)} {newMeeting.currencyCode}</span>
             </>
           ) : (
             <span>{newMeeting.price.toFixed(2)} PLN</span>

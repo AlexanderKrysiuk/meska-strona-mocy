@@ -89,7 +89,8 @@ export const GetMeetingParticipantsByMeeting = async (meetingID: string) => {
                         name: true,
                         email: true,
                     }
-                }
+                },
+                currency: true
             }
         })
     } catch (error) {

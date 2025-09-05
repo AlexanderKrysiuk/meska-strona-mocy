@@ -133,7 +133,7 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
         timeZone: m.city.region.country.timeZone,
         street: m.street,
         city: m.city.name,
-        currency: m.currency
+        currencyId: m.currencyId
       }));
 
     try {
@@ -150,7 +150,7 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
                 data: futureMeetings.map((meeting) => ({
                     meetingId: meeting.id,
                     userId: user.id,
-                    currency: meeting.currency
+                    currencyId: meeting.currencyId
                 })),
                 skipDuplicates: true
             })

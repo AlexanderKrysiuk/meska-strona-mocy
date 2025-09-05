@@ -1,13 +1,13 @@
 import { Section, Text } from "@react-email/components";
 import { EmailLayout, Header, emailStyles } from "./Components";
-import { Circle, CircleMeeting, CircleMeetingParticipant, User, City, Country, Region } from "@prisma/client";
+import { Circle, CircleMeeting, CircleMeetingParticipant, User, City, Country, Region, Currency } from "@prisma/client";
 import { formatedDate } from "@/utils/date";
 
 interface ParticipantVacationEmailProps {
   user: Pick<User, "name">;
   circle: Pick<Circle, "name">
   meeting: CircleMeeting & { city: City & { region: Region & { country: Country }} };
-  participation: CircleMeetingParticipant
+  participation: CircleMeetingParticipant & { currency: Currency }
 }
 
 export default function SendParticipantToVacationEmail({
@@ -27,7 +27,7 @@ export default function SendParticipantToVacationEmail({
                 </Text>
 
                 <Text style={emailStyles.paragraph}>
-                    Za spotkanie, które przypadało w dniu: <strong>{formatedDate(meeting.startTime, meeting.endTime, meeting.city.region.country.timeZone, "withDay", meeting.city.region.country.locale)}</strong>, zwróciliśmy Ci kwotę <strong>{participation.amountPaid} {participation.currency}</strong> na Twoje saldo.
+                    Za spotkanie, które przypadało w dniu: <strong>{formatedDate(meeting.startTime, meeting.endTime, meeting.city.region.country.timeZone, "withDay", meeting.city.region.country.locale)}</strong>, zwróciliśmy Ci kwotę <strong>{participation.amountPaid} {participation.currency.code}</strong> na Twoje saldo.
                 </Text>
 
             </Section>

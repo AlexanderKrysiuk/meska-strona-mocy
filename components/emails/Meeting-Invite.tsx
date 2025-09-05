@@ -13,6 +13,7 @@ interface MeetingInviteProps {
   city: string;
   timeZone: string;
   price: number;
+  currencyCode: string
   moderatorName?: string | null;
   moderatorAvatarUrl?: string | null;
 }
@@ -26,6 +27,7 @@ export function MeetingInvite({
   city,
   timeZone,
   price,
+  currencyCode,
   moderatorName,
   moderatorAvatarUrl,
 }: MeetingInviteProps) {
@@ -48,7 +50,7 @@ export function MeetingInvite({
           <strong>Miejsce:</strong> {street}, {city}
         </Text>
         <Text style={{ ...emailStyles.paragraph, color: textColor }}>
-          <strong>Cena spotkania:</strong> {price.toFixed(2)} PLN
+          <strong>Cena spotkania:</strong> {price.toFixed(2)} {currencyCode}
         </Text>
 
         {moderatorName && (

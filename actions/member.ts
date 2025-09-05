@@ -113,18 +113,18 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
 
             // 3. Grupujemy refund per currency
             const refundsByCurrency = futureMeetings.reduce<Record<string, number>>((acc, p) => {
-                acc[p.currency] = (acc[p.currency] || 0) + p.amountPaid;
+                acc[p.currencyId] = (acc[p.currencyId] || 0) + p.amountPaid;
                 return acc;
             }, {});
 
             // 4. Zwrot do tabeli Balance
-            for (const [currency, amount] of Object.entries(refundsByCurrency)) {
+            for (const [currencyId, amount] of Object.entries(refundsByCurrency)) {
                 if (amount > 0) {
                     await tx.balance.upsert({
                         where: {
-                            userId_currency: {
+                            userId_currencyId: {
                                 userId: membership.user.id,
-                                currency: currency as Currency,
+                                currencyId: currencyId,
                             }
                         },
                         update: {
@@ -132,7 +132,7 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
                         },
                         create: {
                             userId: membership.user.id,
-                            currency: currency as Currency,
+                            currencyId: currencyId,
                             amount,
                         },
                     });
@@ -230,7 +230,7 @@ export const RestoreMemberToCircle = async (data: z.infer<typeof RestoreMemberTo
                     create: {
                         userId: membership.user.id,
                         meetingId: meeting.id,
-                        currency: meeting.currency
+                        currencyId: meeting.currencyId
                     }
                 })
             }

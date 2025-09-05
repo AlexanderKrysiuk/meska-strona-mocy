@@ -3,13 +3,14 @@
 import { faUserGroup } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, User, useDisclosure } from "@heroui/react"
-import { Circle, CircleMeeting, Country, MeetingParticipantStatus } from "@prisma/client"
+import { Circle, CircleMeeting, Country, Currency, MeetingParticipantStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
 import { ModeratorQueries } from "@/utils/query"
 import { GetMeetingParticipantsByMeeting } from "@/actions/meeting-participants"
 import { formatedDate } from "@/utils/date"
 import { SendParticipantToVacationModal } from "./send-participant-to-vacation-modal"
 import ReturnParticipantFromVacationModal from "./return-participant-from-vacation-modal"
+import { PayForParticipantModal } from "./pay-for-participant-modal"
   
 const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -40,11 +41,13 @@ const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
 const ShowMeetingMembersModal = ({
     meeting,
     circle,
-    country
+    country,
+    currency
 } : {
     meeting: CircleMeeting
     circle: Circle
     country: Country
+    currency: Currency
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
@@ -118,9 +121,9 @@ const ShowMeetingMembersModal = ({
                                             />
                                         </TableCell>
                                         <TableCell>{item.user.email}</TableCell>
-                                        <TableCell>{item.amountPaid}/{meeting.price} {meeting.currency}</TableCell>
+                                        <TableCell>{item.amountPaid}/{meeting.price} {currency.code}</TableCell>
                                         <TableCell><StatusChip status={item.status}/></TableCell>
-                                        <TableCell>
+                                        <TableCell className="flex">
                                             {item.status === MeetingParticipantStatus.Vacation ? (
                                                 <ReturnParticipantFromVacationModal
                                                     participation={item}
@@ -134,6 +137,14 @@ const ShowMeetingMembersModal = ({
                                                         participation={item}
                                                     />
                                                 )
+                                            )}
+                                            {item.status === MeetingParticipantStatus.Active && (
+                                                <PayForParticipantModal
+                                                    participation={item}
+                                                    meeting={meeting}
+                                                    country={country}
+                                                    user={item.user}
+                                                />
                                             )}
                                         </TableCell>
                                     </TableRow>

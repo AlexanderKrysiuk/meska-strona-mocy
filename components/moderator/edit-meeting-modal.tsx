@@ -11,7 +11,7 @@ import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, CircleMeeting, CircleMeetingStatus, Country, Currency, Region } from "@prisma/client"
+import { Circle, CircleMeeting, CircleMeetingStatus, Country, Region } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -19,6 +19,7 @@ import { z } from "zod"
 import Loader from "../loader"
 import { getLocalTimeZone, today } from "@internationalized/date"
 import { combineDateAndTime, convertDateToNative, convertDateToTimeInputValue, formatedDate, isSameDay } from "@/utils/date"
+import { GetCurrencies } from "@/actions/currency"
 
 export const EditMeetingModal = ({
     meeting,
@@ -102,11 +103,15 @@ const EditMeetingForm = ({
             { 
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
+            },
+            {
+                queryKey: [GeneralQueries.Currencies],
+                queryFn: () => GetCurrencies()
             }
         ]
     })
 
-    const [scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities] = queries
+    const [scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities, currencies] = queries
     
     const unavailableDates = useMemo(() => [scheduledMeetings, completedMeetings, ArchivedMeetings]
             .flatMap(q => q.data ?? [])
@@ -128,7 +133,7 @@ const EditMeetingForm = ({
     type FormFields = z.infer<ReturnType<typeof EditMeetingSchema>>
 
     const { handleSubmit, watch, trigger, reset, setValue, setError, formState: { errors, isValid, isSubmitting, isDirty } } = useForm<FormFields>({
-        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime, meeting.price, meeting.currency)),
+        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime, meeting.price, meeting.currencyId)),
         mode: "all",
         defaultValues: {
             meetingId: meeting.id,
@@ -142,7 +147,7 @@ const EditMeetingForm = ({
             cityId: meeting.cityId,
             priceCurrency: {
                 price: meeting.price,
-                currency: meeting.currency
+                currencyId: meeting.currencyId
             }
         }
     })
@@ -303,7 +308,7 @@ const EditMeetingForm = ({
                             cityId: undefined,
                             priceCurrency: {
                                 price: watch("priceCurrency.price"),
-                                currency: watch("priceCurrency.currency")
+                                currencyId: watch("priceCurrency.currencyId")
                             }
                         },
                         {keepErrors: true}
@@ -340,7 +345,7 @@ const EditMeetingForm = ({
                             cityId: undefined,
                             priceCurrency: {
                                 price: watch("priceCurrency.price"),
-                                currency: watch("priceCurrency.currency")
+                                currencyId: watch("priceCurrency.currencyId")
                             }                        
                         },
                         {keepErrors: true}
@@ -379,14 +384,14 @@ const EditMeetingForm = ({
                 onValueChange={(value) => {setValue("priceCurrency.price", value, {shouldValidate: true, shouldDirty:true})}}
                 endContent={
                     <select
-                        value={watch("priceCurrency.currency") ?? ""}
+                        value={watch("priceCurrency.currencyId") ?? ""}
                         onChange={(event) => {
                             const val = event.target.value;
-                            setValue("priceCurrency.currency", val as Currency, { shouldValidate: true, shouldDirty: true });
+                            setValue("priceCurrency.currencyId", val, { shouldValidate: true, shouldDirty: true });
                         }}
                     >
-                        {Object.values(Currency).map((c) => (
-                            <option key={c} value={c}>{c}</option>
+                        {currencies.data?.map((c)=>(
+                                <option key={c.id} value={c.id}>{c.code}</option>
                         ))}
                     </select>
                 }

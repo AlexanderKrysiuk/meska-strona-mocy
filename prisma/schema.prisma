@@ -45,19 +45,33 @@ model Balance {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amount Int @default(0)
-  currency Currency
+
+  currencyId String
+  currency Currency @relation(fields: [currencyId], references: [id])
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  @@unique([userId, currency])
+  @@unique([userId, currencyId])
 }
 
-enum Currency {
-  PLN
-  EUR
-  USD
+model Currency {
+  id    String   @id @default(uuid())
+  code  String   @unique   // np. "PLN", "EUR", "USD"
+  name  String?              // np. "Polski złoty"
+  symbol String?              // np. "zł", "$", "€"
+
+  balances Balance[]
+  circles Circle[]
+  meetings CircleMeeting[]
+  participations CircleMeetingParticipant[]
 }
+
+// enum Currency {
+//   PLN
+//   EUR
+//   USD
+// }
 
 model UserRole {
   id     String @id @default(uuid())
@@ -144,7 +158,9 @@ model Circle {
   city   City? @relation(fields: [cityId], references: [id])
 
   price Int?
-  currency Currency?
+  
+  currencyId String?
+  currency Currency? @relation(fields: [currencyId], references: [id])
 
   meetings CircleMeeting[]
   members  CircleMembership[]
@@ -167,7 +183,9 @@ model CircleMeeting {
   number Int
   
   price  Int
-  currency Currency
+
+  currencyId String
+  currency Currency @relation(fields: [currencyId], references: [id])
 
   circleId      String
   circle        Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
@@ -197,7 +215,9 @@ model CircleMeetingParticipant {
 
   status     MeetingParticipantStatus @default(Active)
   amountPaid Int    @default(0)
-  currency   Currency
+  
+  currencyId  String
+  currency    Currency @relation(fields: [currencyId], references: [id])
 
   paymentDate DateTime?
 

@@ -60,7 +60,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             ? activeMembers.filter(m => m.user).map(m => ({
                 user: { connect: { id: m.user.id } },
                 status: MeetingParticipantStatus.Active,
-                currency: data.currency
+                currency: { connect: { id: data.currencyId } }, // <-- teraz poprawnie
             }))
             : undefined
   
@@ -73,7 +73,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
-                currency: data.currency,
+                currencyId: data.currencyId,
                 circleId: data.circleId,
                 moderatorId: user.id,
                 number: existingMeetings + 1,
@@ -83,7 +83,8 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                 participants: { include: { user: true } },
                 circle: true,
                 moderator: true,
-                city: { include: { region: { include: { country:true }}}}
+                city: { include: { region: { include: { country:true }}}},
+                currency: true
             },
         })
   
@@ -102,6 +103,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                         city: meeting.city.name,
                         timeZone: meeting.city.region.country.timeZone,
                         price: meeting.price,
+                        currencyCode: meeting.currency.code,
                         moderatorName: meeting.moderator?.name,
                         moderatorAvatarUrl: meeting.moderator?.image,
                     }),
@@ -148,10 +150,10 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
     }
   
     // 🔹 Sprawdzamy minimalną podwyżkę ceny
-    if (data.priceCurrency.currency === meeting.currency && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) {
+    if (data.priceCurrency.currencyId === meeting.currencyId && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) {
         return {
             success: false,
-            message: `Minimalna podwyżka ceny to 10 ${meeting.currency} (obecnie ${meeting.price} ${meeting.currency})`
+            message: `Minimalna podwyżka ceny to 10 (obecnie ${meeting.price} )`
         };
     }
 
@@ -189,18 +191,19 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                 startTime: data.TimeRangeSchema.startTime,
                 endTime: data.TimeRangeSchema.endTime,
                 price: data.priceCurrency.price,
-                currency: data.priceCurrency.currency,
+                currencyId: data.priceCurrency.currencyId,
                 street: data.street,
                 cityId: data.cityId
               },
               include: { 
                 participants: { include: { user: true } },
-                city: { include: { region: { include: { country:true }}}}
+                city: { include: { region: { include: { country:true }}}},
+                currency: true
               }
             })
 
             for (const participant of updatedMeeting.participants) {
-                if (data.priceCurrency.currency === meeting.currency) {
+                if (data.priceCurrency.currencyId === meeting.currencyId) {
                     if (participant.amountPaid > updatedMeeting.price) {
                         const difference = participant.amountPaid - updatedMeeting.price
                         await tx.circleMeetingParticipant.update({
@@ -210,9 +213,9 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                             }
                         })
                         await tx.balance.upsert({
-                            where: { userId_currency: { userId: participant.userId, currency: participant.currency }},
+                            where: { userId_currencyId: { userId: participant.userId, currencyId: participant.currencyId }},
                             update: { amount: { increment: difference }},
-                            create: { userId: participant.userId, amount: difference, currency: participant.currency }
+                            create: { userId: participant.userId, amount: difference, currencyId: participant.currencyId }
                         })
                     }
                 } else {
@@ -220,14 +223,14 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                         where: {id: participant.id},
                         data: {
                             amountPaid: 0,
-                            currency: updatedMeeting.currency
+                            currencyId: updatedMeeting.currencyId
                         }
                     })
 
                     await tx.balance.upsert({
-                        where: { userId_currency: { userId: participant.userId, currency: participant.currency }},
+                        where: { userId_currencyId: { userId: participant.userId, currencyId: participant.currencyId }},
                         update: { amount: { increment: participant.amountPaid }},
-                        create: { userId: participant.userId, amount: participant.amountPaid, currency: participant.currency }
+                        create: { userId: participant.userId, amount: participant.amountPaid, currencyId: participant.currencyId }
                     })
                 }
             }
@@ -254,7 +257,7 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                                     street: meeting.street,
                                     city: meeting.city.name,
                                     price: meeting.price,
-                                    currency: meeting.currency,
+                                    currencyCode: meeting.currency.code,
                                     locale: meeting.city.region.country.locale,
                                     timeZone: meeting.city.region.country.timeZone
                                 },
@@ -264,7 +267,7 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                                     street: updatedMeeting.street,
                                     city: updatedMeeting.city.name,
                                     price: updatedMeeting.price,
-                                    currency: updatedMeeting.currency,
+                                    currencyCode: updatedMeeting.currency.code,
                                     locale: meeting.city.region.country.locale,
                                     timeZone: updatedMeeting.city.region.country.timeZone
                                 },
@@ -342,7 +345,8 @@ export const GetMeetingById = async (id: string) => {
             where: { id },
             include: { 
                 city: { include: { region: { include: { country: true }}}},
-                circle: true
+                circle: true,
+                currency: true
             }
         })
     } catch (error) {
@@ -449,7 +453,8 @@ export const GetModeratorMeetingsByModeratorID = async (moderatorID: string, sta
             orderBy: { startTime: "asc" },
             include: { 
                 city : { include: { region: {include: {country:true}}}},
-                circle:true
+                circle:true,
+                currency: true
             }
         })
     } catch (error) {

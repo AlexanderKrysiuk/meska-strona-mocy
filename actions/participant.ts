@@ -23,9 +23,9 @@ export const SendParticipantToVacation = async (data: z.infer<typeof SendPartici
     try {
         await prisma.$transaction(async (tx) => {
             await tx.balance.upsert({
-                where: { userId_currency: { userId: participation.userId, currency: participation.meeting.currency }},
+                where: { userId_currencyId: { userId: participation.userId, currencyId: participation.meeting.currencyId }},
                 update: { amount: { increment: participation.amountPaid }},
-                create: { userId: participation.userId, amount: participation.amountPaid, currency: participation.meeting.currency }
+                create: { userId: participation.userId, amount: participation.amountPaid, currencyId: participation.meeting.currencyId }
             })
 
             await tx.circleMeetingParticipant.update({
@@ -128,9 +128,11 @@ export const GetParticipationByID = async (ID: string) => {
                         email: true
                     }
                 },
+                currency: true,
                 meeting: { include: {
                     circle : true,
-                    city: { include: { region: { include: { country: true }}}}
+                    city: { include: { region: { include: { country: true }}}},
+                    currency: true
                 }
             }}
         })

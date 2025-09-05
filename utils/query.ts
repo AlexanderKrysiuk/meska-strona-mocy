@@ -12,5 +12,10 @@ export enum ModeratorQueries {
 export enum GeneralQueries {
     Cities = "Cities",
     Regions = "Regions",
-    Countries = "Countries"
+    Countries = "Countries",
+    Currencies = "Currencies"
+}
+
+export enum PaymentQueries {
+    Participation = "Payment-Participation"
 }

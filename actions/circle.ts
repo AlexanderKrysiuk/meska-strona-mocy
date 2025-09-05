@@ -99,7 +99,7 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
-                currency: data.currency
+                currencyId: data.currencyId
             }
         })
     } catch {
