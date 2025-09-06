@@ -19,3 +19,7 @@ export enum GeneralQueries {
 export enum PaymentQueries {
     Participation = "Payment-Participation"
 }
+
+export enum UserQueries {
+    Balance
+}

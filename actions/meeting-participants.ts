@@ -77,7 +77,7 @@ export const GetMeetingParticipationWithMeetingAndUserByID = async (ID: string) 
 //     }
 // }
 
-export const GetMeetingParticipantsByMeeting = async (meetingID: string) => {
+export const GetMeetingParticipantsByMeetingID = async (meetingID: string) => {
     try {
         return await prisma.circleMeetingParticipant.findMany({
             where: {meetingId: meetingID},
@@ -90,7 +90,6 @@ export const GetMeetingParticipantsByMeeting = async (meetingID: string) => {
                         email: true,
                     }
                 },
-                currency: true
             }
         })
     } catch (error) {

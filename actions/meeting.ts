@@ -13,6 +13,7 @@ import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
 import { setTimeout } from "timers"
 import { FormError } from "@/utils/errors"
+import { GetMeetingParticipantsByMeetingID } from "./meeting-participants"
 
 export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {    
     const user = await CheckLoginReturnUser()
@@ -60,7 +61,6 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             ? activeMembers.filter(m => m.user).map(m => ({
                 user: { connect: { id: m.user.id } },
                 status: MeetingParticipantStatus.Active,
-                currency: { connect: { id: data.currencyId } }, // <-- teraz poprawnie
             }))
             : undefined
   
@@ -148,12 +148,14 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
     if (!(user.roles.includes(Role.Admin) || (user.roles.includes(Role.Moderator) && user.id === meeting.moderatorId))) {
       return { success: false, message: "Brak uprawnień do edycji spotkania" }
     }
+
+    const participants = await GetMeetingParticipantsByMeetingID(meeting.id)
   
     // 🔹 Sprawdzamy minimalną podwyżkę ceny
     if (data.priceCurrency.currencyId === meeting.currencyId && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) {
         return {
             success: false,
-            message: `Minimalna podwyżka ceny to 10 (obecnie ${meeting.price} )`
+            message: `Minimalna podwyżka ceny to 10 ${meeting.currency.code} (obecnie ${meeting.price} ${meeting.currency.code})`
         };
     }
 
@@ -196,41 +198,35 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                 cityId: data.cityId
               },
               include: { 
-                participants: { include: { user: true } },
                 city: { include: { region: { include: { country:true }}}},
                 currency: true
               }
             })
 
-            for (const participant of updatedMeeting.participants) {
-                if (data.priceCurrency.currencyId === meeting.currencyId) {
+            for (const participant of participants) {
+                if (meeting.currencyId === updatedMeeting.currencyId) {
                     if (participant.amountPaid > updatedMeeting.price) {
                         const difference = participant.amountPaid - updatedMeeting.price
                         await tx.circleMeetingParticipant.update({
                             where: {id: participant.id},
-                            data: {
-                                amountPaid: updatedMeeting.price
-                            }
+                            data: { amountPaid: updatedMeeting.price }
                         })
                         await tx.balance.upsert({
-                            where: { userId_currencyId: { userId: participant.userId, currencyId: participant.currencyId }},
+                            where: { userId_currencyId: { userId: participant.userId, currencyId: meeting.currencyId }},
                             update: { amount: { increment: difference }},
-                            create: { userId: participant.userId, amount: difference, currencyId: participant.currencyId }
+                            create: { userId: participant.userId, amount: difference, currencyId: meeting.currencyId }
                         })
                     }
                 } else {
                     await tx.circleMeetingParticipant.update({
                         where: {id: participant.id},
-                        data: {
-                            amountPaid: 0,
-                            currencyId: updatedMeeting.currencyId
-                        }
+                        data: { amountPaid: 0}
                     })
 
                     await tx.balance.upsert({
-                        where: { userId_currencyId: { userId: participant.userId, currencyId: participant.currencyId }},
+                        where: { userId_currencyId: { userId: participant.userId, currencyId: meeting.currencyId }},
                         update: { amount: { increment: participant.amountPaid }},
-                        create: { userId: participant.userId, amount: participant.amountPaid, currencyId: participant.currencyId }
+                        create: { userId: participant.userId, amount: participant.amountPaid, currencyId: meeting.currencyId }
                     })
                 }
             }
@@ -242,7 +238,7 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
   
       // wysyłka maili do uczestników jeśli spotkanie w przyszłości
         if (updatedMeeting.startTime > new Date()) {
-            for (const participant of updatedMeeting.participants) {
+            for (const participant of participants) {
                 if (participant.status === MeetingParticipantStatus.Active) {
                     try {
                         await sendEmail({

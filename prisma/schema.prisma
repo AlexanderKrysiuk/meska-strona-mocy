@@ -64,7 +64,6 @@ model Currency {
   balances Balance[]
   circles Circle[]
   meetings CircleMeeting[]
-  participations CircleMeetingParticipant[]
 }
 
 // enum Currency {
@@ -215,9 +214,6 @@ model CircleMeetingParticipant {
 
   status     MeetingParticipantStatus @default(Active)
   amountPaid Int    @default(0)
-  
-  currencyId  String
-  currency    Currency @relation(fields: [currencyId], references: [id])
 
   paymentDate DateTime?
 

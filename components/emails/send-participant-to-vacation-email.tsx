@@ -4,10 +4,17 @@ import { Circle, CircleMeeting, CircleMeetingParticipant, User, City, Country, R
 import { formatedDate } from "@/utils/date";
 
 interface ParticipantVacationEmailProps {
-  user: Pick<User, "name">;
-  circle: Pick<Circle, "name">
-  meeting: CircleMeeting & { city: City & { region: Region & { country: Country }} };
-  participation: CircleMeetingParticipant & { currency: Currency }
+    user: Pick<User, "name">;
+    circle: Pick<Circle, "name">
+    meeting: CircleMeeting & { 
+        city: City & { 
+            region: Region & { 
+                country: Country 
+            }
+        },
+        currency: Currency 
+    };
+    participation: CircleMeetingParticipant
 }
 
 export default function SendParticipantToVacationEmail({
@@ -27,7 +34,7 @@ export default function SendParticipantToVacationEmail({
                 </Text>
 
                 <Text style={emailStyles.paragraph}>
-                    Za spotkanie, które przypadało w dniu: <strong>{formatedDate(meeting.startTime, meeting.endTime, meeting.city.region.country.timeZone, "withDay", meeting.city.region.country.locale)}</strong>, zwróciliśmy Ci kwotę <strong>{participation.amountPaid} {participation.currency.code}</strong> na Twoje saldo.
+                    Za spotkanie, które przypadało w dniu: <strong>{formatedDate(meeting.startTime, meeting.endTime, meeting.city.region.country.timeZone, "withDay", meeting.city.region.country.locale)}</strong>, zwróciliśmy Ci kwotę <strong>{participation.amountPaid} {meeting.currency.code}</strong> na Twoje saldo.
                 </Text>
 
             </Section>

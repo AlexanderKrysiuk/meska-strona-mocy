@@ -6,7 +6,7 @@ import { Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Tab
 import { Circle, CircleMeeting, Country, Currency, MeetingParticipantStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
 import { ModeratorQueries } from "@/utils/query"
-import { GetMeetingParticipantsByMeeting } from "@/actions/meeting-participants"
+import { GetMeetingParticipantsByMeetingID } from "@/actions/meeting-participants"
 import { formatedDate } from "@/utils/date"
 import { SendParticipantToVacationModal } from "./send-participant-to-vacation-modal"
 import ReturnParticipantFromVacationModal from "./return-participant-from-vacation-modal"
@@ -53,7 +53,7 @@ const ShowMeetingMembersModal = ({
 
     const { data: participants, isLoading } = useQuery({
         queryKey: [ModeratorQueries.MeetingParticipants, meeting.id],
-        queryFn: () => GetMeetingParticipantsByMeeting(meeting.id),
+        queryFn: () => GetMeetingParticipantsByMeetingID(meeting.id),
         enabled: isOpen,
     });  
 
@@ -144,6 +144,7 @@ const ShowMeetingMembersModal = ({
                                                     meeting={meeting}
                                                     country={country}
                                                     user={item.user}
+                                                    currency={currency}
                                                 />
                                             )}
                                         </TableCell>

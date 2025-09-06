@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     await prisma.circleMeetingParticipant.update({
       where: { id: participationId },
-      data: { amountPaid: paymentIntent.amount / 100 },
+      data: { amountPaid: { increment: paymentIntent.amount / 100 } },
     })
   }
 

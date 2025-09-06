@@ -12,6 +12,7 @@ import DeleteUserFromCircleEmail from "@/components/emails/DeleteUserFromCircle"
 import { GetCircleById } from "./circle"
 import { GetCircleFutureMeetingsByCircleID } from "./meeting"
 import WelcomeBackToCircleEmail from "@/components/emails/WelcomeBackToCircle"
+import { GetFutureMemberParticipationsByCircleID } from "./participant"
 
 export const SendMemberToVacation = async (data: z.infer<typeof SendMemberToVacationSchema>) => {
     const user = await CheckLoginReturnUser()
@@ -91,7 +92,9 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
         message: "Brak uprawnień do usunięcia użytkownika" 
     }
 
-    const futureMeetings = await GetFutureMeetingsForUserInCircle(membership.user.id, membership.circle.id)
+//    const futureMeetings = await GetFutureMeetingsForUserInCircle(membership.user.id, membership.circle.id)
+
+    const futureParticipations = await GetFutureMemberParticipationsByCircleID(membership.userId, membership.circle.id)
 
     try {
         //const totalRefund = futureMeetings.reduce((sum, p) => sum + p.amountPaid, 0);
@@ -104,39 +107,29 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
             });
 
             // 2. Aktualizujemy uczestnictwo w przyszłych spotkaniach
-            for (const participant of futureMeetings) {
-                await tx.circleMeetingParticipant.update({
-                    where: { id: participant.id },
-                    data: { status: MeetingParticipantStatus.Cancelled, amountPaid: 0 },
-                });
-            }
-
-            // 3. Grupujemy refund per currency
-            const refundsByCurrency = futureMeetings.reduce<Record<string, number>>((acc, p) => {
-                acc[p.currencyId] = (acc[p.currencyId] || 0) + p.amountPaid;
-                return acc;
-            }, {});
-
-            // 4. Zwrot do tabeli Balance
-            for (const [currencyId, amount] of Object.entries(refundsByCurrency)) {
-                if (amount > 0) {
+            for (const participation of futureParticipations) {
+                if (participation.amountPaid > 0) {
                     await tx.balance.upsert({
-                        where: {
-                            userId_currencyId: {
-                                userId: membership.user.id,
-                                currencyId: currencyId,
-                            }
-                        },
-                        update: {
-                            amount: { increment: amount },
-                        },
+                        where: { userId_currencyId: {
+                            userId: participation.userId,
+                            currencyId: participation.meeting.currencyId
+                        }},
+                        update: { amount: { increment: participation.amountPaid }},
                         create: {
-                            userId: membership.user.id,
-                            currencyId: currencyId,
-                            amount,
-                        },
-                    });
+                            userId: participation.userId,
+                            currencyId: participation.meeting.currencyId,
+                            amount: participation.amountPaid
+                        }
+                    })
                 }
+
+                await tx.circleMeetingParticipant.update({
+                    where: { id: participation.id },
+                    data: {
+                        status: MeetingParticipantStatus.Cancelled,
+                        amountPaid: 0
+                    }
+                })
             }
         });
     } catch(error) {
@@ -166,10 +159,6 @@ export const DeleteMemberFromCircle = async (data: z.infer<typeof DeleteMemberFr
         success: true,
         message: "Użytkownik został usunięty z kręgu"
     }
-}
-
-export const GetMemberWithMeetingAndCircleByParticipationID = async (ID:string) => {
-    
 }
 
 export const RestoreMemberToCircle = async (data: z.infer<typeof RestoreMemberToCircleSchema>) => {
@@ -230,7 +219,6 @@ export const RestoreMemberToCircle = async (data: z.infer<typeof RestoreMemberTo
                     create: {
                         userId: membership.user.id,
                         meetingId: meeting.id,
-                        currencyId: meeting.currencyId
                     }
                 })
             }

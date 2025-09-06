@@ -2,11 +2,11 @@
 
 import { CreatePaymentForMeetingByParticipationID } from "@/actions/stripe";
 import { formatedDate } from "@/utils/date";
-import { ModeratorQueries, PaymentQueries } from "@/utils/query";
+import { ModeratorQueries, PaymentQueries, UserQueries } from "@/utils/query";
 import { faRotate, faSackDollar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Alert, Button, Form, Modal, ModalBody, ModalContent, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react";
-import { CircleMeeting, CircleMeetingParticipant, Country, User } from "@prisma/client";
+import { Alert, Button, Form, Modal, ModalBody, ModalContent, ModalHeader, NumberInput, Tab, Tabs, Tooltip, addToast, useDisclosure } from "@heroui/react";
+import { Balance, CircleMeeting, CircleMeetingParticipant, Country, Currency, User } from "@prisma/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
@@ -14,17 +14,26 @@ import Loader from "../loader";
 import { stripePromise } from "@/lib/stripe-client";
 import { useTheme } from "next-themes";
 import { PaymentIntent } from "@stripe/stripe-js";
+import { clientAuth } from "@/hooks/auth";
+import { PaymentFromBalance, QueryGetSingleUserBalance } from "@/actions/balance";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { OwnBalancePaymentSchema } from "@/schema/payment";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 
 export const PayForParticipantModal = ({
     participation,
     user,
     meeting,
-    country
+    country,
+    currency
 } : {
     participation: CircleMeetingParticipant
     meeting: CircleMeeting
     country: Country
     user: Pick<User, "name">
+    currency: Currency
 }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -62,6 +71,7 @@ export const PayForParticipantModal = ({
                         country={country}
                         user={user}
                         onClose={onClose}
+                        currency={currency}
                     />
                 </ModalContent>
             </Modal>
@@ -74,43 +84,31 @@ const PayForParticipantForm = ({
     meeting,
     country,
     user,
-    onClose
+    onClose,
+    currency
 } : {
     participation: CircleMeetingParticipant
     meeting: CircleMeeting
     country: Country
     user: Pick<User, "name">
     onClose: () => void
+    currency: Currency
 }) => {
     const { resolvedTheme } = useTheme(); // "light" | "dark"
-  
-    const { data: payment, isLoading, error, refetch } = useQuery({
-        queryKey: [PaymentQueries.Participation, participation.id],
-        queryFn: () => CreatePaymentForMeetingByParticipationID(participation.id),
+    const moderator = clientAuth()
+
+    // Query Stripe – odpala się tylko gdy tab stripe jest wybrany
+    const stripeQuery = useQuery({
+      queryKey: [PaymentQueries.Participation, participation.id],
+      queryFn: () => CreatePaymentForMeetingByParticipationID(participation.id),
+    });
+
+    // Query Balance – odpala się tylko gdy tab balance jest wybrany
+    const balanceQuery = useQuery({
+      queryKey: [UserQueries.Balance, moderator?.id],
+      queryFn: () => QueryGetSingleUserBalance(moderator!.id, meeting.currencyId),
     });
   
-    if (isLoading) return <Loader />;
-  
-    if (error) return (
-        <ModalBody>
-            <Alert 
-                color="danger" 
-                title="Nie udało się wygenerować płatności."
-                endContent={
-                    <Button
-                        color="danger"
-                        startContent={<FontAwesomeIcon icon={faRotate}/>}
-                        onPress={()=>refetch()}
-                    >
-                        Odśwież
-                    </Button>
-                }
-            />
-        </ModalBody>
-    );
-
-    if (!payment) return null
-    
     const theme: "night" | "stripe" = resolvedTheme === "dark" ? "night" : "stripe";
   
     const appearance = {
@@ -118,15 +116,14 @@ const PayForParticipantForm = ({
         variables: {
             colorPrimary: resolvedTheme === "dark" ? "#facc15" : "#f59e0b",
         },
-    
-    };
-        
-    const options = {
-        clientSecret: payment.client_secret,
-        appearance,
-        
     };
 
+    useEffect(() => {
+      if (stripeQuery.data === null) {
+        onClose();
+      }
+    }, [stripeQuery.data, onClose]);
+    
     return (
         <ModalBody>
             <div className="mb-4">
@@ -142,13 +139,58 @@ const PayForParticipantForm = ({
             </strong>{" "}
             dla kręgowca <strong>{user.name}</strong>
             </div>
-            <Elements stripe={stripePromise} options={options}>
-                <StripeCheckoutForm 
-                    payment={payment}
+            <Tabs variant="underlined" fullWidth>
+                <Tab title="Płatność">
+                  {stripeQuery.isLoading && <Loader/>}
+                  {stripeQuery.isError && (
+                    <Alert 
+                      color="danger" 
+                      title="Nie udało się wygenerować płatności."
+                      endContent={
+                        <Button
+                          color="danger" 
+                          startContent={<FontAwesomeIcon icon={faRotate}/>}
+                          onPress={() => stripeQuery.refetch()}
+                        >
+                          Odśwież
+                        </Button>
+                      }
+                    />
+                  )}
+                  {stripeQuery.data && <Elements stripe={stripePromise} options={{ clientSecret: stripeQuery.data.client_secret, appearance }}>
+                    <StripeCheckoutForm 
+                      payment={stripeQuery.data}
+                      participation={participation}
+                      onClose={onClose}    
+                    />
+                  </Elements>}
+                </Tab>
+                <Tab title="Z własnego konta">
+                  {balanceQuery.isLoading && <Loader/>}
+                  {balanceQuery.isError && (
+                    <Alert 
+                      color="danger" 
+                      title="Nie udało się pobrać salda."
+                      endContent={
+                        <Button 
+                          color="danger" 
+                          startContent={<FontAwesomeIcon icon={faRotate}/>}
+                          onPress={() => balanceQuery.refetch()}
+                        >
+                          Odśwież
+                        </Button>
+                      }
+                    />
+                  )}
+                  <BalanceCheckoutFrom
                     participation={participation}
-                    onClose={onClose}    
-                />
-            </Elements>
+                    meeting={meeting}
+                    meetingCurrency={currency}
+                    balance={balanceQuery.data}
+                    balanceCurrency={balanceQuery.data?.currency}
+                  />
+                </Tab>
+            </Tabs>
         </ModalBody>
     );
 };
@@ -198,11 +240,11 @@ const StripeCheckoutForm = ({
         title: "Płatność udana",
         color: "success"
       })
-    setTimeout(() => {
-  }, 3000)
       queryClient.invalidateQueries({ 
         queryKey: [ModeratorQueries.MeetingParticipants, participation.meetingId] 
       })
+      setTimeout(() => {
+        }, 3000)
       onClose()
     },
     onError: (error) => {
@@ -228,15 +270,129 @@ const StripeCheckoutForm = ({
         fullWidth
         className="mt-4 text-white"
         startContent={<FontAwesomeIcon icon={faSackDollar}/>}
-        isDisabled={mutation.isPending || !payment}
+        isDisabled={mutation.isPending || !stripe || !elements || !payment}
         isLoading={mutation.isPending}
       >
         {mutation.isPending
           ? "Przetwarzanie..."
-          : `Zapłać ${payment.amount/100} ${payment.currency}`}
+          : `Zapłać ${payment.amount/100} ${payment.currency.toUpperCase()}`}
       </Button>
     </Form>
   )
+}
+
+const BalanceCheckoutFrom = ({
+  meeting,
+  meetingCurrency,
+  participation,
+  balance,
+  balanceCurrency
+} : {
+  meeting: CircleMeeting
+  meetingCurrency: Currency
+  participation: CircleMeetingParticipant
+  balance?: Balance | null
+  balanceCurrency?: Currency | null
+}) => {
+  const moderator = clientAuth()
+
+  // const { data: balance, isLoading, error, refetch } = useQuery({
+  //   queryKey: [UserQueries.Balance, moderator?.id],
+  //   queryFn: () => QueryGetSingleUserBalance(moderator!.id, meeting.currencyId),
+  //   enabled: !!moderator?.id
+  // });
+
+  type FormFields = z.infer<typeof OwnBalancePaymentSchema>
+
+  
+  const { handleSubmit, setError, setValue, formState: { errors, isSubmitting, isValid }} = useForm<FormFields>({
+    resolver: zodResolver(OwnBalancePaymentSchema),
+    mode: "all",
+    defaultValues: {
+      balanceID: balance?.id,
+      participationID: participation.id,
+    }
+  })
+  const queryClient = useQueryClient()
+  
+  const submit: SubmitHandler<FormFields> = async(data) => {
+    const result = await PaymentFromBalance(data)
+
+    addToast({
+      title: result.message,
+      color: result.success ? "success" : "danger"
+    })
+    
+    if (result.success) {
+      queryClient.invalidateQueries({ queryKey: [UserQueries.Balance, moderator?.id]});
+      queryClient.invalidateQueries({ queryKey: [ModeratorQueries.MeetingParticipants, participation.meetingId]});
+      queryClient.invalidateQueries({ queryKey: [PaymentQueries.Participation, participation.id]})
+    } else {
+      if (result.fieldErrors) {
+        Object.entries(result.fieldErrors).forEach(([field, message]) => {
+          setError(field as keyof FormFields, { type: "manual", message });
+        });
+      }
+    }
+  }
+  
+  // if (isLoading) return <Loader />;
+  
+  // if (error) return (
+  //   <ModalBody>
+  //     <Alert 
+  //       color="danger" 
+  //       title="Nie udało się wygenerować płatności."
+  //       endContent={
+  //         <Button
+  //           color="danger"
+  //           startContent={<FontAwesomeIcon icon={faRotate}/>}
+  //           onPress={()=>refetch()}
+  //         >
+  //           Odśwież
+  //          </Button>
+  //       }
+  //     />
+  //   </ModalBody>
+  // );
+  
+
+  return <main className="space-y-4">
+    <div>
+    Dostępne środki: <strong className="text-warning">{balance?.amount || "0"} {balanceCurrency?.code || meetingCurrency.code}</strong>
+    </div>
+    <Form className="space-y-4" onSubmit={handleSubmit(submit)}>
+      <NumberInput
+        label="Kwota, którą chcesz wpłacić"
+        labelPlacement="outside"
+        variant="bordered"
+        placeholder="150"
+        minValue={0}
+        maxValue={Math.min(meeting.price - participation.amountPaid, balance?.amount ?? 0)}
+        onValueChange={(value) => {setValue("amout", value, {shouldValidate:true})}}
+        isClearable
+        isDisabled={!balance || isSubmitting}
+        isInvalid={!!errors.amout}
+        errorMessage={errors.amout?.message}
+      />
+      <Button
+        fullWidth
+        type="submit"
+        color="success"
+        className="text-white"
+        startContent={isSubmitting ? undefined : <FontAwesomeIcon icon={faSackDollar}/>}
+        isDisabled={isSubmitting || !isValid}
+        isLoading={isSubmitting}
+      >
+        Zapłać
+      </Button>
+    </Form>
+    {/* <pre>
+      {JSON.stringify(watch(),null,2)}<br/>
+      {JSON.stringify(balance,null,2)}
+    </pre> */}
+  </main>
+
 }
 
 

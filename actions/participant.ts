@@ -128,7 +128,6 @@ export const GetParticipationByID = async (ID: string) => {
                         email: true
                     }
                 },
-                currency: true,
                 meeting: { include: {
                     circle : true,
                     city: { include: { region: { include: { country: true }}}},
@@ -139,5 +138,23 @@ export const GetParticipationByID = async (ID: string) => {
     } catch (error) {
         console.error(error)
         return null
+    }
+}
+
+export const GetFutureMemberParticipationsByCircleID = async (userID: string, circleID: string) => {
+    try {
+        return await prisma.circleMeetingParticipant.findMany({
+            where: {
+                userId: userID,
+                meeting: {
+                    circleId: circleID,
+                    startTime: { gt: new Date() }
+                }
+            },
+            include: { meeting: true }
+        })
+    } catch (error) {
+        console.error(error)
+        return []
     }
 }
