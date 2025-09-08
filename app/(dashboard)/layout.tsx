@@ -1,6 +1,6 @@
 "use client"
 
-import { ModeratorItems } from "@/components/user-menu";
+import { ModeratorItems, userItems } from "@/components/user-menu";
 import { clientAuth } from "@/hooks/auth";
 import { PermissionGate } from "@/utils/gate";
 import { Listbox, ListboxItem, ListboxSection } from "@heroui/react";
@@ -22,6 +22,20 @@ const DashboadLayout = ({
                         className="pr-0"
                         aria-label="Dashboard Menu"
                     >
+                        <ListboxSection
+                            showDivider
+                            title="Użytkownik"
+                            items={userItems}
+                        >
+                            {(item)=><ListboxItem
+                                key={item.title}
+                                title={item.title}
+                                href={item.href}
+                                color={pathname.startsWith(item.href) ? "primary" : "default"}
+                                startContent={item.icon}
+                                className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
+                            />}
+                        </ListboxSection>
                         {PermissionGate(user.roles, [Role.Moderator]) ? (
                             <ListboxSection
                                 showDivider

@@ -4,7 +4,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { AllItems, ModeratorItems } from "./user-menu";
+import { AllItems, ModeratorItems, userItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
@@ -62,6 +62,21 @@ const Header = () => {
                                 />
                             </DropdownTrigger>
                             <DropdownMenu>
+                                {user && <DropdownSection
+                                    title={"Użytkownik"}
+                                    showDivider
+                                    items={userItems}
+                                >
+                                    {(item) => <DropdownItem
+                                        key={item.title}
+                                        href={item.href}
+                                        title={item.title}
+                                        variant="light"
+                                        color="primary"
+                                        startContent={item.icon}
+                                        className={`${pathname.startsWith(item.href) && "text-primary"}`}
+                                    />}
+                                </DropdownSection>}
                                 {PermissionGate(user.roles, [Role.Moderator]) ? (
                                     <DropdownSection
                                         title="Moderator"
@@ -120,6 +135,24 @@ const Header = () => {
                         <Divider/>
                     </NavbarMenuItem>
                 )}
+                {user && <div>
+                    <span className="text-sm text-foreground-500">
+                        Użytkownik    
+                    </span>
+                    <div className="space-y-4">
+                        {userItems.map((item)=><NavbarMenuItem
+                            key={item.title}
+                        >
+                            <Link
+                                href={item.href}
+                                color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                                className="flex gap-2 hover:primary transition-colors duration-400"
+                            >
+                                {item.icon} {item.title}
+                            </Link>
+                        </NavbarMenuItem>)}
+                    </div>
+                </div>}
                 {PermissionGate(user?.roles, [Role.Moderator]) && (
                     <div>
                         <span className="text-sm text-foreground-500">
