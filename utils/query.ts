@@ -21,5 +21,6 @@ export enum PaymentQueries {
 }
 
 export enum UserQueries {
+    User,
     Balance
 }

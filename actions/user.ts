@@ -27,6 +27,21 @@ export const GetUserByEmail = async (email:string) => {
     }
 }
 
+export const QueryGetUserByID = async (ID:string) => {
+    try {
+        return await prisma.user.findUnique({
+            where: {id: ID},
+            select: {
+                name: true,
+                image: true,
+            }
+        })
+    } catch (error) {
+        console.error(error)
+        throw new Error ("Błąd połączenia z bazą danych")
+    }
+}
+
 export const GetUserByID = async (id:string) => {
     try {
         return await prisma.user.findUnique({where: {id: id}})
