@@ -9,6 +9,8 @@ export async function middleware(req: NextRequest) {
     const path = req.nextUrl.pathname
     //console.log("SESSION", session)
     // Jeśli użytkownik jest zalogowany i próbuje wejść na stronę logowania
+    if (path.startsWith("/konto") && !session) return NextResponse.redirect(new URL("/auth/start", req.url));
+    
     if (session && path.includes("/auth/start")) return NextResponse.redirect(new URL("/", req.url))
 
     // ✅ Jeśli użytkownik jest Adminem, ma dostęp do wszystkiego

@@ -8,24 +8,28 @@ import React, { useRef, useState } from "react";
 import { Cropper, ReactCropperElement } from "react-cropper"
 import "cropperjs/dist/cropper.css";
 import "@/utils/cropper-rounded.css"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QueryUploadAvatar } from "@/actions/blob";
 import { UserQueries } from "@/utils/query";
-import { QueryGetUserByID } from "@/actions/user";
+import { User } from "@prisma/client";
 
 
-const EditAvatarModal = () => {
+const EditAvatarModal = ({
+    user
+} : {
+    user: Pick<User, "image">
+}) => {
     const MAX_FILE_SIZE = 4 * 1024 * 1024; // 5MB
     const MIN_FILE_SIZE = 4 * 1024; // 5KB
 
     const auth = clientAuth()
     const {isOpen, onOpen, onClose} = useDisclosure()
 
-    const { data: user } = useQuery({
-        queryKey: [UserQueries.User, auth?.id],
-        queryFn: () => QueryGetUserByID(auth!.id),
-        enabled: !!auth?.id
-    })
+    // const { data: user } = useQuery({
+    //     queryKey: [UserQueries.User, auth?.id],
+    //     queryFn: () => QueryGetUserByID(auth!.id),
+    //     enabled: !!auth?.id
+    // })
 
     const [imageUrl, setImageUrl] = useState<string | null>(null)
 
@@ -123,7 +127,7 @@ const EditAvatarModal = () => {
         mutation.mutate(formData);
     }
 
-    return <main className="flex justify-center lg:justify-end items-center w-full">
+    return <main className="flex justify-center lg:justify-start items-center w-full">
         <div className="relative w-40 h-40 group" onClick={handleAvatarClick}>
             <Avatar
                 src={user?.image || undefined}
@@ -131,9 +135,9 @@ const EditAvatarModal = () => {
                 className="w-40 h-40"
                 
             />
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer">
-                <FontAwesomeIcon icon={faArrowUp} className="text-white text-xl"/>
-                <div>Zmień zdjęcie</div>
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer text-xl text-white">
+                <FontAwesomeIcon icon={faArrowUp}/>
+                <strong>Zmień zdjęcie</strong>
             </div>
         </div>
         <input

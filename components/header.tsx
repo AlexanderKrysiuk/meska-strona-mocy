@@ -9,10 +9,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
 import { PermissionGate } from "@/utils/gate";
+import { useQuery } from "@tanstack/react-query";
+import { UserQueries } from "@/utils/query";
+import { QueryGetUserByID } from "@/actions/user";
 
 const Header = () => {
-    const user = clientAuth()
+    const auth = clientAuth()
     const pathname = usePathname()
+
+    const { data: user } = useQuery({
+        queryKey: [UserQueries.User, auth?.id],
+        queryFn: () => QueryGetUserByID(auth!.id),
+        enabled: !!auth?.id
+    })
 
     return ( 
         <Navbar
@@ -49,7 +58,7 @@ const Header = () => {
                     <ThemeSwitcher/>
                 </NavbarItem>
                 <NavbarItem className="hidden lg:block">
-                    {user ? 
+                    {auth ? 
                         <Dropdown
                             placement="bottom-end"
                             radius="none"
@@ -57,12 +66,12 @@ const Header = () => {
                             <DropdownTrigger>
                                 <Avatar
                                     showFallback
-                                    src={user.image!}
+                                    src={user?.image || undefined}
                                     className="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-400"
                                 />
                             </DropdownTrigger>
                             <DropdownMenu>
-                                {user && <DropdownSection
+                                {auth && <DropdownSection
                                     title={"Użytkownik"}
                                     showDivider
                                     items={userItems}
@@ -77,7 +86,7 @@ const Header = () => {
                                         className={`${pathname.startsWith(item.href) && "text-primary"}`}
                                     />}
                                 </DropdownSection>}
-                                {PermissionGate(user.roles, [Role.Moderator]) ? (
+                                {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) ? (
                                     <DropdownSection
                                         title="Moderator"
                                         showDivider
@@ -122,20 +131,20 @@ const Header = () => {
                 <NavbarMenuToggle className="lg:hidden"/>
             </NavbarContent>
             <NavbarMenu>
-                {user && (
+                {auth && (
                     <NavbarMenuItem>
                         <div className="flex justify-between items-center mb-1">
-                            Witaj {user.name}
+                            Witaj {user?.name}
                             <Avatar
                                 size="sm"
                                 showFallback
-                                src={user.image!}
+                                src={user?.image || undefined}
                             />
                         </div>
                         <Divider/>
                     </NavbarMenuItem>
                 )}
-                {user && <div>
+                {auth && <div>
                     <span className="text-sm text-foreground-500">
                         Użytkownik    
                     </span>
@@ -153,7 +162,7 @@ const Header = () => {
                         </NavbarMenuItem>)}
                     </div>
                 </div>}
-                {PermissionGate(user?.roles, [Role.Moderator]) && (
+                {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) && (
                     <div>
                         <span className="text-sm text-foreground-500">
                             Moderator
@@ -190,7 +199,7 @@ const Header = () => {
                     </NavbarMenuItem>
                 ))}
                 <NavbarMenuItem>
-                    {user ? 
+                    {auth ? 
                         <Link
                             onPress={()=>{signOut()}}
                             color="danger"

@@ -14,6 +14,7 @@ const newPassword = z.string()
 .regex(/[\W_]/, "Hasło musi zawierać co najmniej jeden znak specjalny" )
 const confirmPassword = z.string()
 const password = z.string().min(1)
+const description = z.string().optional().nullable()
 
 export const RegisterSchema = z.object({
     name,
@@ -39,4 +40,8 @@ export const ResetPasswordSchema = z.object({
 
 export const AddUserToCircleSchema = RegisterSchema.extend({
     circleId
+})
+
+export const EditUserSchema = z.object({
+    description
 })

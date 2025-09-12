@@ -21,6 +21,7 @@ model User {
   password      String?
   image         String?
   title         String?
+  description   String?
   balances      Balance[]
   roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]

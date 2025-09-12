@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { AddUserToCircleSchema, RegisterSchema } from "@/schema/user"
+import { AddUserToCircleSchema, EditUserSchema, RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
 import { GetCircleById, GetCircleMembershipById } from "./circle"
@@ -34,6 +34,7 @@ export const QueryGetUserByID = async (ID:string) => {
             select: {
                 name: true,
                 image: true,
+                description: true
             }
         })
     } catch (error) {
@@ -203,5 +204,23 @@ export const AddNewUserToCircle = async(data: z.infer<typeof AddUserToCircleSche
             success: false,
             message: "Nie udało się dodać użytkownika do kręgu"
         }
+    }
+}
+
+export const UpdateUser = async (data: z.infer<typeof EditUserSchema>) => {
+    const user = await CheckLoginReturnUser()
+    if (!user) return { success: false, message: "Nie znaleziono użytkownika"}
+
+    try {
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                description: data.description
+            }
+        })
+        return { success: true, message: "Zaktualizowano dane"}
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: "Błąd połączenia z bazą danych"}
     }
 }
