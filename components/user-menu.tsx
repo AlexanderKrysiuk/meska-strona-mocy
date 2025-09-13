@@ -16,6 +16,11 @@ export const userItems = [
         href: "/konto/profil",
         icon: <FontAwesomeIcon icon={faUser}/>,
         title: "Profil"
+    },
+    {
+        href: "/konto/moje-kregi",
+        icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
+        title: "Moje Kręgi"
     }
 ]
 

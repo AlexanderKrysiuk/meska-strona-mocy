@@ -44,9 +44,9 @@ const EditUserForm = ({
     }
 
     return <Form onSubmit={handleSubmit(submit)}>
-        <pre>
+        {/* <pre>
             Watch: {JSON.stringify(watch(),null,2)}
-        </pre>
+        </pre> */}
         <Textarea
             label="Opis"
             labelPlacement="outside"

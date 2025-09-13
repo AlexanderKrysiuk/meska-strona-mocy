@@ -158,3 +158,60 @@ export const GetFutureMemberParticipationsByCircleID = async (userID: string, ci
         return []
     }
 }
+
+export const QueryGetUnpaidMeetingsByUserID = async(userID: string) => {
+    try {
+        const participations = await prisma.circleMeetingParticipant.findMany({
+            where: {
+                userId: userID,
+                status: MeetingParticipantStatus.Active
+            },
+            select: {
+                id: true,
+                amountPaid: true,
+                meeting: { select: {
+                    startTime: true,
+                    endTime: true,
+                    street: true,
+                    price: true,
+                    city: { select: {
+                        name: true,
+                        region: { select: {
+                            country: { select: {
+                                timeZone: true
+                            }}
+                        }}
+                    }},
+                    circle: { select: { 
+                        name: true
+                    }},
+                    currency: { select: {
+                        code: true
+                    }}
+                }}
+            },
+            // include: {
+            //     meeting: {
+            //         include: {
+            //             city: {
+            //                 include: {
+            //                     region: {
+            //                         include: {
+            //                             country: true
+            //                         }
+            //                     }
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+        })
+
+        return participations.filter(
+            (p) => p.amountPaid < p.meeting.price
+        )
+    } catch (error) {
+        console.error(error)
+        throw new Error ("Błąd połączenia z bazą danych")
+    }
+}

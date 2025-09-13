@@ -17,7 +17,12 @@ export enum GeneralQueries {
 }
 
 export enum PaymentQueries {
-    Participation = "Payment-Participation"
+    Participation = "Payment-Participation",
+    UnpaidMeetings = "Unpaid-Meetings"
+}
+
+export enum CircleQueries {
+    MyCircles = "My-Circles"
 }
 
 export enum UserQueries {

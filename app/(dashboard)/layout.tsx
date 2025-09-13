@@ -15,7 +15,7 @@ const DashboadLayout = ({
     const user = clientAuth()
     const pathname = usePathname()
     return ( 
-        <main className="h-full lg:grid lg:grid-cols-5">
+        <main className="lg:grid lg:grid-cols-5 flex-1">
             <div className="hidden lg:block lg:col-span-1 border-r border-foreground-200">
                 {user && (
                     <Listbox
@@ -57,7 +57,7 @@ const DashboadLayout = ({
                     </Listbox>
                 )}
             </div>
-            <div className="lg:col-span-4">
+            <div className="lg:col-span-4 flex flex-col flex-1">
                 {children}
             </div>
         </main>

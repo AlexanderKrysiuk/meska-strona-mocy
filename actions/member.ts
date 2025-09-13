@@ -250,3 +250,24 @@ export const RestoreMemberToCircle = async (data: z.infer<typeof RestoreMemberTo
         }
     }
 }
+
+export const QueryGetMyCircleMemberships = async (ID: string) => {
+    try {
+        return await prisma.circleMembership.findMany({
+            where: { 
+                userId: ID,
+                status: CircleMembershipStatus.Active
+            },
+            include: {
+                circle: {
+                    select: {
+                        name: true
+                    }
+                }
+            }
+        })
+    } catch (error) {
+        console.error(error)
+        throw new Error ("Błąd połączenia z bazą danych")
+    }
+}

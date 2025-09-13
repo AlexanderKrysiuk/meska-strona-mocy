@@ -11,11 +11,10 @@ export function Providers({children}: { children: React.ReactNode }) {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <HeroUIProvider className='h-full'>
+      <HeroUIProvider>
         <NextThemesProvider attribute="class" defaultTheme="dark" enableSystem={true}>
-          <main className='h-full'>
+          <main>
             {children}
-
           </main>
           <div className='absolute z-[9999999999999]'>
             <ToastProvider 
