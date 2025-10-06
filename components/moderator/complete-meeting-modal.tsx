@@ -9,7 +9,7 @@ import { faCalendarCheck, faCheck, faXmark } from "@fortawesome/free-solid-svg-i
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, CircleMeeting } from "@prisma/client"
+import { Circle, Meeting } from "@prisma/client"
 import { useQueryClient } from "@tanstack/react-query"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
@@ -18,11 +18,11 @@ export const CompleteMeetingModal = ({
     meeting,
     circle,
 } : {
-    meeting: CircleMeeting,
+    meeting: Meeting,
     circle: Circle
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const moderator = clientAuth()
+    const auth = clientAuth()
 
     type FormFields = z.infer<typeof CompleteMeetingSchema>
 
@@ -44,8 +44,8 @@ export const CompleteMeetingModal = ({
         })
     
         if (result.success) {
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id]})
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.CompletedMeetings, moderator?.id]})
+            const year = meeting.startTime.getFullYear()
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.Meetings, auth?.id, year]})
             onClose()
         }
     }

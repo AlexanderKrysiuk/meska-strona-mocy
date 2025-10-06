@@ -1,6 +1,6 @@
 "use client"
 
-import { AddNewUserToCircle } from "@/actions/user"
+import { AddMembershipByModerator } from "@/actions/membership"
 import { AddUserToCircleSchema } from "@/schema/user"
 import { ModeratorQueries } from "@/utils/query"
 import { faUserPlus } from "@fortawesome/free-solid-svg-icons"
@@ -37,7 +37,7 @@ const AddCircleMemberModal = ({
     const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        const result = await AddNewUserToCircle(data)
+        const result = await AddMembershipByModerator(data)
 
         addToast({
             title: result.message,

@@ -7,7 +7,7 @@ import { PaymentQueries } from "@/utils/query"
 import { faSackDollar } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tab, Tabs, Tooltip, addToast, useDisclosure } from "@heroui/react"
-import { Circle, CircleMeeting, CircleMeetingParticipant, Country } from "@prisma/client"
+import { Circle, Country, Meeting, Participation } from "@prisma/client"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTheme } from "next-themes"
 import Loader from "../loader"
@@ -22,10 +22,10 @@ export const PayForMeetingButton = ({
     circle,
     participation
 } : {
-    meeting: Pick<CircleMeeting, "startTime" | "endTime">
+    meeting: Pick<Meeting, "startTime" | "endTime">
     country: Pick<Country, "timeZone">
     circle: Pick<Circle, "name">
-    participation: Pick<CircleMeetingParticipant, "id">
+    participation: Pick<Participation, "id">
 }) => {
     const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -82,7 +82,7 @@ const StripePaymentTab = ({
     participation,
     onClose
 } : {
-    participation: Pick<CircleMeetingParticipant, "id">
+    participation: Pick<Participation, "id">
     onClose: () => void
 }) => {
     const { resolvedTheme } = useTheme()
@@ -126,7 +126,11 @@ const StripePaymentForm = ({
 
     const queryClient = useQueryClient()
 
-    const { handleSubmit, formState: { isSubmitting } } = useForm()
+    const { handleSubmit, setValue, watch, formState: { isSubmitting } } = useForm({
+        defaultValues: { stripeComplete: false }
+    })
+
+    const isValid = watch("stripeComplete")
 
     const onSubmit = async () => {
         if (!stripe || !elements) return
@@ -154,7 +158,8 @@ const StripePaymentForm = ({
     return <Form onSubmit={handleSubmit(onSubmit)}>
         <PaymentElement 
                 options={{ layout: "tabs"}}
-                className="w-full" 
+                className="w-full"
+                onChange={(event) => setValue("stripeComplete", event.complete)}
         />
         <Button
             radius="sm"
@@ -164,7 +169,7 @@ const StripePaymentForm = ({
             className="mt-4 text-white"
             startContent={<FontAwesomeIcon icon={faSackDollar}/>}
             isLoading={isSubmitting}
-            isDisabled={isSubmitting}
+            isDisabled={isSubmitting || !isValid}
         >
             {isSubmitting ? "Przetwarzanie..." : `Zapłać ${paymentIntent.amount/100} ${paymentIntent.currency.toUpperCase()}`}
         </Button>

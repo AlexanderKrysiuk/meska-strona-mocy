@@ -58,16 +58,19 @@ export const emailStyles = {
   } as const,
 
   button: {
-    display: "inline-block",
+    display: "block",              // blokowy, łatwiej centrować
+    width: "fit-content",          // przyjmuje szerokość treści
+    margin: "0 auto",              // wycentrowanie w kontenerze
     padding: "12px 20px",
     backgroundColor: "#0070f3",
-    color: "#fff",
+    color: "#ffffff",              // zawsze biały tekst
     borderRadius: "5px",
     textDecoration: "none",
     textAlign: "center",
-    fontWeight: 500,
+    fontWeight: 600,
     fontFamily: "Arial, sans-serif",
   } as const,
+
 
   footerText: {
     fontSize: "12px",
@@ -216,25 +219,35 @@ export const Sign = ({
       {avatarUrl && (
         <Img
           src={avatarUrl}
-          width={40}
-          height={40}
+          width={60}
+          height={60}
           alt={name ?? "Avatar"}
-          style={{ borderRadius: "50%", marginRight: "12px" }}
+          style={{
+            borderRadius: "50%",
+            marginRight: "12px",
+            objectFit: "cover",      // zachowuje proporcje i wypełnia ramkę
+            objectPosition: "center", // wyśrodkowanie jeśli przycinany
+          }}        
         />
       )}
-      <div>
-        <p style={{ margin: 0, fontSize: "14px", color: "#111827" }}>
-          Pozdrawiam,
-        </p>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          textAlign: "left",
+          color: "inherit", // dziedziczy kolor z EmailLayout
+        }}
+      >
+        <p style={{ margin: 0, fontSize: "14px" }}>Pozdrawiam,</p>
         {name && (
-          <p style={{ margin: 0, fontSize: "14px", fontWeight: 500 }}>{name}</p>
+          <p style={{ margin: 0, fontSize: "18px", fontWeight: 500 }}>{name}</p>
         )}
         {title && (
-          <p style={{ margin: 0, fontSize: "12px", color: "#6b7280" }}>
-            {title}
-          </p>
+          <p style={{ margin: 0, fontSize: "16px", opacity: 0.5 }}>{title}</p>
         )}
       </div>
     </div>
   );
 };
+

@@ -1,6 +1,6 @@
 "use client"
 
-import { QueryGetUserByID } from "@/actions/user";
+import { GetUserByID } from "@/actions/user";
 import Loader from "@/components/loader";
 import EditAvatarModal from "@/components/user/edit-avatar-modal";
 import EditUserForm from "@/components/user/edit-user-form";
@@ -14,7 +14,7 @@ const ProfilePage = () => {
 
     const { data: user, isLoading } = useQuery({
         queryKey: [UserQueries.User, auth?.id],
-        queryFn: () => QueryGetUserByID(auth!.id),
+        queryFn: () => GetUserByID(auth!.id),
         enabled: !!auth?.id
     })
 
@@ -24,7 +24,10 @@ const ProfilePage = () => {
         <EditAvatarModal
             user={user}
         />
-        {auth?.roles.includes(Role.Moderator) && <EditUserForm user={user}/>
+        {auth?.roles.includes(Role.Moderator) && 
+            <>
+                <EditUserForm user={user}/>
+            </>
         }
     </main>
 }

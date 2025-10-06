@@ -1,6 +1,6 @@
 "use client"
 
-import { ModeratorItems, userItems } from "@/components/user-menu";
+import { ModeratorItems, PartnerItems, userItems } from "@/components/user-menu";
 import { clientAuth } from "@/hooks/auth";
 import { PermissionGate } from "@/utils/gate";
 import { Listbox, ListboxItem, ListboxSection } from "@heroui/react";
@@ -54,6 +54,24 @@ const DashboadLayout = ({
                                 )}
                             </ListboxSection>
                         ) : null}
+                        {user.roles && 
+                            <ListboxSection
+                                showDivider
+                                title="Partner"
+                                items={PartnerItems}
+                            >
+                                {(item)=>(
+                                    <ListboxItem
+                                        key={item.title}
+                                        title={item.title}
+                                        href={item.href}
+                                        color={pathname.startsWith(item.href) ? "primary" : "default"}
+                                        startContent={item.icon}
+                                        className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
+                                    />
+                                )}
+                            </ListboxSection>
+                        }
                     </Listbox>
                 )}
             </div>

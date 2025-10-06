@@ -14,7 +14,7 @@ const price = z.coerce.number({required_error: "Pole nie może być puste",inval
 
 const date = z.date({ required_error: "Wybierz datę" })
 
-const currencyId = z.string().uuid()
+const currency = z.nativeEnum(Currency)
 
 // początek jutrzejszego dnia
 const tomorrow = new Date();
@@ -46,12 +46,12 @@ const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" 
 
 export const EditPriceSchema = (
   originalPrice: number,
-  originalCurrencyId: string
+  originalCurrency: Currency
 ) => z.object({
   price,
-  currencyId
+  currency
 }).superRefine((data, ctx) => {
-  if (data.currencyId === originalCurrencyId) {
+  if (data.currency === originalCurrency) {
     if (data.price > originalPrice && data.price < originalPrice + 10) {
       ctx.addIssue({
         code: "custom",
@@ -71,12 +71,12 @@ export const CreateMeetingSchema = (unavailableDates: Date[]) => {
             street,
             cityId,
             price,
-            currencyId,
+            currency,
             TimeRangeSchema
         })
 };
 
-export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date, originalPrice: number, originalCurrencyId: string) => {  
+export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date, originalPrice: number, originalCurrency: Currency) => {  
   return z.object({
     meetingId,
     circleId,
@@ -84,7 +84,7 @@ export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: D
     TimeRangeSchema,
     street,
     cityId,
-    priceCurrency: EditPriceSchema(originalPrice, originalCurrencyId)
+    priceCurrency: EditPriceSchema(originalPrice, originalCurrency)
   })
 };
   

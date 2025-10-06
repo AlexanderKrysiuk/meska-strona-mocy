@@ -3,7 +3,7 @@
 import { GetModeratorCircles } from "@/actions/circle"
 import { GetCities } from "@/actions/city"
 import { GetCountries } from "@/actions/country"
-import { CreateMeeting, GetModeratorMeetingsByModeratorID } from "@/actions/meeting"
+import { CreateMeeting, GetModeratorMeetingsDates } from "@/actions/meeting"
 import { GetRegions } from "@/actions/region"
 import { clientAuth } from "@/hooks/auth"
 import { CreateMeetingSchema } from "@/schema/meeting"
@@ -13,14 +13,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { getLocalTimeZone, today } from "@internationalized/date"
-import { Circle, CircleMeetingStatus, Country, Region } from "@prisma/client"
+import { Circle, Country, Currency, Region } from "@prisma/client"
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
 import { combineDateAndTime, isSameDay } from "@/utils/date"
-import { GetCurrencies } from "@/actions/currency"
+import {I18nProvider} from "@react-aria/i18n";
 
 export const CreateMeetingModal = ({
     circle
@@ -74,20 +74,10 @@ const CreateMeetingform = ({
                 enabled: !!moderator
             },
             {
-                queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],
-                queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Scheduled),
+                queryKey: [ModeratorQueries.AllMeetingsDates, moderator?.id],
+                queryFn: () => GetModeratorMeetingsDates(moderator!.id),
                 enabled: !!moderator?.id
-            },
-            {
-                queryKey: [ModeratorQueries.CompletedMeetings, moderator?.id],
-                queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Completed),
-                enabled: !!moderator?.id
-            },
-            {
-                queryKey: [ModeratorQueries.ArchivedMeetings, moderator?.id],
-                queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Archived),
-                enabled: !!moderator?.id
-            },
+            },              
             {
                 queryKey: [GeneralQueries.Countries],
                 queryFn: () => GetCountries(),
@@ -99,32 +89,23 @@ const CreateMeetingform = ({
             { 
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
-            },
-            {
-                queryKey: [GeneralQueries.Currencies],
-                queryFn: () => GetCurrencies()
             }
         ]
     })
 
-    const [circles, scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities, currencies] = queries
+    const [circles, allMeetingsDates, countries, regions, cities] = queries
     
-    const unavailableDates = useMemo(() => [scheduledMeetings, completedMeetings, ArchivedMeetings]
-            .flatMap(q => q.data ?? [])
-            .map(meeting => {
-                const d = new Date(meeting.startTime);
-                return new Date(d.getFullYear(), d.getMonth(), d.getDate()); // tylko data, bez godziny
-            }),
-        [scheduledMeetings, completedMeetings, ArchivedMeetings]
-    );
-      
+    const unavailableDates = useMemo(() => allMeetingsDates.data ?? [], [allMeetingsDates]);
+
     const isDateUnavailable = useCallback(
         (date: DateValue) => {
-            if (!date) return false;
-            const d = new Date(date.year, date.month - 1, date.day);
-            return unavailableDates.some(disabled => isSameDay(d, disabled));
+          if (!date) return false;
+          const d = new Date(date.year, date.month - 1, date.day);
+          return unavailableDates.some(disabled => isSameDay(d, disabled));
         },[unavailableDates]
-    );
+      );
+      
+
     type FormFields = z.infer<ReturnType<typeof CreateMeetingSchema>>
     
     const { reset, handleSubmit, watch, trigger, setValue, setError, formState: { errors, isValid, isSubmitting } } = useForm<FormFields>({
@@ -135,7 +116,7 @@ const CreateMeetingform = ({
             street: circle?.street ?? undefined,
             cityId: circle?.cityId ?? undefined,
             price: circle?.price ?? undefined,
-            currencyId: circle?.currencyId ?? undefined
+            currency: circle?.currency ?? undefined
         }
     })
     
@@ -166,7 +147,11 @@ const CreateMeetingform = ({
         })
 
         if (result.success) {
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],})
+            const year = new Date(data.date).getFullYear()
+
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.AllMeetingsDates, moderator?.id]})
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.MeetingsYears, moderator?.id]})
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.Meetings, moderator?.id, year]})
         } else {
             if (result.fieldErrors) {
                 Object.entries(result.fieldErrors).forEach(([field, message]) => {
@@ -208,6 +193,7 @@ const CreateMeetingform = ({
                             street: circle?.street ?? undefined,
                             cityId: circle?.cityId ?? undefined,
                             price: circle?.price ?? undefined,
+                            currency: circle?.currency ?? undefined,
                         },
                         {keepErrors: true}
                     )
@@ -227,67 +213,69 @@ const CreateMeetingform = ({
             >
                 {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
             </Select>
-            <DatePicker
-                label="Data spotkania"
-                labelPlacement="outside"
-                variant="bordered"
-                description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
-                isDateUnavailable={isDateUnavailable}
-                minValue={country?.timeZone ? today(country.timeZone).add({ days: 1 }) : today(getLocalTimeZone()).add({days: 1})}
-                onChange={(date) => {
-                    if (!date) return;
-                    setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true });
-                    const startTime = watch("TimeRangeSchema.startTime");
-                    const endTime = watch("TimeRangeSchema.endTime");    
+            <I18nProvider locale="pl-PL">
+                <DatePicker
+                    label="Data spotkania"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
+                    isDateUnavailable={isDateUnavailable}
+                    minValue={country?.timeZone ? today(country.timeZone).add({ days: 1 }) : today(getLocalTimeZone()).add({days: 1})}
+                    onChange={(date) => {
+                        if (!date) return;
+                        setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true });
+                        const startTime = watch("TimeRangeSchema.startTime");
+                        const endTime = watch("TimeRangeSchema.endTime");    
                     
-                    if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone));
-                    if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone));
+                        if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone));
+                        if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone));
                 
-                    if (startTime) trigger("TimeRangeSchema.startTime")
-                    if (endTime) trigger("TimeRangeSchema.endTime")          
-                }}
-                isRequired
-                isInvalid={!!errors.date}
-                errorMessage={errors.date?.message}
-                isDisabled={isSubmitting}
-            />
-            <div className="flex space-x-4 w-full my-4">
-                <TimeInput
-                    label="Godzina Rozpoczęcia"
-                    labelPlacement="outside"
-                    variant="bordered"
-                    hourCycle={24}
-                    value={startHour}
-                    onChange={(time) => {
-                        setStartHour(time)
-                        const date = watch("date")
-                        if (!time || !date) return;
-                        setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true})
-                        if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
+                        if (startTime) trigger("TimeRangeSchema.startTime")
+                        if (endTime) trigger("TimeRangeSchema.endTime")          
                     }}
                     isRequired
-                    isDisabled={isSubmitting || !watch("date")}
-                    isInvalid={!!errors.TimeRangeSchema?.startTime}
-                    errorMessage={errors.TimeRangeSchema?.startTime?.message}
+                    isInvalid={!!errors.date}
+                    errorMessage={errors.date?.message}
+                    isDisabled={isSubmitting}
                 />
-                <TimeInput
-                    label="Godzina zakończenia"
-                    labelPlacement="outside"
-                    variant="bordered"
-                    hourCycle={24}
-                    onChange={(time) => {
-                        setEndHour(time)
-                        const date = watch("date")
-                        if (!time || !date) return;
-                        setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true})
-                        if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
-                    }}
-                    isRequired
-                    isDisabled={isSubmitting || !watch("date") || !watch("TimeRangeSchema.startTime")}
-                    isInvalid={!!errors.TimeRangeSchema?.endTime}
-                    errorMessage={errors.TimeRangeSchema?.endTime?.message}
-                />
-            </div>
+                <div className="flex space-x-4 w-full my-4">
+                    <TimeInput
+                        label="Godzina Rozpoczęcia"
+                        labelPlacement="outside"
+                        variant="bordered"
+                        hourCycle={24}
+                        value={startHour}
+                        onChange={(time) => {
+                            setStartHour(time)
+                            const date = watch("date")
+                            if (!time || !date) return;
+                            setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true})
+                            if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
+                        }}
+                        isRequired
+                        isDisabled={isSubmitting || !watch("date")}
+                        isInvalid={!!errors.TimeRangeSchema?.startTime}
+                        errorMessage={errors.TimeRangeSchema?.startTime?.message}
+                    />
+                    <TimeInput
+                        label="Godzina zakończenia"
+                        labelPlacement="outside"
+                        variant="bordered"
+                        hourCycle={24}
+                        onChange={(time) => {
+                            setEndHour(time)
+                            const date = watch("date")
+                            if (!time || !date) return;
+                            setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true})
+                            if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
+                        }}
+                        isRequired
+                        isDisabled={isSubmitting || !watch("date") || !watch("TimeRangeSchema.startTime")}
+                        isInvalid={!!errors.TimeRangeSchema?.endTime}
+                        errorMessage={errors.TimeRangeSchema?.endTime?.message}
+                    />
+                </div>
+            </I18nProvider>
             <Input
                 label="Adres (ulica, numer)"
                 labelPlacement="outside"
@@ -399,15 +387,17 @@ const CreateMeetingform = ({
                 onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
                 endContent={
                     <select
-                        value={watch("currencyId") ?? ""}
+                        value={watch("currency") ?? ""}
                         onChange={(event) => {
-                            const val = event.target.value;
-                            setValue("currencyId", val, { shouldValidate: true });
+                            const val = event.target.value as Currency;
+                            setValue("currency", val , { shouldValidate: true, shouldDirty: true });
                         }}
                     >
                         <option value="">Brak</option> {/* opcja brak */}
-                        {currencies.data?.map((c)=>(
-                            <option key={c.id} value={c.id}>{c.code}</option>
+                        {Object.values(Currency).map((c) => (
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
                         ))}
                     </select>
                 }

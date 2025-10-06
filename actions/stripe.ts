@@ -1,48 +1,153 @@
 "use server"
 
 import { stripe } from "@/lib/stripe-server"
-import { GetParticipationByID } from "./participant"
-import { MeetingParticipantStatus } from "@prisma/client"
+import { GetParticipationByID } from "./participation"
+import { ParticipationStatus, SubscriptionPeriod } from "@prisma/client"
+import { ServerAuth } from "./auth"
+import { GetUserByID } from "./user"
+import { prisma } from "@/lib/prisma"
 
-export const CreatePaymentForMeetingByParticipationID = async (participationID: string) => {
-    const participation = await GetParticipationByID(participationID)
-    //if (!participation) return { success: false, message: "Brak danych o uczestnictwie" }
-    if (!participation) throw new Error("Brak danych o uczestnictwie")
+export const GetAccountPayments = async (accountID: string) => {
+    if (!accountID) throw new Error("Brak identyfikatora")
 
-    if (participation.status !== MeetingParticipantStatus.Active) throw new Error ("użytkownika nie będzie na tym spotkaniu")
+    const payments = await stripe.paymentIntents.list(
+        { limit: 20 },
+        { stripeAccount: accountID }
+    )
 
-    const amount = (participation.meeting.price - participation.amountPaid)*100
+    return payments.data
+}
 
-    //if (amount <= 0) return { success: false, message: "Spotkanie opłacone" }
-    if (amount <= 0) return null
-    
+export const CreatePaymentForParticipationByID = async (participationID: string) => {
+    const participation = await GetParticipationByID(participationID);
+    if (!participation) throw new Error("Brak danych o uczestnictwie");
+    if (participation.status !== ParticipationStatus.Active) throw new Error("Użytkownik nie będzie na tym spotkaniu");
+  
+    const moderatorId = participation.meeting.moderator.stripeAccountId;
+    if (!moderatorId) throw new Error("Nie można wygenerować płatności");
+  
+    // Sprawdzenie, czy moderator ma aktywne transfers
+    const account = await stripe.accounts.retrieve(moderatorId);
+    const transfersActive = account.capabilities?.transfers === "active";
+    if (!transfersActive) throw new Error("Moderator nie ma włączonych przelewów. Płatność jest niemożliwa.");
+  
+    const amount = (participation.meeting.price - participation.amountPaid) * 100;
+    if (amount <= 0) return null; // Spotkanie już opłacone
+  
     try {
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
-            currency: participation.meeting.currency.code.toLowerCase(),
+            amount,
+            currency: participation.meeting.currency.toLowerCase(),
             automatic_payment_methods: { enabled: true },
-            metadata: {
-                participationId: participation.id}
-        })
+            transfer_data: { destination: moderatorId }, // całość idzie do moderatora
+            metadata: { participationId: participation.id },
+        });
+        
         return {
             id: paymentIntent.id,
             client_secret: paymentIntent.client_secret!,
             amount: paymentIntent.amount,
             currency: paymentIntent.currency,
             status: paymentIntent.status,
-        }    
+        };
     } catch (error) {
-        console.error(error)
-        throw new Error ("Błąd tworzenia płatności")
+        console.error(error);
+        throw new Error("Błąd tworzenia płatności");
+    }
+};  
+
+export const ConnectStripeAccount = async () => {
+    const auth = await ServerAuth()
+
+    if (auth.roles.length <= 0) throw new Error ("Brak uprawnień")
+        
+    return stripe.oauth.authorizeUrl({
+        response_type: "code",
+        client_id: process.env.STRIPE_CLIENT_ID!,
+        scope: "read_write",
+        redirect_uri: `http://${process.env.NEXT_PUBLIC_APP_URL}/api/stripe/callback`,
+        state: auth.id
+    })
+}
+
+export const CreateModeratorSubscriptionCheckout = async (type: SubscriptionPeriod) => {
+    const auth = await ServerAuth()
+
+    const user = await GetUserByID(auth.id)
+    if (!user) throw new Error("Brak danych o użytkowniku")
+    
+    const customerId = user.stripeCustomerId ?? (await CreateStripeCustomer(user.id, user.email))
+
+    let priceID
+    switch (type) {
+        case SubscriptionPeriod.Monthly:
+            priceID = process.env.STRIPE_SUBSCRIPTION_MODERATOR_MONTHLY
+            break
+        case SubscriptionPeriod.Yearly:
+            priceID = process.env.STRIPE_SUBSCRIPTION_MODERATOR_YEARLY
+            break
     }
 
-    // ✅ Zwracamy tylko plain object z tym, czego potrzebujemy
-    // return {
-    //     success: true,
-    //     clientSecret: paymentIntent.client_secret,
-    //     amount: paymentIntent.amount,
-    //     currency: paymentIntent.currency,
-    //     name: participation.user.name,
-    //     email: participation.user.email
-    // }
+    // const session = await stripe.checkout.sessions.create({
+    //     mode: "subscription",
+    //     customer: user.stripeCustomerId,
+    //     line_items: [
+    //         {
+    //             price: priceID,
+    //             quantity: 1
+    //         }
+    //     ],
+        
+    // })
 }
+
+const CreateStripeCustomer = async(userId: string, email:string) => {
+    const customer = await stripe.customers.create({ email })
+    await prisma.user.update({
+        where: {id: userId},
+        data: {stripeCustomerId: customer.id}
+    })
+    return customer.id
+} 
+
+export const CheckModeratorTransfers = async (moderatorId: string) => {
+    const moderator = await prisma.user.findUnique({
+        where: { id: moderatorId },
+        select: { stripeAccountId: true },
+    });
+  
+    if (!moderator?.stripeAccountId) throw new Error("Moderator nie połączył konta Stripe");
+  
+    const account = await stripe.accounts.retrieve(moderator.stripeAccountId);
+    // Bezpieczne sprawdzenie, jeśli capabilities undefined
+    const transfersActive = account.capabilities?.transfers === "active";  
+    return transfersActive;
+  }
+  
+
+  async function showModeratorCommissionStatus(moderatorStripeAccountId: string) {
+    const startOfMonth = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() / 1000);
+    const endOfMonth = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getTime() / 1000);
+  
+    const transfers = await stripe.transfers.list({
+      destination: moderatorStripeAccountId,
+      created: { gte: startOfMonth, lte: endOfMonth },
+      limit: 100,
+    });
+  
+    let totalTaken = 0;
+  
+    console.log(`Transferry od moderatora ${moderatorStripeAccountId} w tym miesiącu:\n`);
+  
+    transfers.data.forEach(t => {
+      const amountZl = t.amount / 100;
+      totalTaken += amountZl;
+      console.log(`- Transfer: ${amountZl} ${t.currency} | z charge: ${t.source_transaction} | utworzony: ${new Date(t.created * 1000).toLocaleString()}`);
+    });
+  
+    const monthlyLimit = 200;
+    const remaining = Math.max(monthlyLimit - totalTaken, 0);
+  
+    console.log(`\nSuma pobranych prowizji: ${totalTaken.toFixed(2)} zł`);
+    console.log(`Pozostało do limitu 200 zł: ${remaining.toFixed(2)} zł`);
+  }

@@ -1,3 +1,4 @@
+import { Currency } from '@prisma/client'
 import * as z from 'zod'
 
 //const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -37,8 +38,7 @@ const price = z.preprocess(
   )
 );
 
-const currencyId = z.string().uuid().nullable().optional()
-
+const currency = z.nativeEnum(Currency).optional().nullable()
 // const price = z.number().nullable()
 //   .refine((val) => val === null || val === 0 || val >= 10, {
 //     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
@@ -57,7 +57,7 @@ export const EditCircleSchema = z.object({
   street: street.nullable(),
   cityId,
   price: price.nullable(),
-  currencyId
+  currency
 })
 
 export const EditCircleSlugSchema = z.object({

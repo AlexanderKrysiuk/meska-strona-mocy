@@ -4,14 +4,14 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { AllItems, ModeratorItems, userItems } from "./user-menu";
+import { AllItems, ModeratorItems, PartnerItems, userItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
 import { PermissionGate } from "@/utils/gate";
 import { useQuery } from "@tanstack/react-query";
 import { UserQueries } from "@/utils/query";
-import { QueryGetUserByID } from "@/actions/user";
+import { GetUserByID } from "@/actions/user";
 
 const Header = () => {
     const auth = clientAuth()
@@ -19,7 +19,7 @@ const Header = () => {
 
     const { data: user } = useQuery({
         queryKey: [UserQueries.User, auth?.id],
-        queryFn: () => QueryGetUserByID(auth!.id),
+        queryFn: () => GetUserByID(auth!.id),
         enabled: !!auth?.id
     })
 
@@ -105,6 +105,25 @@ const Header = () => {
                                         )}
                                     </DropdownSection>
                                 ) : null}
+                                {auth.roles && 
+                                    <DropdownSection
+                                        title={"Partner"}
+                                        showDivider
+                                        items={PartnerItems}
+                                    >
+                                        {(item) => (
+                                            <DropdownItem
+                                                key={item.title}
+                                                href={item.href}
+                                                title={item.title}
+                                                variant="light"
+                                                color="primary"
+                                                startContent={item.icon}
+                                                className={`${pathname.startsWith(item.href) && "text-primary"}`}
+                                            />
+                                        )}
+                                    </DropdownSection>
+                                }
                                 <DropdownItem
                                     key="Logout"
                                     color="danger"
@@ -185,6 +204,29 @@ const Header = () => {
                         <Divider/>
                     </div>
                 )}
+                {auth?.roles && 
+                    <div>
+                        <span className="text-sm text-foreground-500">
+                            Partner
+                        </span>
+                        <div className="space-y-4">
+                            {PartnerItems.map((item)=>(
+                                <NavbarMenuItem
+                                    key={item.title}
+                                >
+                                    <Link
+                                        href={item.href}
+                                        color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                                        className="flex gap-2 hover:primary transition-colors duration-400"
+                                    >
+                                        {item.icon} {item.title}
+                                    </Link>
+                                </NavbarMenuItem>
+                            ))}
+                        </div>
+                        <Divider/>
+                    </div>
+                }
                 {AllItems.map((item)=>(
                     <NavbarMenuItem
                         isActive={pathname.startsWith(item.href)}

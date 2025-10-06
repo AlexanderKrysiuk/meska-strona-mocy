@@ -1,13 +1,13 @@
 "use client"
 
-import { RestoreMemberToCircle } from "@/actions/member"
-import { RestoreMemberToCircleSchema } from "@/schema/member"
+import { RestoreMembership } from "@/actions/membership"
+import { RestoreMembershipSchema } from "@/schema/membership"
 import { ModeratorQueries } from "@/utils/query"
 import { faArrowRotateBack, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, CircleMembership, User } from "@prisma/client"
+import { Circle, Membership, User } from "@prisma/client"
 import { useQueryClient } from "@tanstack/react-query"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
@@ -17,16 +17,16 @@ const RestoreUserToCircleModal = ({
     member,
     circle
 } : {
-    membership: CircleMembership
+    membership: Membership
     member: Pick<User, "id" | "name">
     circle: Pick<Circle, "id" | "name">
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
-    type FormFields = z.infer<typeof RestoreMemberToCircleSchema>
+    type FormFields = z.infer<typeof RestoreMembershipSchema>
 
     const { handleSubmit, formState: {isSubmitting} } = useForm<FormFields>({
-        resolver: zodResolver(RestoreMemberToCircleSchema),
+        resolver: zodResolver(RestoreMembershipSchema),
         defaultValues: {
             membershipId: membership.id
         }
@@ -35,7 +35,7 @@ const RestoreUserToCircleModal = ({
     const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        const result = await RestoreMemberToCircle(data)
+        const result = await RestoreMembership(data)
 
         addToast({
             title: result.message,

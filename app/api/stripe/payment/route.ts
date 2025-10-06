@@ -1,8 +1,8 @@
 // app/api/webhook/route.ts
 import { stripe } from "@/lib/stripe-server"
-import { PrismaClient } from "@prisma/client"
+//import { PrismaClient } from "@prisma/client"
 
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 export async function POST(req: Request) {
   const payload = await req.text()
@@ -18,13 +18,27 @@ export async function POST(req: Request) {
 
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object
-    const participationId = paymentIntent.metadata.participationId
+    //const participationId = paymentIntent.metadata.participationId
     console.log(paymentIntent.amount)
 
-    await prisma.circleMeetingParticipant.update({
-      where: { id: participationId },
+    // const businessInfo = await prisma.businessInfo.findFirst({
+    //   orderBy: { createdAt: "desc"}
+    // })
+
+
+    await prisma.participation.update({
+      where: { id: paymentIntent.metadata.participationId },
       data: { amountPaid: { increment: paymentIntent.amount / 100 } },
     })
+    
+    // await prisma.transaction.create({
+    //   data: {
+    //     userId: participation.userId,
+    //     amount: paymentIntent.amount/100,
+    //     currencyId: paymentIntent.currency
+    //   }
+    // })
+
   }
 
   return new Response("Success", { status: 200 })

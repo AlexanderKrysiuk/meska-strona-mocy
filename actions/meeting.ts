@@ -1,364 +1,271 @@
 "use server"
 
 import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
-import { date, z } from "zod"
-import { CheckLoginReturnUser } from "./auth"
-import { CircleMeeting, CircleMeetingStatus, CircleMembershipStatus, Currency, MeetingParticipantStatus, Role } from "@prisma/client"
+import { z } from "zod"
+import { ServerAuth } from "./auth"
+import { MeetingStatus, MembershipStatus, ParticipationStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { GetCircleById } from "./circle"
-import { PermissionGate } from "@/utils/gate"
-import { GetActiveCircleMembersByCircleID } from "./circle-membership"
-import { resend, sendEmail } from "@/lib/resend"
+import { GetCircleByID } from "./circle"
+import { sendEmail } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
-import MeetingUpdatedEmail from "@/components/emails/Meeting-update"
-import { setTimeout } from "timers"
-import { FormError } from "@/utils/errors"
-import { GetMeetingParticipantsByMeetingID } from "./meeting-participants"
+import { GetMembers } from "./membership"
+import { MeetingUpdatedEmail } from "@/components/emails/Meeting-Update"
 
-export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {    
-    const user = await CheckLoginReturnUser()
-    if (!user) return { success: false, message: "Musisz być zalogowanym by utworzyć spotkanie" }
-  
-    
-    const circle = await GetCircleById(data.circleId)
-    if (!circle) return { success: false, message: "Dana grupa nie istnieje" }
-    
-    if (!user.roles.includes(Role.Admin) && (user.id !== circle.moderatorId || !user.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień do dodania spotkania" }
+const MODERATOR_SHARE = parseFloat(process.env.MODERATOR_SHARE!);
 
-    const activeMembers = (await GetActiveCircleMembersByCircleID(circle.id)) || []
-  
-    let overlappingMeeting: CircleMeeting | null
+export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {
     try {
-         // Sprawdzenie nakładających się spotkań
-        overlappingMeeting = await prisma.circleMeeting.findFirst({
-            where: {
-                moderatorId: user.id,
-                AND: [
-                    { startTime: { lt: data.TimeRangeSchema.endTime } },
-                    { endTime: { gt: data.TimeRangeSchema.startTime } },
-                ],
-            },
+        const auth = await ServerAuth()
+      
+        const circle = await GetCircleByID(data.circleId)
+        if (!circle) return { success: false, message: "Brak danych o kręgu" }
+      
+        if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień do dodania spotkania" }
+  
+        const activeMembers = await GetMembers({ 
+            circleID: circle.id,
+            status: MembershipStatus.Active
         })
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: "Błąd sprawdzania konfliktu spotkań" };
-    }
+  
+        const overlappingMeeting = await CheckOverlapingMeeting(
+            auth.id,
+            data.TimeRangeSchema.startTime,
+            data.TimeRangeSchema.endTime
+        )
 
-    if (overlappingMeeting) {
-        return {
-          success: false,
-          message: "Nie udało się edytować spotkania",
-          fieldErrors: { date: "W tym dniu masz już inne spotkanie" }
+        if (overlappingMeeting) {
+            return {
+                success: false,
+                message: "Nie udało się utworzyć spotkania",
+                fieldErrors: { date: "W tym dniu masz już inne spotkanie" },
+            }
         }
-    }
-
-    try {
-        const existingMeetings = await prisma.circleMeeting.count({ where: { circleId: data.circleId } })
   
-        // Przygotowanie uczestników
-        const participantData =
-            activeMembers.length > 0
-            ? activeMembers.filter(m => m.user).map(m => ({
-                user: { connect: { id: m.user.id } },
-                status: MeetingParticipantStatus.Active,
-            }))
-            : undefined
+        const existingMeetings = await prisma.meeting.count({ where: { circleId: data.circleId } })
   
-        // Tworzenie spotkania z uczestnikami
-        const meeting = await prisma.circleMeeting.create({
+        const meeting = await prisma.meeting.create({
             data: {
-                status: CircleMeetingStatus.Scheduled,
+                status: MeetingStatus.Scheduled,
                 startTime: data.TimeRangeSchema.startTime,
                 endTime: data.TimeRangeSchema.endTime,
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
-                currencyId: data.currencyId,
+                currency: data.currency,
                 circleId: data.circleId,
-                moderatorId: user.id,
+                moderatorId: auth.id,
                 number: existingMeetings + 1,
-                ...(participantData && { participants: { create: participantData } }),
+                participants: {
+                    create: activeMembers.map(member => ({ userId: member.userId })),
+                },
             },
             include: {
-                participants: { include: { user: true } },
-                circle: true,
-                moderator: true,
-                city: { include: { region: { include: { country:true }}}},
-                currency: true
+                participants: { select: { user: { select: { name: true, email: true } } } },
+                circle: { select: { name: true } },
+                city: { select: { name: true, region: { select: { country: { select: { timeZone: true } } } } } },
+                moderator: { select: { name: true, image: true, title: true } },
             },
         })
   
-        // Wysyłka maili w osobnym try/catch
+        // maile (ew. osobny try/catch)
         for (const participant of meeting.participants) {
             try {
                 await sendEmail({
                     to: participant.user.email,
                     subject: `Nowe spotkanie ${meeting.circle.name}`,
                     react: MeetingInvite({
-                        userName: participant.user.name,
-                        circleName: meeting.circle.name,
-                        startTime: meeting.startTime,
-                        endTime: meeting.endTime,
-                        street: meeting.street,
-                        city: meeting.city.name,
-                        timeZone: meeting.city.region.country.timeZone,
-                        price: meeting.price,
-                        currencyCode: meeting.currency.code,
-                        moderatorName: meeting.moderator?.name,
-                        moderatorAvatarUrl: meeting.moderator?.image,
+                        participant: participant.user,
+                        circle: meeting.circle,
+                        city: meeting.city,
+                        country: meeting.city.region.country,
+                        meeting: meeting,
+                        moderator: meeting.moderator,
                     }),
-                });
+                })
             } catch (error) {
-                console.error(error);
+                console.error(error)
             }
         }
-          
-        return { success: true, message: "Spotkanie utworzone pomyślnie" };
+        return { success: true, message: "Spotkanie utworzone pomyślnie" }
     } catch (error) {
         console.error(error)
-        return { success: false, message: "Błąd połączenia z bazą danych" }
+        return { success: false, message: "Błąd serwera lub połączenia z bazą danych" }
     }
-}
-  
-async function RefreshMeetingsNumbering (circleId: string) {
-    const meetings = await prisma.circleMeeting.findMany({
-        where: {circleId: circleId},
-        orderBy: {startTime: "asc"}
-    })
-
-    for (let i = 0; i < meetings.length ; i++) {
-        await prisma.circleMeeting.update({
-            where: {id: meetings[i].id },
-            data: { number: i+1 }
-        })
-    }
-    return meetings.length
-}
+}  
 
 export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSchema>>) => {
-    const user = await CheckLoginReturnUser()
+    try {
+        const auth = await ServerAuth();
   
-    if (!user) 
-      return { success: false, message: "Musisz być zalogowanym by edytować spotkanie" }
-  
-    const meeting = await GetMeetingById(data.meetingId)
-    if (!meeting) 
-      return { success: false, message: "Dane spotkanie nie istnieje" }
-  
-    if (!(user.roles.includes(Role.Admin) || (user.roles.includes(Role.Moderator) && user.id === meeting.moderatorId))) {
-      return { success: false, message: "Brak uprawnień do edycji spotkania" }
-    }
-
-    const participants = await GetMeetingParticipantsByMeetingID(meeting.id)
-  
-    // 🔹 Sprawdzamy minimalną podwyżkę ceny
-    if (data.priceCurrency.currencyId === meeting.currencyId && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) {
-        return {
+        const meeting = await GetMeeting(data.meetingId);
+        if (!meeting) return {
             success: false,
-            message: `Minimalna podwyżka ceny to 10 ${meeting.currency.code} (obecnie ${meeting.price} ${meeting.currency.code})`
-        };
-    }
+            message: "Dane spotkanie nie istnieje"
+        }
 
-    // Sprawdzanie konfliktu spotkań
-    let overlappingMeeting: CircleMeeting | null
-    try {
-        overlappingMeeting = await prisma.circleMeeting.findFirst({
-            where: {
-                moderatorId: user.id,
-                id: { not: data.meetingId }, // <-- wykluczamy edytowane spotkanie
-                AND: [
-                    { startTime: { lt: data.TimeRangeSchema.endTime } },
-                    { endTime: { gt: data.TimeRangeSchema.startTime } }
-                ]
-            }
+        if (meeting.status === MeetingStatus.Completed) return {
+            success: false,
+            message: "Nie możesz edytować zakończonego spotkania"
+        }
+  
+        if (!auth.roles.includes(Role.Admin) && (auth.id !== meeting.moderatorId || !auth.roles.includes(Role.Moderator))) return {
+            success: false,
+            message: "Brak uprawnień do edycji spotkania"
+        }
+  
+        if (data.priceCurrency.currency === meeting.currency && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) return {
+            success: false,
+            message: `Minimalna podwyżka ceny to 10 ${meeting.currency} (obecnie ${meeting.price} ${meeting.currency})`
+        }
+  
+        const overlappingMeeting = await CheckOverlapingMeeting(auth.id, data.TimeRangeSchema.startTime, data.TimeRangeSchema.endTime, meeting.id);
+        if (overlappingMeeting) {
+            return {
+                success: false,
+                message: "Nie udało się edytować spotkania",
+                fieldErrors: { date: "W tym dniu masz już inne spotkanie" }
+            };
+        }
+  
+        const activeMembers = await GetMembers({
+            circleID: meeting.circleId,
+            status: MembershipStatus.Active
         });
-    } catch (error) {
-        console.error(error);
-        return { success: false, message: "Błąd sprawdzania konfliktu spotkań" };
-    }
   
-    if (overlappingMeeting) {
-      return {
-        success: false,
-        message: "Nie udało się edytować spotkania",
-        fieldErrors: { date: "W tym dniu masz już inne spotkanie" }
-      }
-    }
-  
-    try {
         const updatedMeeting = await prisma.$transaction(async (tx) => {
-            const updatedMeeting = await tx.circleMeeting.update({
-              where: { id: data.meetingId },
-              data: {
-                startTime: data.TimeRangeSchema.startTime,
-                endTime: data.TimeRangeSchema.endTime,
-                price: data.priceCurrency.price,
-                currencyId: data.priceCurrency.currencyId,
-                street: data.street,
-                cityId: data.cityId
-              },
-              include: { 
-                city: { include: { region: { include: { country:true }}}},
-                currency: true
-              }
-            })
-
-            for (const participant of participants) {
-                if (meeting.currencyId === updatedMeeting.currencyId) {
-                    if (participant.amountPaid > updatedMeeting.price) {
-                        const difference = participant.amountPaid - updatedMeeting.price
-                        await tx.circleMeetingParticipant.update({
-                            where: {id: participant.id},
-                            data: { amountPaid: updatedMeeting.price }
-                        })
-                        await tx.balance.upsert({
-                            where: { userId_currencyId: { userId: participant.userId, currencyId: meeting.currencyId }},
-                            update: { amount: { increment: difference }},
-                            create: { userId: participant.userId, amount: difference, currencyId: meeting.currencyId }
-                        })
-                    }
-                } else {
-                    await tx.circleMeetingParticipant.update({
-                        where: {id: participant.id},
-                        data: { amountPaid: 0}
-                    })
-
-                    await tx.balance.upsert({
-                        where: { userId_currencyId: { userId: participant.userId, currencyId: meeting.currencyId }},
-                        update: { amount: { increment: participant.amountPaid }},
-                        create: { userId: participant.userId, amount: participant.amountPaid, currencyId: meeting.currencyId }
-                    })
+            // 1️⃣ Upsert aktywnych członków
+            if (data.TimeRangeSchema.startTime > new Date()) {
+                for (const member of activeMembers) {
+                    await tx.participation.upsert({
+                        where: { userId_meetingId: { meetingId: meeting.id, userId: member.userId } },
+                        update: {},
+                        create: { meetingId: meeting.id, userId: member.userId }
+                    });
                 }
             }
-            return updatedMeeting
-        })
-
   
-      await sortMeetings(meeting.circleId)
+            // 2️⃣ Aktualizacja spotkania i pobranie uczestników
+            const updated = await tx.meeting.update({
+                where: { id: data.meetingId },
+                data: {
+                    startTime: data.TimeRangeSchema.startTime,
+                    endTime: data.TimeRangeSchema.endTime,
+                    price: data.priceCurrency.price,
+                    currency: data.priceCurrency.currency,
+                    street: data.street,
+                    cityId: data.cityId
+                },
+                select: {
+                    startTime: true,
+                    endTime: true,
+                    street: true,
+                    price: true,
+                    currency: true,
+                    circle: { select: { name: true} },
+                    city: { select: { name: true, region: { select: { country: { select: { timeZone: true } } } } } },
+                    participants: { select: { 
+                        id: true, 
+                        amountPaid: true, 
+                        status: true, 
+                        userId: true, 
+                        user: { select: { 
+                            name: true, 
+                            email: true,
+                            memberships: {
+                                where: { circleId: meeting.circleId },
+                                select: { id: true }
+                            }
+                        }}}},
+                    moderator: { select: { name: true, image: true, title: true } }
+                }
+            });
   
-      // wysyłka maili do uczestników jeśli spotkanie w przyszłości
+            // 3️⃣ Korekta wpłat i balansów
+            for (const participant of updated.participants) {
+                if (meeting.currency === updated.currency) {
+                    if (participant.amountPaid > updated.price) {
+                        const difference = participant.amountPaid - updated.price;
+                        await tx.participation.update({ where: { id: participant.id }, data: { amountPaid: updated.price } });
+                        await tx.membershipBalance.upsert({
+                            where: { membershipId_currency: { membershipId: participant.user.memberships[0]?.id, currency: meeting.currency } },
+                            update: { amount: { increment: difference } },
+                            create: { membershipId: participant.user.memberships[0]?.id, amount: difference, currency: meeting.currency }
+                        });
+                    }
+                } else {
+                    await tx.participation.update({ where: { id: participant.id }, data: { amountPaid: 0 } });
+                    await tx.membershipBalance.upsert({
+                        where: { membershipId_currency: { membershipId: participant.user.memberships[0]?.id, currency: meeting.currency } },
+                        update: { amount: { increment: participant.amountPaid } },
+                        create: { membershipId: participant.user.memberships[0]?.id, amount: participant.amountPaid, currency: meeting.currency }
+                    });
+                }
+            }
+  
+            return updated;
+        });
+  
+        await sortMeetings(meeting.circleId);
+  
+        // 4️⃣ Wysyłka maili poza transakcją
         if (updatedMeeting.startTime > new Date()) {
-            for (const participant of participants) {
-                if (participant.status === MeetingParticipantStatus.Active) {
+            for (const participant of updatedMeeting.participants) {
+                if (participant.status === ParticipationStatus.Active) {
                     try {
                         await sendEmail({
                             to: participant.user.email,
-                            subject: `Zmiana spotkania w kręgu ${meeting.circle.name}`,
+                            subject: `Zmiana spotkania w kręgu ${updatedMeeting.circle.name}`,
                             react: MeetingUpdatedEmail({
-                                userName: participant.user.name,
-                                circleName: meeting.circle.name,
-                                oldMeeting: {
-                                    startTime: meeting.startTime,
-                                    endTime: meeting.endTime,
-                                    street: meeting.street,
-                                    city: meeting.city.name,
-                                    price: meeting.price,
-                                    currencyCode: meeting.currency.code,
-                                    locale: meeting.city.region.country.locale,
-                                    timeZone: meeting.city.region.country.timeZone
-                                },
-                                newMeeting: {
-                                    startTime: updatedMeeting.startTime,
-                                    endTime: updatedMeeting.endTime,
-                                    street: updatedMeeting.street,
-                                    city: updatedMeeting.city.name,
-                                    price: updatedMeeting.price,
-                                    currencyCode: updatedMeeting.currency.code,
-                                    locale: meeting.city.region.country.locale,
-                                    timeZone: updatedMeeting.city.region.country.timeZone
-                                },
-                                moderatorName: user.name
+                                participant: participant.user,
+                                oldMeeting: { ...meeting, city: meeting.city, country: meeting.city.region.country },
+                                newMeeting: { ...updatedMeeting, city: updatedMeeting.city, country: updatedMeeting.city.region.country },
+                                circle: updatedMeeting.circle,
+                                moderator: updatedMeeting.moderator
                             })
-                        })
+                        });
                     } catch (error) {
-                        console.error(error)
+                        console.error("Błąd wysyłki maila:", error);
                     }
                 }
             }
         }
-    return { success: true, message: "Pomyślnie zmieniono dane spotkania" }
-    } catch(error) {
-        console.error(error)
-        return { success: false, message: "Błąd połączenia z bazą danych" }
+  
+        return { success: true, message: "Pomyślnie zmieniono dane spotkania" };
+  
+    } catch (error) {
+        console.error(error);
+        return { success: false, message: "Błąd połączenia z bazą danych" };
     }
-}
+};
   
 
-// export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {
-//     let circle
-
-//     try {
-//         circle = await prisma.circle.findUnique({
-//             where: {
-//                 id: data.circleId
-//             },
-//             include: {
-//                 _count: {
-//                     select: {
-//                         members: true
-//                     }
-//                 }
-//             }
-//         })
-//     } catch (error) {
-//         throw new Error("Błąd połączenia z bazą danych.");
-//     }
-
-//     if (!circle) throw new Error("Nie znaleziono grupy.")    
-//     if (circle._count.members >= circle.maxMembers) throw new Error("Brak wolnych miejsc w tej grupie.");
-    
-//     let user
-
-//     try {
-//         user = await prisma.user.findUnique({
-//             where: { email: data.email}
-//         })
-//     } catch (error) {
-//         throw new Error("Błąd połączenia z bazą danych.");
-//     }
-
-//     if (!user) {
-//         try {
-//             user = await prisma.user.create({ data })
-//         } catch (error) {
-//             throw new Error("Rejestracja nie powiodła się. Spróbuj ponownie.")
-//         }
-
-//         try {
-//             const verificationToken = await GenerateVerificationToken(data.email)
-//             await sendVerificationEmail(verificationToken)
-//         } catch (error) {
-//             throw new Error("Nie udało się wysłać e-maila weryfikacyjnego.")
-//         }
-//     }
-
-
-// }
-
-export const GetMeetingById = async (id: string) => {
-    try {
-        return await prisma.circleMeeting.findUnique({
-            where: { id },
-            include: { 
-                city: { include: { region: { include: { country: true }}}},
-                circle: true,
-                currency: true
-            }
-        })
-    } catch (error) {
-        return null
-    }
+export const GetMeeting = async (id: string) => {
+    return await prisma.meeting.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            circleId: true,
+            moderatorId: true,
+            startTime: true,
+            endTime: true,
+            street: true,
+            price: true,
+            currency: true,
+            status: true,
+            city: { select: { name: true, region: { select: { country: { select: { timeZone: true } } } } } }
+        }
+    })
 }
 
 export const sortMeetings = async (circleId: string) => {
-    const meetings = await prisma.circleMeeting.findMany({
+    const meetings = await prisma.meeting.findMany({
         where: {circleId: circleId},
         orderBy: { startTime: "asc"}
     })
 
     for (let i = 0; i < meetings.length; i++) {
         const meeting = meetings[i];
-        await prisma.circleMeeting.update({
+        await prisma.meeting.update({
           where: { id: meeting.id },
           data: { number: i + 1 } // najstarszy = 1
         });
@@ -366,112 +273,89 @@ export const sortMeetings = async (circleId: string) => {
 }
 
 export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema>) => {
-    const user = await CheckLoginReturnUser()
-
-    if (!user) return {
-        success: false,
-        message: "Musisz być zalogowanym by zatwierdzić spotkanie"
-    }
-
-    if (!PermissionGate(user.roles, [Role.Moderator])) return {
-        success: false,
-        message: "Brak uprawnień do zatwierdzenia spotkania"
-    }
-
-    const meeting = await GetMeetingById(data.meetingId)
-
-    if (!meeting) return {
-        success: false,
-        message: "Dana spotkanie nie istnieje"
-    }
-
-    if (PermissionGate(user.roles, [Role.Moderator]) && user.id !== meeting.moderatorId) return {
-        success: false,
-        message: "Brak uprawień do zatwierdzenia spotkania"
-    }
-
     try {
-        await prisma.circleMeeting.update({
-            where: { id: data.meetingId },
-            data: { status: CircleMeetingStatus.Completed }
-        })
-    } catch {
-        return {
+        const auth = await ServerAuth()
+
+        const meeting = await GetMeeting(data.meetingId);
+        if (!meeting) return {
             success: false,
-            message: "Błąd połączenia z bazą danych"
+            message: "Dane spotkanie nie istnieje"
         }
-    }
 
-    return {
-        success: true,
-        message: "Pomyślnie zatwierdzono spotkanie"
-    }
-}
+        if (meeting.status !== MeetingStatus.Scheduled) return {
+            success: false,
+            message: "Nie możesz zakończyć tego spotkania"
+        }
 
-export const GetCircleFutureMeetingsByCircleID = async (ID:string) => {
-    try {
-        return await prisma.circleMeeting.findMany({
-            where: { 
-                circleId:ID,
-                startTime: { gte: new Date() }
-            },
-            include: { city: { include: { region: { include: { country: true }}}} },
-            orderBy: { startTime: "asc" }
+        if (!auth.roles.includes(Role.Admin) && (auth.id !== meeting.moderatorId || !auth.roles.includes(Role.Moderator))) return {
+            success: false,
+            message: "Brak uprawnień do edycji spotkania"
+        }
+
+        await prisma.meeting.update({
+            where: { id: meeting.id },
+            data: { status: MeetingStatus.Completed }
         })
-    } catch(error) {
-        console.error(error)
-        return null
-    }
-}
 
-export const GetScheduledMeetingsByModeratorID = async (moderatorID: string) => {
-    try {
-        return await prisma.circleMeeting.findMany({
-            where: {
-                moderatorId: moderatorID,
-                status: CircleMeetingStatus.Scheduled,
-            },
-            orderBy: { startTime: "asc" }
-        })
+        return {
+            success: true,
+            message: "Pomyślnie zakończono spotkanie"
+        }
     } catch (error) {
         console.error(error)
-        throw new Error("Błąd połączenia z bazą danych")
+        return { success: false, message: "Błąd połączenia z bazą danych" };
     }
 }
 
-export const GetModeratorMeetingsByModeratorID = async (moderatorID: string, status?: CircleMeetingStatus) => {
-    try {
-        return await prisma.circleMeeting.findMany({
-            where: {
-                moderatorId: moderatorID,
-                status: status
-            },
-            orderBy: { startTime: "asc" },
-            include: { 
-                city : { include: { region: {include: {country:true}}}},
-                circle:true,
-                currency: true
-            }
-        })
-    } catch (error) {
-        console.error(error)
-        throw new Error("Błąd połączenia z bazą danych")
-    }
+export const GetModeratorMeetings = async (moderatorID: string, status?: MeetingStatus, year?: number) => {
+    return await prisma.meeting.findMany({
+        where: {
+            moderatorId: moderatorID,
+            status: status,
+            ...(year
+                ? {
+                    startTime: {
+                        gte: new Date(year, 0, 1),       // 1 stycznia o 00:00
+                        lt: new Date(year + 1, 0, 1),    // 1 stycznia następnego roku
+                    },
+                } : {}),
+        },
+        orderBy: { startTime: "desc" },
+        include: { 
+            city : { include: { region: {include: {country:true}}}},
+            circle: true
+        }
+    })
 }
 
-export const FindModeratorOverlappingMeeting = async(moderatorID:string, startTime:Date, endTime:Date) => {
-    try {
-        return await prisma.circleMeeting.findFirst({
-            where: {
-                moderatorId: moderatorID,
-                AND: [
-                    { startTime: { lt: endTime }},
-                    { endTime: { gt: startTime }}
-                ]
-            }
-        })
-    } catch(error) {
-        console.log(error)
-        return null
-    }
+export const GetModeratorMeetingsDates = async (moderatorID: string) => {
+    const meetings = await prisma.meeting.findMany({
+        where: { moderatorId: moderatorID },
+        select: { startTime: true },
+        orderBy: { startTime: "asc" }
+    })
+
+    return meetings.map(m => m.startTime)
+}
+
+
+export const CheckOverlapingMeeting = async(moderatorID: string, start: Date, end: Date, meetingID?: string) => {
+    const overlappingMeeting = await prisma.meeting.findFirst({
+        where: {
+            moderatorId: moderatorID,
+            id: meetingID ? { not: meetingID } : undefined,
+            AND: [
+                { startTime: { lt: end }},
+                { endTime: { gt: start }}
+            ]
+        }
+    })
+
+    return !!overlappingMeeting
+}
+
+export const GetModeratorMeetingsYears = async(moderatorID: string) => {
+    const years = await prisma.meeting.groupBy({ by: ["startTime"] })
+    const uniqueYears = Array.from(new Set(years.map(y => y.startTime.getFullYear()))).sort((a, b) => b - a)
+    return uniqueYears
 }

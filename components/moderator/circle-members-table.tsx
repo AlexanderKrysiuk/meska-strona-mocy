@@ -1,30 +1,34 @@
 "use client"
 
-import { GetCircleMembersByCircleID } from "@/actions/member";
+import { GetCircleMembersByCircleID } from "@/actions/membership";
 import { clientAuth } from "@/hooks/auth";
 import { ModeratorQueries } from "@/utils/query";
 import { Chip, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from "@heroui/react";
-import { Circle, CircleMembershipStatus } from "@prisma/client";
+import { Circle, MembershipStatus } from "@prisma/client";
 import { useQueries } from "@tanstack/react-query";
 import DeleteCircleMemberModal from "./delete-circle-member-modal";
 import RestoreUserToCircleModal from "./restore-user-to-circle-modal";
 
-const StatusChip = ({ status }: { status: CircleMembershipStatus }) => {
+const StatusChip = ({ status }: { status: MembershipStatus }) => {
     let color: "success" | "danger" | "default" = "default";
     let message: string = status;
   
     switch (status) {
-      case CircleMembershipStatus.Active:
-        color = "success";
-        message = "Aktywny";
-        break;
-      case CircleMembershipStatus.Removed:
-        color = "danger";
-        message = "Usunięty";
-        break;
-      case CircleMembershipStatus.Left:
-        color = "danger";
-        message = "Opuścił";
+        case MembershipStatus.Active:
+            color = "success";
+            message = "Aktywny";
+            break;
+        case MembershipStatus.Pending:
+            color = "default";
+            message = "Oczekuje"
+            break;
+        case MembershipStatus.Removed:
+            color = "danger";
+            message = "Usunięty";
+            break;
+        case MembershipStatus.Left:
+            color = "danger";
+            message = "Opuścił";
         break;
     }
   
@@ -79,7 +83,7 @@ const CircleMembersTable = ({
                         {(item) => (
                             <TableRow 
                                 key={item.id}
-                                className={item.status === CircleMembershipStatus.Active ? "" : "opacity-60"}
+                                className={item.status === MembershipStatus.Active ? "" : "opacity-60"}
                             >
                                 <TableCell>
                                     <User
@@ -94,14 +98,14 @@ const CircleMembersTable = ({
                                 <TableCell>{item.circle.name}</TableCell>
                                 <TableCell><StatusChip status={item.status}/></TableCell>
                                 <TableCell align="center">
-                                    {item.status === CircleMembershipStatus.Active && (
+                                    {(item.status === MembershipStatus.Active || item.status === MembershipStatus.Pending) && (
                                         <DeleteCircleMemberModal
                                             membership={item}
                                             memberName={item.user.name}
                                             circleName={item.circle.name}
                                         />
                                     )}
-                                    {item.status !== CircleMembershipStatus.Active && (
+                                    {item.status === MembershipStatus.Removed && (
                                         <RestoreUserToCircleModal
                                             membership={item}
                                             member={item.user}

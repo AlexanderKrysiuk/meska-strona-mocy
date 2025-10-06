@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { CheckLoginReturnUser } from "./auth"
 import { put, del } from '@vercel/blob';
-import { v4 as uuidv4 } from "uuid";
 
 export const QueryUploadAvatar = async (formData: FormData) => {
     const user = await CheckLoginReturnUser();
@@ -17,7 +16,9 @@ export const QueryUploadAvatar = async (formData: FormData) => {
     try {
         const prefix = "avatars";
         const fileExtension = file.name.split(".").pop();
-        const newFileName = `${prefix}/${uuidv4()}.${fileExtension}`;
+        const newFileName = `${prefix}/${crypto.randomUUID()}.${fileExtension}`;
+
+        //const newFileName = `${prefix}/${uuidv4()}.${fileExtension}`;
 
         const newBlob = await put(newFileName, file, { access: 'public' });
 

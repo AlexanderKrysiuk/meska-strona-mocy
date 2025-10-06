@@ -3,25 +3,25 @@
 import { faUserGroup } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Chip, Modal, ModalBody, ModalContent, ModalHeader, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Tooltip, User, useDisclosure } from "@heroui/react"
-import { Circle, CircleMeeting, Country, Currency, MeetingParticipantStatus } from "@prisma/client"
+import { Circle, Country, Meeting, MeetingStatus, ParticipationStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
 import { ModeratorQueries } from "@/utils/query"
-import { GetMeetingParticipantsByMeetingID } from "@/actions/meeting-participants"
+import { GetParticipantsByMeetingID } from "@/actions/participation"
 import { formatedDate } from "@/utils/date"
-import { SendParticipantToVacationModal } from "./send-participant-to-vacation-modal"
-import ReturnParticipantFromVacationModal from "./return-participant-from-vacation-modal"
+//import { PayForParticipantModal } from "./pay-for-participant-modal"
+import { ParticipantVacationModal } from "./participant-vacation-modal"
 import { PayForParticipantModal } from "./pay-for-participant-modal"
   
-const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
+const StatusChip = ({ status }: { status: ParticipationStatus }) => {
     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
     let message: string = status;
   
     switch (status) {
-        case MeetingParticipantStatus.Active:
+        case ParticipationStatus.Active:
             color = "success";
             message = "Aktywny";
             break;
-        case MeetingParticipantStatus.Vacation:
+        case ParticipationStatus.Vacation:
             color = "warning";
             message = "Urlop";
             break;
@@ -29,7 +29,7 @@ const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
         //     color = "primary";
         //     message = "Nieopłacony";
         //     break;
-        case MeetingParticipantStatus.Cancelled:
+        case ParticipationStatus.Cancelled:
             color = "danger";
             message = "Usunięty";
             break;
@@ -38,22 +38,20 @@ const StatusChip = ({ status }: { status: MeetingParticipantStatus }) => {
     return <Chip color={color} variant="dot">{message}</Chip>;
   };
 
-const ShowMeetingMembersModal = ({
+const MeetingParticipantsModal = ({
     meeting,
     circle,
-    country,
-    currency
+    country,    
 } : {
-    meeting: CircleMeeting
+    meeting: Meeting
     circle: Circle
     country: Country
-    currency: Currency
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
     const { data: participants, isLoading } = useQuery({
         queryKey: [ModeratorQueries.MeetingParticipants, meeting.id],
-        queryFn: () => GetMeetingParticipantsByMeetingID(meeting.id),
+        queryFn: () => GetParticipantsByMeetingID(meeting.id),
         enabled: isOpen,
     });  
 
@@ -121,32 +119,36 @@ const ShowMeetingMembersModal = ({
                                             />
                                         </TableCell>
                                         <TableCell>{item.user.email}</TableCell>
-                                        <TableCell>{item.amountPaid}/{meeting.price} {currency.code}</TableCell>
-                                        <TableCell><StatusChip status={item.status}/></TableCell>
-                                        <TableCell className="flex">
-                                            {item.status === MeetingParticipantStatus.Vacation ? (
-                                                <ReturnParticipantFromVacationModal
-                                                    participation={item}
-                                                    user={item.user}
-                                                />
+                                        <TableCell>{item.status === ParticipationStatus.Vacation ? (
+                                                `Nie dotyczy`    
                                             ) : (
-                                                item.status === MeetingParticipantStatus.Active && ( // tylko aktywni mogą iść na wakacje
-                                                    <SendParticipantToVacationModal
-                                                        user={item.user}
-                                                        circle={circle}
-                                                        participation={item}
-                                                    />
-                                                )
+                                                `${item.amountPaid}/${meeting.price} ${meeting.currency}`
                                             )}
-                                            {item.status === MeetingParticipantStatus.Active && (
+                                        </TableCell>
+                                        <TableCell><StatusChip status={item.status}/></TableCell>
+                                        <TableCell align="center">
+                                            <div className="flex">
+
+                                            {meeting.status === MeetingStatus.Scheduled && (
+                                                item.status !== ParticipationStatus.Cancelled && (
+                                                <ParticipantVacationModal
+                                                    user={item.user}
+                                                    circle={circle}
+                                                    meeting={meeting}
+                                                    participation={item}
+                                                />
+
+                                            )
+                                            )}
+                                            {item.status === ParticipationStatus.Active && (
                                                 <PayForParticipantModal
                                                     participation={item}
                                                     meeting={meeting}
                                                     country={country}
                                                     user={item.user}
-                                                    currency={currency}
                                                 />
                                             )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -158,4 +160,4 @@ const ShowMeetingMembersModal = ({
         </main>
     )
 }
-export default ShowMeetingMembersModal
+export default MeetingParticipantsModal

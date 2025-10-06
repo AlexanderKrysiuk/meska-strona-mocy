@@ -19,5 +19,12 @@ export async function middleware(req: NextRequest) {
     // // Sprawdzamy, czy użytkownik próbuje uzyskać dostęp do strony /moderator
     if (path.startsWith("/moderator") && !session?.user.roles.includes(Role.Moderator)) return NextResponse.redirect(new URL("/auth/start", req.url)); 
 
+    // ✅ Dostęp do stron płatności / partnerów tylko dla osób z jakąkolwiek rolą
+    if (path.startsWith("/partner")) {
+    if (!session?.user.roles || session.user.roles.length === 0) {
+      return NextResponse.redirect(new URL("/auth/start", req.url));
+    }
+  }
+
     return NextResponse.next();
 }

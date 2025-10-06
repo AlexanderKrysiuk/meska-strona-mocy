@@ -10,14 +10,13 @@ import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { liveSlugify } from "@/utils/slug"
 import { Button, Form, Input, NumberInput, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Country, Region } from "@prisma/client"
+import { Country, Currency, Region } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../loader"
 import CreateCircleModal from "./create-circle-modal"
-import { GetCurrencies } from "@/actions/currency"
 
 const EditCircleForm = () => {
     const moderator = clientAuth()
@@ -41,14 +40,10 @@ const EditCircleForm = () => {
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
             },
-            {
-                queryKey: [GeneralQueries.Currencies],
-                queryFn: () => GetCurrencies()
-            }
         ]
     })
 
-    const [circles, countries, regions, cities, currencies] = queries
+    const [circles, countries, regions, cities] = queries
 
     const [region, setRegion] = useState<Region | undefined>();
     const [country, setCountry] = useState<Country | undefined>();
@@ -105,7 +100,7 @@ const EditCircleForm = () => {
                                 street: circle?.street,
                                 cityId: circle?.cityId,
                                 price: circle?.price,
-                                currencyId: circle?.currencyId
+                                currency: circle?.currency
                             },
                             {keepErrors: true}
                         )
@@ -205,7 +200,7 @@ const EditCircleForm = () => {
                                 street: watch("street"),
                                 cityId: null,
                                 price: watch("price"),
-                                currencyId: watch("currencyId")
+                                currency: watch("currency")
                             },
                             {keepErrors: true}
                         )
@@ -236,7 +231,7 @@ const EditCircleForm = () => {
                                 street: watch("street"),
                                 cityId: null,
                                 price: watch("price"),
-                                currencyId: watch("currencyId")
+                                currency: watch("currency")
                             },
                             {keepErrors: true}
                         )
@@ -272,15 +267,17 @@ const EditCircleForm = () => {
                     onValueChange={(value) => {setValue("price", value ?? null, {shouldDirty:true, shouldValidate: true})}}
                     endContent={
                         <select
-                            value={watch("currencyId") ?? ""}
+                            value={watch("currency") ?? ""}
                             onChange={(event) => {
-                                const val = event.target.value;
-                                setValue("currencyId", val , { shouldValidate: true, shouldDirty: true });
+                                const val = event.target.value as Currency;
+                                setValue("currency", val , { shouldValidate: true, shouldDirty: true });
                             }}
                         >
-                            <option value="">Brak</option> {/* opcja brak */}
-                            {currencies.data?.map((c)=>(
-                                <option key={c.id} value={c.id}>{c.code}</option>
+                            <option value={null!}>Brak</option> {/* opcja brak */}
+                            {Object.values(Currency).map((c) => (
+                                <option key={c} value={c}>
+                                    {c}
+                                </option>
                             ))}
                         </select>
                     }

@@ -1,7 +1,10 @@
 export enum ModeratorQueries {
     Circles = "Moderator-Circles",
     CircleMembers = "Moderator-Circle-Members",
+    Membership="Membership",
+    MeetingsYears="Meetings-Years",
     Meetings = "Moderator-Meetings",
+    AllMeetingsDates = "Moderator-All-Meetings-Dates",
     ScheduledMeetings = "Moderator-Scheduled-Meetings",
     CompletedMeetings = "Moderator-Completed-Meetings",
     ArchivedMeetings = "Moderator-Archived-Meetings",
@@ -28,4 +31,8 @@ export enum CircleQueries {
 export enum UserQueries {
     User,
     Balance
+}
+
+export enum StripeQueries {
+    StripeConnect = "Stripe-Connect"
 }

@@ -1,17 +1,14 @@
 "use client"
 
-import { GetModeratorMeetingsByModeratorID } from "@/actions/meeting"
+import { GetModeratorMeetings } from "@/actions/meeting"
 import { clientAuth } from "@/hooks/auth"
 import { formatedDate } from "@/utils/date"
 import { ModeratorQueries } from "@/utils/query"
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
-import { Circle, CircleMeetingStatus } from "@prisma/client"
+import { Circle, MeetingStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
-import { EditMeetingModal } from "./edit-meeting-modal"
-import { CompleteMeetingModal } from "./complete-meeting-modal"
-import ShowMeetingMembersModal from "./show-meeting-members-modal"
 
-export const ScheduledMeetingsTable = ({
+export const EndedMeetingsTable = ({
     circle
 } : {
     circle?: Circle
@@ -19,22 +16,18 @@ export const ScheduledMeetingsTable = ({
     const moderator = clientAuth()
 
     const { data: meetings, isLoading } = useQuery({
-        queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],
-        queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Scheduled),
+        queryKey: [ModeratorQueries.CompletedMeetings, moderator?.id],
+        queryFn: () => GetModeratorMeetings(moderator!.id, MeetingStatus.Completed),
         enabled: !!moderator
     })
 
-    // Filtrujemy tylko spotkania dla wybranego kręgu
     const filteredMeetings = circle
         ? (meetings ?? []).filter(m => m.circle.id === circle.id)
         : meetings ?? []
 
-    //if (isLoading) return null
-
     return <main>
-        <Table
-            shadow="sm"
-        >
+        <h6>Zakończone spotkania</h6>
+        <Table shadow="sm">
             <TableHeader>
                 <TableColumn>Data</TableColumn>
                 <TableColumn>Krąg</TableColumn>
@@ -46,7 +39,7 @@ export const ScheduledMeetingsTable = ({
                 items={filteredMeetings}
                 isLoading={isLoading}
                 loadingContent={<Spinner label="Ładowanie danych" variant="wave"/>}
-                emptyContent={"Brak planowanych spotkań"}
+                emptyContent={"Brak zakończonych spotkań"}
             >
                 {(item) => (
                     <TableRow key={item.id}>
@@ -55,29 +48,11 @@ export const ScheduledMeetingsTable = ({
                         <TableCell>{item.street}</TableCell>
                         <TableCell>{item.city.name}</TableCell>
                         <TableCell className="flex justify-center">
-                            <EditMeetingModal
-                                meeting={item}
-                                circle={item.circle}
-                                country={item.city.region.country}
-                            />
-                            <CompleteMeetingModal
-                                meeting={item}
-                                circle={item.circle}
-                            />
-                            <ShowMeetingMembersModal
-                                meeting={item}
-                                circle={item.circle}
-                                country={item.city.region.country}
-                                currency={item.currency}
-                            />
+                            Brak
                         </TableCell>
                     </TableRow>
                 )}
             </TableBody>
         </Table>
-        <pre>
-            {/* {JSON.stringify(meetings,null,2)} */}
-            {/* {JSON.stringify(circle,null,2)} */}
-        </pre>
     </main>
 }

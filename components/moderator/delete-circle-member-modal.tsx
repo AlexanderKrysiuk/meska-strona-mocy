@@ -1,13 +1,13 @@
 "use client"
 
-import { DeleteMemberFromCircle } from "@/actions/member";
-import { DeleteMemberFromCircleSchema } from "@/schema/member";
+import { RemoveMembership } from "@/actions/membership";
+import { RemoveMembershipSchema } from "@/schema/membership";
 import { ModeratorQueries } from "@/utils/query";
 import { faCheck, faTrashCan, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea, Tooltip, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleMembership } from "@prisma/client";
+import { Membership } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,16 +17,16 @@ const DeleteCircleMemberModal = ({
     memberName,
     circleName
 } : {
-    membership: CircleMembership
+    membership: Membership
     memberName?: string | null
     circleName: string | null
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
-    type FormFields = z.infer<typeof DeleteMemberFromCircleSchema>
+    type FormFields = z.infer<typeof RemoveMembershipSchema>
 
     const {handleSubmit, watch, setValue, formState: {errors, isSubmitting, isValid}} = useForm<FormFields>({
-        resolver: zodResolver(DeleteMemberFromCircleSchema),
+        resolver: zodResolver(RemoveMembershipSchema),
         defaultValues: {
             membershipId: membership.id
         }
@@ -35,7 +35,7 @@ const DeleteCircleMemberModal = ({
     const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
-        const result = await DeleteMemberFromCircle(data)
+        const result = await RemoveMembership(data)
 
         addToast({
             title: result.message,

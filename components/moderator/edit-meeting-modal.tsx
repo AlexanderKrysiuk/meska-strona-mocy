@@ -2,7 +2,7 @@
 
 import { GetCities } from "@/actions/city"
 import { GetCountries } from "@/actions/country"
-import { EditMeeting, GetModeratorMeetingsByModeratorID } from "@/actions/meeting"
+import { EditMeeting, GetModeratorMeetingsDates } from "@/actions/meeting"
 import { GetRegions } from "@/actions/region"
 import { clientAuth } from "@/hooks/auth"
 import { EditMeetingSchema } from "@/schema/meeting"
@@ -11,7 +11,7 @@ import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, CircleMeeting, CircleMeetingStatus, Country, Region } from "@prisma/client"
+import { Circle, Meeting, Country, Region, Currency } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -19,14 +19,14 @@ import { z } from "zod"
 import Loader from "../loader"
 import { getLocalTimeZone, today } from "@internationalized/date"
 import { combineDateAndTime, convertDateToNative, convertDateToTimeInputValue, formatedDate, isSameDay } from "@/utils/date"
-import { GetCurrencies } from "@/actions/currency"
+import { I18nProvider } from "@react-aria/i18n"
 
 export const EditMeetingModal = ({
     meeting,
     circle,
     country
 } : {
-    meeting: CircleMeeting
+    meeting: Meeting
     circle: Circle
     country: Country
 }) => {
@@ -70,7 +70,7 @@ const EditMeetingForm = ({
     meeting,
     onClose
 } : {
-    meeting: CircleMeeting
+    meeting: Meeting
     onClose: () => void;
 }) => {
     const moderator = clientAuth()
@@ -78,20 +78,10 @@ const EditMeetingForm = ({
     const queries = useQueries({
         queries: [
             {
-                queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],
-                queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Scheduled),
+                queryKey: [ModeratorQueries.AllMeetingsDates, moderator?.id],
+                queryFn: () => GetModeratorMeetingsDates(moderator!.id),
                 enabled: !!moderator?.id
-            },
-            {
-                queryKey: [ModeratorQueries.CompletedMeetings, moderator?.id],
-                queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Completed),
-                enabled: !!moderator?.id
-            },
-            {
-                queryKey: [ModeratorQueries.ArchivedMeetings, moderator?.id],
-                queryFn: () => GetModeratorMeetingsByModeratorID(moderator!.id, CircleMeetingStatus.Archived),
-                enabled: !!moderator?.id
-            },
+            },  
             {
                 queryKey: [GeneralQueries.Countries],
                 queryFn: () => GetCountries(),
@@ -103,24 +93,13 @@ const EditMeetingForm = ({
             { 
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
-            },
-            {
-                queryKey: [GeneralQueries.Currencies],
-                queryFn: () => GetCurrencies()
             }
         ]
     })
 
-    const [scheduledMeetings, completedMeetings, ArchivedMeetings, countries, regions, cities, currencies] = queries
+    const [allMeetingsDates, countries, regions, cities] = queries
     
-    const unavailableDates = useMemo(() => [scheduledMeetings, completedMeetings, ArchivedMeetings]
-            .flatMap(q => q.data ?? [])
-            .map(meeting => {
-                const d = new Date(meeting.startTime);
-                return new Date(d.getFullYear(), d.getMonth(), d.getDate()); // tylko data, bez godziny
-            }),
-        [scheduledMeetings, completedMeetings, ArchivedMeetings]
-    );
+    const unavailableDates = useMemo(() => allMeetingsDates.data ?? [], [allMeetingsDates]);
 
     const isDateUnavailable = useCallback(
         (date: DateValue) => {
@@ -133,7 +112,7 @@ const EditMeetingForm = ({
     type FormFields = z.infer<ReturnType<typeof EditMeetingSchema>>
 
     const { handleSubmit, watch, trigger, reset, setValue, setError, formState: { errors, isValid, isSubmitting, isDirty } } = useForm<FormFields>({
-        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime, meeting.price, meeting.currencyId)),
+        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime, meeting.price, meeting.currency)),
         mode: "all",
         defaultValues: {
             meetingId: meeting.id,
@@ -147,7 +126,7 @@ const EditMeetingForm = ({
             cityId: meeting.cityId,
             priceCurrency: {
                 price: meeting.price,
-                currencyId: meeting.currencyId
+                currency: meeting.currency
             }
         }
     })
@@ -180,7 +159,11 @@ const EditMeetingForm = ({
         })
 
         if (result.success) {
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.ScheduledMeetings, moderator?.id],})
+            const year = new Date(data.date).getFullYear()
+
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.AllMeetingsDates, moderator?.id]})
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.MeetingsYears, moderator?.id]})
+            queryClient.invalidateQueries({queryKey: [ModeratorQueries.Meetings, moderator?.id, year]})
             onClose() 
         } else {
             if (result.fieldErrors) {
@@ -197,77 +180,79 @@ const EditMeetingForm = ({
 
     return <Form onSubmit={handleSubmit(submit)}>
         <ModalBody className="w-full">
-            <DatePicker
-                label="Data spotkania"
-                labelPlacement="outside"
-                variant="bordered"
-                description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
-                defaultValue={convertDateToNative(meeting.startTime)}
-                isDateUnavailable={isDateUnavailable}
-                minValue={
-                    (() => {
-                        const tomorrow = country?.timeZone
+            <I18nProvider locale="pl-PL">
+                <DatePicker
+                    label="Data spotkania"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
+                    defaultValue={convertDateToNative(meeting.startTime)}
+                    isDateUnavailable={isDateUnavailable}
+                    minValue={
+                        (() => {
+                            const tomorrow = country?.timeZone
                             ? today(country.timeZone).add({ days: 1 })
                             : today(getLocalTimeZone()).add({ days: 1 })
-                        const startMeeting = convertDateToNative(meeting.startTime)
-                        return tomorrow > startMeeting ? startMeeting : tomorrow
-                    })()
-                }               
-                onChange={(date) => {
-                    if (!date) return;
-                    setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true, shouldDirty: true });
-                    const startTime = watch("TimeRangeSchema.startTime");
-                    const endTime = watch("TimeRangeSchema.endTime");
+                            const startMeeting = convertDateToNative(meeting.startTime)
+                            return tomorrow > startMeeting ? startMeeting : tomorrow
+                        })()
+                    }               
+                    onChange={(date) => {
+                        if (!date) return;
+                        setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true, shouldDirty: true });
+                        const startTime = watch("TimeRangeSchema.startTime");
+                        const endTime = watch("TimeRangeSchema.endTime");
                     
-                    if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone), {shouldDirty: true});
-                    if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone), {shouldDirty: true});
-                
-                    if (startTime) trigger("TimeRangeSchema.startTime")
-                    if (endTime) trigger("TimeRangeSchema.endTime")          
-                }}
-                isRequired
-                isInvalid={!!errors.date}
-                errorMessage={errors.date?.message}
-                isDisabled={isSubmitting}
-            />
-            <div className="flex space-x-4 w-full my-4">
-                <TimeInput
-                    label="Godzina Rozpoczęcia"
-                    labelPlacement="outside"
-                    variant="bordered"
-                    hourCycle={24}
-                    defaultValue={convertDateToTimeInputValue(meeting.startTime)}
-                    onChange={(time) => {
-                        setStartHour(time)
-                        const date = watch("date")
-                        if (!time || !date) return;
-                        setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
-                        if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
+                        if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone), {shouldDirty: true});
+                        if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone), {shouldDirty: true});
+                    
+                        if (startTime) trigger("TimeRangeSchema.startTime")
+                        if (endTime) trigger("TimeRangeSchema.endTime")          
                     }}
                     isRequired
-                    isDisabled={isSubmitting || !watch("date")}
-                    isInvalid={!!errors.TimeRangeSchema?.startTime}
-                    errorMessage={errors.TimeRangeSchema?.startTime?.message}
+                    isInvalid={!!errors.date}
+                    errorMessage={errors.date?.message}
+                    isDisabled={isSubmitting}
                 />
-                <TimeInput
-                    label="Godzina zakończenia"
-                    labelPlacement="outside"
-                    variant="bordered"
-                    hourCycle={24}
-                    defaultValue={convertDateToTimeInputValue(meeting.endTime)}
-                    onChange={(time) => {
-                        setEndHour(time)
-                        const date = watch("date")
-                        if (!time || !date) return;
-                        setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
-                        if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
-                    }}
-                    isRequired
-                    isDisabled={isSubmitting || !watch("date") || !watch("TimeRangeSchema.startTime")}
-                    isInvalid={!!errors.TimeRangeSchema?.endTime}
-                    errorMessage={errors.TimeRangeSchema?.endTime?.message}
-                />
-            </div>
+                <div className="flex space-x-4 w-full my-4">
+                    <TimeInput
+                        label="Godzina Rozpoczęcia"
+                        labelPlacement="outside"
+                        variant="bordered"
+                        hourCycle={24}
+                        defaultValue={convertDateToTimeInputValue(meeting.startTime)}
+                        onChange={(time) => {
+                            setStartHour(time)
+                            const date = watch("date")
+                            if (!time || !date) return;
+                            setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
+                            if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
+                            }}
+                        isRequired
+                        isDisabled={isSubmitting || !watch("date")}
+                        isInvalid={!!errors.TimeRangeSchema?.startTime}
+                        errorMessage={errors.TimeRangeSchema?.startTime?.message}
+                    />
+                    <TimeInput
+                        label="Godzina zakończenia"
+                        labelPlacement="outside"
+                        variant="bordered"
+                        hourCycle={24}
+                        defaultValue={convertDateToTimeInputValue(meeting.endTime)}
+                        onChange={(time) => {
+                            setEndHour(time)
+                            const date = watch("date")
+                            if (!time || !date) return;
+                            setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
+                            if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
+                        }}
+                        isRequired
+                        isDisabled={isSubmitting || !watch("date") || !watch("TimeRangeSchema.startTime")}
+                        isInvalid={!!errors.TimeRangeSchema?.endTime}
+                        errorMessage={errors.TimeRangeSchema?.endTime?.message}
+                    />
+                </div>
+            </I18nProvider>
             <Input
                 label="Adres (ulica, numer)"
                 labelPlacement="outside"
@@ -308,7 +293,7 @@ const EditMeetingForm = ({
                             cityId: undefined,
                             priceCurrency: {
                                 price: watch("priceCurrency.price"),
-                                currencyId: watch("priceCurrency.currencyId")
+                                currency: watch("priceCurrency.currency")
                             }
                         },
                         {keepErrors: true}
@@ -345,7 +330,7 @@ const EditMeetingForm = ({
                             cityId: undefined,
                             priceCurrency: {
                                 price: watch("priceCurrency.price"),
-                                currencyId: watch("priceCurrency.currencyId")
+                                currency: watch("priceCurrency.currency")
                             }                        
                         },
                         {keepErrors: true}
@@ -384,14 +369,16 @@ const EditMeetingForm = ({
                 onValueChange={(value) => {setValue("priceCurrency.price", value, {shouldValidate: true, shouldDirty:true})}}
                 endContent={
                     <select
-                        value={watch("priceCurrency.currencyId") ?? ""}
+                        value={watch("priceCurrency.currency") ?? ""}
                         onChange={(event) => {
-                            const val = event.target.value;
-                            setValue("priceCurrency.currencyId", val, { shouldValidate: true, shouldDirty: true });
+                            const val = event.target.value as Currency;
+                            setValue("priceCurrency.currency", val , { shouldValidate: true, shouldDirty: true });
                         }}
                     >
-                        {currencies.data?.map((c)=>(
-                                <option key={c.id} value={c.id}>{c.code}</option>
+                        {Object.values(Currency).map((c) => (
+                            <option key={c} value={c}>
+                                {c}
+                            </option>
                         ))}
                     </select>
                 }

@@ -2,15 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { clientAuth } from "@/hooks/auth";
-import { GetModeratorCircles } from "@/actions/circle";
 import { useState } from "react";
 import { Divider, Select, SelectItem } from "@heroui/react";
 import CreateCircleModal from "@/components/moderator/create-circle-modal";
 import { ModeratorQueries } from "@/utils/query";
-import { CreateMeetingModal } from "@/components/moderator/create-meeting-modal";
 import Loader from "@/components/loader";
 import { Circle } from "@prisma/client";
-import { ScheduledMeetingsTable } from "@/components/moderator/scheduled-meetings-table";
+import { GetModeratorCircles } from "@/actions/circle";
+import { MeetingsTable } from "@/components/moderator/meetings-table";
 
 const MeetingsPage = () => {
     const [selectedCircle, setSelectedCircle] = useState<Circle | undefined>()
@@ -72,7 +71,10 @@ const MeetingsPage = () => {
                 <CreateCircleModal/>
             </div>
             <Divider/>
-            <div className="flex space-x-4 items-center">
+            <MeetingsTable
+                circle={selectedCircle}
+            />
+            {/* <div className="flex space-x-4 items-center">
                 <h6 className="w-full">Zaplanowane spotkania</h6>
                 <CreateMeetingModal circle={selectedCircle}/>
             </div>
@@ -80,6 +82,10 @@ const MeetingsPage = () => {
                 circle={selectedCircle}
             />
             <Divider/>
+            <EndedMeetingsTable
+                circle={selectedCircle}
+            /> */}
+
             <pre>
                 {/* {JSON.stringify(selectedCircle,null,2)} */}
             </pre>

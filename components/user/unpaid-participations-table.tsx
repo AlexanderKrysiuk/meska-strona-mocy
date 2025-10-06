@@ -1,25 +1,22 @@
 "use client"
 
-import { QueryGetUnpaidMeetingsByUserID } from "@/actions/participant";
-import { clientAuth } from "@/hooks/auth";
+//import { clientAuth } from "@/hooks/auth";
 import { formatedDate } from "@/utils/date";
 import { PaymentQueries } from "@/utils/query";
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { PayForMeetingButton } from "./pay-for-meeting-modal";
+import { GetMyUnpaidParticipations } from "@/actions/participation";
 
 const ShowUnpaidMeetingsTable = () => {
-    const auth = clientAuth()
+    //const auth = clientAuth()
     
-    const { data: unpaidMeetings, isLoading } = useQuery({
-        queryKey: [PaymentQueries.UnpaidMeetings, auth?.id],
-        queryFn: () => QueryGetUnpaidMeetingsByUserID(auth!.id),
-        enabled: !!auth?.id
+    const { data: participations, isLoading } = useQuery({
+        queryKey: [PaymentQueries.UnpaidMeetings],
+        queryFn: () => GetMyUnpaidParticipations()
     })
     
-    if (!unpaidMeetings || isLoading) return null
-
-    if (unpaidMeetings.length === 0) return null
+    if (participations && participations.length === 0) return null
 
     return (
         <div className="space-y-4">
@@ -35,7 +32,7 @@ const ShowUnpaidMeetingsTable = () => {
                         <TableColumn>Akcje</TableColumn>
                     </TableHeader>
                     <TableBody
-                        items={unpaidMeetings}
+                        items={participations ?? []}
                         isLoading={isLoading}
                         loadingContent={<Spinner label="Ładowanie danych" variant="wave"/>}
                     >
@@ -44,7 +41,7 @@ const ShowUnpaidMeetingsTable = () => {
                             <TableCell>{item.meeting.circle.name}</TableCell>
                             <TableCell>{item.meeting.street}</TableCell>
                             <TableCell>{item.meeting.city.name}</TableCell>
-                            <TableCell>{item.amountPaid} / {item.meeting.price} {item.meeting.currency.code}</TableCell>
+                            <TableCell>{item.amountPaid} / {item.meeting.price} {item.meeting.currency}</TableCell>
                             <TableCell>
                                 <PayForMeetingButton
                                     meeting={item.meeting}
@@ -57,7 +54,7 @@ const ShowUnpaidMeetingsTable = () => {
                     </TableBody>
                 </Table>
         <pre>
-            {JSON.stringify(unpaidMeetings,null,2)}
+            {JSON.stringify(participations,null,2)}
         </pre>
         </div> 
      );
