@@ -46,7 +46,6 @@ const currency = z.nativeEnum(Currency).optional().nullable()
 
 export const CreateCircleSchema = z.object({
   name,
-  maxMembers,
 })
 
 export const EditCircleSchema = z.object({

@@ -43,7 +43,6 @@ model User {
   
   memberships Membership[]
 
-  participations Participation[]
   moderatedMeetings Meeting[] @relation("Moderator")
 }
 
@@ -178,7 +177,8 @@ model Circle {
   moderatorId String
   moderator   User   @relation("Moderator", fields: [moderatorId], references: [id]) // Dodajemy relację do moderatora
 
-  maxMembers Int
+  minMembers Int @default(1)
+  maxMembers Int @default(10)
 
   street String?
 
@@ -234,9 +234,11 @@ enum MeetingStatus {
 
 model Participation {
   id         String   @id @default(uuid())
-  userId     String
+  
+  membershipId String
+  membership Membership @relation(fields: [membershipId], references: [id])
+
   meetingId  String
-  user       User     @relation(fields: [userId], references: [id])
   meeting    Meeting @relation(fields: [meetingId], references: [id])
 
   status     ParticipationStatus @default(Active)
@@ -247,7 +249,7 @@ model Participation {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@unique([userId, meetingId])
+  @@unique([membershipId, meetingId])
 }
 
 model ParticipationPayment {
@@ -286,6 +288,7 @@ model Membership {
   circle   Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
 
   balance MembershipBalance[]
+  participations Participation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

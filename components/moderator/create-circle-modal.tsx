@@ -72,7 +72,7 @@ const CreateCircleModal = () => {
                                 isInvalid={!!errors.name}
                                 errorMessage={errors.name?.message}
                             />
-                            <NumberInput
+                            {/* <NumberInput
                                 label="Maksymalna liczba uczestników"
                                 labelPlacement="outside"
                                 variant="bordered"
@@ -87,7 +87,7 @@ const CreateCircleModal = () => {
                                 isDisabled={isSubmitting}
                                 isInvalid={!!errors.maxMembers}
                                 errorMessage={errors.maxMembers?.message}
-                            />
+                            /> */}
                         </ModalBody>
                         <ModalFooter>
                             <Button

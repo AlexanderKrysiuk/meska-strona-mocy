@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { CreateCircleSchema, EditCircleSchema } from "@/schema/circle"
 import { TypeOf, object, string, z } from "zod"
-import { CheckLoginReturnUser } from "./auth"
+import { CheckLoginReturnUser, ServerAuth } from "./auth"
 import { Role } from "@prisma/client"
 import { ActionStatus } from "@/types/enums"
 import { parse } from "path"
@@ -13,14 +13,14 @@ import { PermissionGate } from "@/utils/gate"
 import { setTimeout } from "timers"
 
 export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => {
-    const user = await CheckLoginReturnUser()
+    const auth = await ServerAuth()
 
-    if (!user) return {
+    if (!auth) return {
         success: false,
         message: "Musisz być zalogowanym by utworzyć grupę"
     }
 
-    if (!PermissionGate(user.roles, [Role.Moderator])) return {
+    if (!auth.roles.includes(Role.Moderator) && !auth.roles.includes(Role.Admin)) return {
         success: false,
         message: "Brak uprawnień do dodania grupy"
     }
@@ -42,8 +42,7 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
             data: {
                 name: data.name,
                 slug: slug,
-                moderatorId: user.id,
-                maxMembers: data.maxMembers
+                moderatorId: auth.id
             }
         })
     } catch (error) {
