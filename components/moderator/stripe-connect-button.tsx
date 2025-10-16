@@ -2,7 +2,7 @@
 
 import { ConnectStripeAccount } from "@/actions/stripe";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button } from "@heroui/react";
+import { Button, addToast } from "@heroui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { faStripeS } from '@fortawesome/free-brands-svg-icons'
@@ -26,13 +26,17 @@ export const StripeConnectButton = () => {
         onSuccess: (stripeConnect: string) => {
             router.push(stripeConnect)
         },
-        onError: (error) => console.error(error)
+        onError: () => addToast({
+            color: "danger",
+            title: "Wystąpił błąd"
+        })
     })
 
     if (!user) return
 
     return <Button
-        color="primary"
+        color="success"
+        size="lg"
         startContent={isPending ? undefined : <FontAwesomeIcon icon={faStripeS}/>}
         isLoading={isPending || isLoading}
         isDisabled={isPending || isLoading || !!user?.stripeAccountId}

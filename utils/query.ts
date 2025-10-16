@@ -34,5 +34,6 @@ export enum UserQueries {
 }
 
 export enum StripeQueries {
-    StripeConnect = "Stripe-Connect"
+    StripeConnect = "Stripe-Connect",
+    Charges="Stripe-Charges"
 }

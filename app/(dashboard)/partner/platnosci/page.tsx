@@ -1,13 +1,15 @@
 "use client"
 
-import { ConnectStripeAccount, GetAccountPayments } from "@/actions/stripe";
+import { ConnectStripeAccount } from "@/actions/stripe";
 import { GetUserByID } from "@/actions/user";
 import Loader from "@/components/loader";
+import { StripeConnectButton } from "@/components/moderator/stripe-connect-button";
+import StripeChargesButton from "@/components/stripe/stripe-charges-button";
 import { clientAuth } from "@/hooks/auth";
 import { UserQueries } from "@/utils/query";
 import { faStripeS } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, addToast } from "@heroui/react";
+import { Button, addToast } from "@heroui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
@@ -21,14 +23,14 @@ const PaymentsPage = () => {
         enabled: !!auth?.id
     })
 
-    const { data: payments, isLoading: isLoadingPayments } = useQuery({
-        queryKey: ["stripePayments", user?.stripeAccountId],
-        queryFn: async () => {
-            if (!user?.stripeAccountId) return []; // nic nie rób, gdy brak ID
-            return await GetAccountPayments(user.stripeAccountId);
-        },
-        enabled: !!user?.stripeAccountId
-    });
+    // const { data: payments, isLoading: isLoadingPayments } = useQuery({
+    //     queryKey: ["stripePayments", user?.stripeAccountId],
+    //     queryFn: async () => {
+    //         if (!user?.stripeAccountId) return []; // nic nie rób, gdy brak ID
+    //         return await GetAccountPayments(user.stripeAccountId);
+    //     },
+    //     enabled: !!user?.stripeAccountId
+    // });
 
     const { mutate, isPending } = useMutation({
         mutationFn: ConnectStripeAccount,
@@ -45,9 +47,13 @@ const PaymentsPage = () => {
 
     return ( 
         <main className="p-4 space-y-4 flex flex-grow">
+            <StripeConnectButton/>
             {user?.stripeAccountId ? (
                 <div className="w-full">
-                    <Table
+                    <StripeChargesButton 
+                        stripeAccountId={user.stripeAccountId}
+                    />
+                    {/* <Table
                         shadow="sm"
                     >
                         <TableHeader>
@@ -81,7 +87,7 @@ const PaymentsPage = () => {
                             )}
                         </TableBody>
                     </Table>
-                    {/* {JSON.stringify(payments,null,2)} */}
+                    {JSON.stringify(payments,null,2)} */}
                 </div>
             ) : (
                 <div className="w-full flex justify-center items-center py-10">

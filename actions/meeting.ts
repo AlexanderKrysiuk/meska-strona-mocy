@@ -22,17 +22,13 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
       
         if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień do dodania spotkania" }
   
-        const activeMembers = await GetMembers({ 
-            circleID: circle.id,
-            status: MembershipStatus.Active
-        })
-  
+        
         const overlappingMeeting = await CheckOverlapingMeeting(
             auth.id,
             data.TimeRangeSchema.startTime,
             data.TimeRangeSchema.endTime
         )
-
+        
         if (overlappingMeeting) {
             return {
                 success: false,
@@ -40,7 +36,12 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                 fieldErrors: { date: "W tym dniu masz już inne spotkanie" },
             }
         }
-  
+        
+        const activeMembers = await GetMembers({ 
+            circleID: circle.id,
+            status: MembershipStatus.Active
+        })
+
         const existingMeetings = await prisma.meeting.count({ where: { circleId: data.circleId } })
   
         const meeting = await prisma.meeting.create({
@@ -165,10 +166,15 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                     city: { select: { name: true, region: { select: { country: { select: { timeZone: true } } } } } },
                     participants: { select: { 
                         id: true, 
-                        amountPaid: true, 
-                        status: true, 
-                        userId: true, 
+                        status: true,
+                        payments: { select: {
+                            id: true,
+                            amount: true,
+                            currency: true,
+                            stripePaymentId: true,
+                        }},
                         user: { select: { 
+                            id: true,
                             name: true, 
                             email: true,
                             memberships: {
@@ -182,26 +188,53 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
   
             // 3️⃣ Korekta wpłat i balansów
             for (const participant of updated.participants) {
+                const membershipId = participant.user.memberships[0].id
                 if (meeting.currency === updated.currency) {
-                    if (participant.amountPaid > updated.price) {
-                        const difference = participant.amountPaid - updated.price;
-                        await tx.participation.update({ where: { id: participant.id }, data: { amountPaid: updated.price } });
-                        await tx.membershipBalance.upsert({
-                            where: { membershipId_currency: { membershipId: participant.user.memberships[0]?.id, currency: meeting.currency } },
-                            update: { amount: { increment: difference } },
-                            create: { membershipId: participant.user.memberships[0]?.id, amount: difference, currency: meeting.currency }
-                        });
+                    const payments = participant.payments.filter(p => p.currency === updated.currency)
+                    
+                    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+                    if (updated.price < totalPaid) {
+                        let remaining = totalPaid - updated.price
+                        for (const payment of participant.payments) {
+                            if (remaining <= 0) break;
+                            
+                            const moveAmount = Math.min(payment.amount, remaining);
+                            await tx.membershipBalance.create({
+                                data: {
+                                    membershipId: membershipId,
+                                    amount: moveAmount,
+                                    currency: payment.currency,
+                                    stripePaymentId: payment.stripePaymentId
+                                }
+                            })
+
+                            if (moveAmount === payment.amount) {
+                                await tx.participationPayment.delete({ where: { id: payment.id }})
+                            } else {
+                                await tx.participationPayment.update({
+                                    where: { id: payment.id },
+                                    data: { amount: { decrement: moveAmount }}
+                                })
+                            }
+                            
+                            remaining -= moveAmount
+                        }
                     }
                 } else {
-                    await tx.participation.update({ where: { id: participant.id }, data: { amountPaid: 0 } });
-                    await tx.membershipBalance.upsert({
-                        where: { membershipId_currency: { membershipId: participant.user.memberships[0]?.id, currency: meeting.currency } },
-                        update: { amount: { increment: participant.amountPaid } },
-                        create: { membershipId: participant.user.memberships[0]?.id, amount: participant.amountPaid, currency: meeting.currency }
-                    });
+                    const payments = participant.payments.filter(p => p.currency !== updated.currency)
+                    for (const payment of payments) {
+                        await tx.membershipBalance.create({
+                            data: {
+                                membershipId: membershipId,
+                                amount: payment.amount,
+                                currency: payment.currency,
+                                stripePaymentId: payment.stripePaymentId
+                            }
+                        })
+                        await tx.participationPayment.delete({ where: { id: payment.id }})
+                    }
                 }
             }
-  
             return updated;
         });
   

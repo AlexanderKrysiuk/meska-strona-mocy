@@ -122,7 +122,7 @@ const MeetingParticipantsModal = ({
                                         <TableCell>{item.status === ParticipationStatus.Vacation ? (
                                                 `Nie dotyczy`    
                                             ) : (
-                                                `${item.amountPaid}/${meeting.price} ${meeting.currency}`
+                                                `${item.totalInMeetingCurrency}/${meeting.price} ${meeting.currency}`
                                             )}
                                         </TableCell>
                                         <TableCell><StatusChip status={item.status}/></TableCell>
@@ -146,6 +146,7 @@ const MeetingParticipantsModal = ({
                                                     meeting={meeting}
                                                     country={country}
                                                     user={item.user}
+                                                    totalPaid={item.totalInMeetingCurrency}
                                                 />
                                             )}
                                             </div>

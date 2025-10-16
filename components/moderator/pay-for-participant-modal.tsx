@@ -22,21 +22,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 
 import Loader from "../loader";
-import { stripePromise } from "@/lib/stripe-client";
+import { stripeConnect } from "@/lib/stripe-client";
 import { useTheme } from "next-themes";
 import { PaymentIntent } from "@stripe/stripe-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const PayForParticipantModal = ({
   participation,
   user,
   meeting,
   country,
+  totalPaid
 } : {
-  participation: Pick<Participation, "id" | "amountPaid" | "meetingId">;
+  participation: Pick<Participation, "id">;
   meeting: Meeting;
   country: Country;
   user: Pick<User, "name">;
+  totalPaid: number
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -54,7 +56,7 @@ export const PayForParticipantModal = ({
           onPress={onOpen}
           variant="light"
           radius="full"
-          isDisabled={participation.amountPaid >= meeting.price}
+          isDisabled={totalPaid >= meeting.price}
         >
           <FontAwesomeIcon icon={faSackDollar} size="xl" />
         </Button>
@@ -88,7 +90,7 @@ const PayForParticipantForm = ({
   user,
   onClose,
 } : {
-  participation: Pick<Participation, "id" | "meetingId">;
+  participation: Pick<Participation, "id">;
   meeting: Meeting;
   country: Country;
   user: Pick<User, "name">;
@@ -115,6 +117,8 @@ const PayForParticipantForm = ({
       onClose();
     }
   }, [stripeQuery.data, onClose]);
+
+  //console.log('Stan zapytania Stripe:', stripeQuery.isLoading, stripeQuery.isError, stripeQuery.data);
 
   return (
     <ModalBody>
@@ -150,7 +154,7 @@ const PayForParticipantForm = ({
       )}
       {stripeQuery.data && (
         <Elements
-          stripe={stripePromise}
+          stripe={stripeConnect(stripeQuery.data.stripeAccountId)}
           options={{
             clientSecret: stripeQuery.data.client_secret,
             appearance,
@@ -158,7 +162,7 @@ const PayForParticipantForm = ({
         >
           <StripeCheckoutForm
             payment={stripeQuery.data}
-            participation={participation}
+            meeting={meeting}
             onClose={onClose}
           />
         </Elements>
@@ -169,19 +173,21 @@ const PayForParticipantForm = ({
 
 const StripeCheckoutForm = ({
   payment,
-  participation,
+  meeting,
   onClose,
 }: {
   payment: Pick<
     PaymentIntent,
     "id" | "status" | "currency" | "amount" | "client_secret"
   >;
-  participation: Pick<Participation, "meetingId">;
+  meeting: Pick<Meeting, "id">;
   onClose: () => void;
 }) => {
   const stripe = useStripe();
   const elements = useElements();
   const queryClient = useQueryClient();
+
+  const [canSubmit, setCanSubmit] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -207,7 +213,7 @@ const StripeCheckoutForm = ({
         color: "success",
       });
       queryClient.invalidateQueries({
-        queryKey: [ModeratorQueries.MeetingParticipants, participation.meetingId],
+        queryKey: [ModeratorQueries.MeetingParticipants, meeting.id],
       });
       onClose();
     },
@@ -226,7 +232,7 @@ const StripeCheckoutForm = ({
         mutation.mutate();
       }}
     >
-      <PaymentElement className="w-full" options={{ layout: "tabs" }} />
+      <PaymentElement className="w-full" options={{ layout: "tabs" }} onChange={(event) => setCanSubmit(event.complete)}/>
       <Button
         radius="sm"
         color="success"
@@ -234,7 +240,7 @@ const StripeCheckoutForm = ({
         fullWidth
         className="mt-4 text-white"
         startContent={<FontAwesomeIcon icon={faSackDollar} />}
-        isDisabled={mutation.isPending || !stripe || !elements || !payment}
+        isDisabled={mutation.isPending || !stripe || !elements || !payment || !canSubmit}
         isLoading={mutation.isPending}
       >
         {mutation.isPending

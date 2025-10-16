@@ -69,3 +69,29 @@
 //         }
 //     }
 // }
+
+export async function GetMembershipBalanceByParticipationID(participationId: string) {
+    const result = await prisma.participation.findUnique({
+      where: { id: participationId },
+      select: {
+        meeting: {
+          select: {
+            circleId: true,
+            circle: {
+              select: {
+                members: {
+                  where: {
+                    userId: participation.userId, // nie zadziała bez wcześniejszego fetchu participation.userId
+                  },
+                  include: {
+                    balance: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    })
+  }
+  

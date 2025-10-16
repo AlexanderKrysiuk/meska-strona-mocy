@@ -52,13 +52,13 @@ model MembershipBalance {
   membershipId String
   membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
 
-  amount Int @default(0)
+  amount Int
+  currency Currency
+  stripePaymentId String?
+  method PaymentMethod?
 
-  currency Currency 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-
-  @@unique([membershipId, currency])
 }
 
 model Subscription {
@@ -240,7 +240,7 @@ model Participation {
   meeting    Meeting @relation(fields: [meetingId], references: [id])
 
   status     ParticipationStatus @default(Active)
-  amountPaid Int    @default(0)
+  payments  ParticipationPayment[]
 
   paymentDate DateTime?
 
@@ -248,6 +248,24 @@ model Participation {
   updatedAt  DateTime @updatedAt
 
   @@unique([userId, meetingId])
+}
+
+model ParticipationPayment {
+  id  String  @id @default(uuid())
+  participationId String
+  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+
+  amount  Int
+  currency  Currency
+  stripePaymentId String?
+  method PaymentMethod?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PaymentMethod {
+  Stripe
 }
 
 enum ParticipationStatus {

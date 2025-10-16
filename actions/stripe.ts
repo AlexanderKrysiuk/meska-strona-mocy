@@ -1,11 +1,13 @@
 "use server"
 
 import { stripe } from "@/lib/stripe-server"
-import { GetParticipationByID } from "./participation"
+import { GetParticipationByID, GetTotalParticipationPaid } from "./participation"
 import { ParticipationStatus, SubscriptionPeriod } from "@prisma/client"
 import { ServerAuth } from "./auth"
 import { GetUserByID } from "./user"
 import { prisma } from "@/lib/prisma"
+import { StripeWebhook } from "@/utils/stripe-webhook"
+import { GetMembershipByUserIdAndCircleId } from "./membership"
 
 export const GetAccountPayments = async (accountID: string) => {
     if (!accountID) throw new Error("Brak identyfikatora")
@@ -18,20 +20,23 @@ export const GetAccountPayments = async (accountID: string) => {
     return payments.data
 }
 
-export const CreatePaymentForParticipationByID = async (participationID: string) => {
+export const CreatePaymentForParticipationByID = async (participationID: string, membershipID: string) => {
     const participation = await GetParticipationByID(participationID);
     if (!participation) throw new Error("Brak danych o uczestnictwie");
     if (participation.status !== ParticipationStatus.Active) throw new Error("Użytkownik nie będzie na tym spotkaniu");
   
-    const moderatorId = participation.meeting.moderator.stripeAccountId;
-    if (!moderatorId) throw new Error("Nie można wygenerować płatności");
-  
-    // Sprawdzenie, czy moderator ma aktywne transfers
-    const account = await stripe.accounts.retrieve(moderatorId);
-    const transfersActive = account.capabilities?.transfers === "active";
-    if (!transfersActive) throw new Error("Moderator nie ma włączonych przelewów. Płatność jest niemożliwa.");
-  
-    const amount = (participation.meeting.price - participation.amountPaid) * 100;
+    if (!participation.meeting.moderator.stripeAccountId) throw new Error("Nie można wygenerować płatności");
+    //const account = await stripe.accounts.retrieve(participation.meeting.moderator.stripeAccountId);
+    //console.log("TYP KONTA:",account.type)
+    //console.log(account.charges_enabled); // true / false
+    //console.log(account.payouts_enabled); 
+
+    const totalPaid = await GetTotalParticipationPaid({
+        participationId: participation.id,
+        currency: participation.meeting.currency
+    })
+
+    const amount = (participation.meeting.price - totalPaid) * 100;
     if (amount <= 0) return null; // Spotkanie już opłacone
   
     try {
@@ -39,9 +44,21 @@ export const CreatePaymentForParticipationByID = async (participationID: string)
             amount,
             currency: participation.meeting.currency.toLowerCase(),
             automatic_payment_methods: { enabled: true },
-            transfer_data: { destination: moderatorId }, // całość idzie do moderatora
-            metadata: { participationId: participation.id },
+            application_fee_amount: Math.round(amount * 0.03),
+            // transfer_data: {
+            //     destination: participation.meeting.moderator.stripeAccountId,
+            //   },
+            metadata: { 
+                type: StripeWebhook.Participations,
+                participationIds: JSON.stringify([participation.id]),
+                membershipID: membershipID
+            },
+        },
+        {
+            stripeAccount: participation.meeting.moderator.stripeAccountId
         });
+
+        // console.log("CLIENT SECRET:", paymentIntent.client_secret)
         
         return {
             id: paymentIntent.id,
@@ -49,6 +66,7 @@ export const CreatePaymentForParticipationByID = async (participationID: string)
             amount: paymentIntent.amount,
             currency: paymentIntent.currency,
             status: paymentIntent.status,
+            stripeAccountId: participation.meeting.moderator.stripeAccountId
         };
     } catch (error) {
         console.error(error);
@@ -151,3 +169,11 @@ export const CheckModeratorTransfers = async (moderatorId: string) => {
     console.log(`\nSuma pobranych prowizji: ${totalTaken.toFixed(2)} zł`);
     console.log(`Pozostało do limitu 200 zł: ${remaining.toFixed(2)} zł`);
   }
+
+export const GetStripeAccountStatus = async (stripeAccountId: string) => {
+    const account = await stripe.accounts.retrieve(stripeAccountId)
+
+    return {
+        charges: account.charges_enabled
+    }
+}
