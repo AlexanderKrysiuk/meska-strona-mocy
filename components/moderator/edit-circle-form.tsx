@@ -50,7 +50,7 @@ const EditCircleForm = () => {
 
     type FormFields = z.infer<typeof EditCircleSchema>
 
-    const { reset, watch, setValue, setError, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid }} = useForm<FormFields>({
+    const { reset, watch, setValue, setError, trigger, handleSubmit, formState: { errors, isSubmitting, isDirty, isValid }} = useForm<FormFields>({
         resolver: zodResolver(EditCircleSchema),
         mode: "all"
     })
@@ -96,7 +96,10 @@ const EditCircleForm = () => {
                                 circleId: circle?.id,
                                 name: circle?.name,
                                 slug: circle?.slug,
-                                maxMembers: circle?.maxMembers,
+                                members: {
+                                    max: circle?.maxMembers,
+                                    min: circle?.minMembers
+                                },
                                 street: circle?.street,
                                 cityId: circle?.cityId,
                                 price: circle?.price,
@@ -157,13 +160,35 @@ const EditCircleForm = () => {
                     minValue={1}
                     maxValue={15}
                     formatOptions={{ maximumFractionDigits: 0 }}
-                    value={watch("maxMembers")}
-                    onValueChange={(value) => {setValue("maxMembers", value, {shouldDirty:true, shouldValidate: true})}}
+                    value={watch("members.max")}
+                    onValueChange={(value) => {
+                        setValue("members.max", value, {shouldDirty:true, shouldValidate: true})
+                        trigger("members.min")
+                    }}
                     isClearable
                     isRequired
                     isDisabled={!watch("circleId") || isSubmitting}
-                    isInvalid={!!errors.maxMembers}
-                    errorMessage={errors.maxMembers?.message}
+                    isInvalid={!!errors.members?.max || !!errors.members}
+                    errorMessage={errors.members?.max?.message || !!errors.members?.message}
+                />
+                <NumberInput
+                    label="Minimalna liczba uczestników"
+                    labelPlacement="outside"
+                    variant="bordered"
+                    placeholder="1"
+                    minValue={1}
+                    maxValue={15}
+                    formatOptions={{ maximumFractionDigits: 0 }}
+                    value={watch("members.min")}
+                    onValueChange={(value) => {
+                        setValue("members.min", value, {shouldDirty:true, shouldValidate: true})
+                        trigger("members.max")
+                    }}
+                    isClearable
+                    isRequired
+                    isDisabled={!watch("circleId") || isSubmitting}
+                    isInvalid={!!errors.members?.min || !!errors.members}
+                    errorMessage={errors.members?.min?.message || !!errors.members?.message}
                 />
                 <Input
                     label="Adres (ulica, numer)"
@@ -196,7 +221,10 @@ const EditCircleForm = () => {
                                 circleId: watch("circleId"),
                                 name: watch("name"),
                                 slug: watch("slug"),
-                                maxMembers: watch("maxMembers"),
+                                members: {
+                                    max: watch("members.max"),
+                                    min: watch("members.min")
+                                },
                                 street: watch("street"),
                                 cityId: null,
                                 price: watch("price"),
@@ -227,7 +255,10 @@ const EditCircleForm = () => {
                                 circleId: watch("circleId"),
                                 name: watch("name"),
                                 slug: watch("slug"),
-                                maxMembers: watch("maxMembers"),
+                                members: {
+                                    max: watch("members.max"),
+                                    min: watch("members.min")
+                                },
                                 street: watch("street"),
                                 cityId: null,
                                 price: watch("price"),

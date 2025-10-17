@@ -29,7 +29,7 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
     let slug = finalSlugify(data.name)
     
     while (true) {
-        const exist = await GetCircleBySlug(slug)
+        const exist = await GetCircleBySlugAndModeratorID(slug, auth.id)
 
         if (!exist) break
 
@@ -59,9 +59,9 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
 }
 
 export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {    
-    const user = await CheckLoginReturnUser()
+    const auth = await ServerAuth()
 
-    if (!user) return {
+    if (!auth) return {
         success: false,
         message: "Musisz być zalogowanym aby edytować grupę"
     }
@@ -73,13 +73,13 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Dana grupa nie istnieje"
     }
 
-    if (!(user.roles.includes(Role.Admin) || (user.roles.includes(Role.Moderator) && user.id === circle.moderatorId))) return {
+    if (!(auth.roles.includes(Role.Admin) || (auth.roles.includes(Role.Moderator) && auth.id === circle.moderatorId))) return {
         success: false,
         message: "Brak uprawień do edycji grupy"
     }
 
     if (circle.slug !== data.slug) {
-        const existingSlug = await GetCircleBySlug(data.slug)
+        const existingSlug = await GetCircleBySlugAndModeratorID(data.slug, circle.moderatorId)
 
         if (existingSlug) return {
             success: false,
@@ -94,7 +94,8 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
             data: {
                 name: data.name,
                 slug: data.slug,
-                maxMembers: data.maxMembers,
+                maxMembers: data.members.max,
+                minMembers: data.members.min,
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
@@ -114,13 +115,13 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
     }
 }
 
-const GetCircleBySlug = async (slug: string) => {
-    try {
-        return await prisma.circle.findUnique({where: {slug}})
-    } catch (error) {
-        console.error(error)
-        return null
-    }
+const GetCircleBySlugAndModeratorID = async (slug: string, moderatorId: string) => {
+    return await prisma.circle.findFirst({
+        where: {
+            slug: slug,
+            moderatorId: moderatorId
+        }
+    })
 }
 
 export const GetCircleByID = async (id: string) => {
@@ -128,6 +129,7 @@ export const GetCircleByID = async (id: string) => {
         where: {id},
         include: {
             moderator: { select: {
+                id: true,
                 name: true,
                 image: true,
                 title: true,

@@ -7,11 +7,20 @@ const name = z.string({
   required_error: "Pole nie może być puste",
   invalid_type_error: "Pole nie moze być puste"
   }).min(1, "Grupa musi posiadać nazwę")
-const maxMembers = z.number({
-  required_error: "Pole nie może być puste",
-  invalid_type_error: "Pole nie moze być puste"
-  })
-  .min(1, "Grupa musi mieć przynajmniej jedną osobę")
+
+const members = z.object({
+  min: z.number()
+    .int()
+    .min(1, "Minimalna liczba uczestników musi być większa od zera"),
+
+  max: z.number()
+    .int()
+    .min(1, "Maksymalna liczba uczestników musi być większa od zera")
+}).refine((members) => members.max >= members.min,{
+  message: "Maksymalna liczba uczestników musi być większa lub równa minimalnej",
+  path: ["max"]
+}) 
+
 const slug = z.string({
   required_error: "Pole nie może być puste",
   invalid_type_error: "Pole nie moze być puste"
@@ -27,15 +36,12 @@ const cityId = z.string().uuid().nullable()
 const price = z.preprocess(
   (val) => {
     const num = Number(val);
-    return isNaN(num) ? null : num; // zamień NaN na null
+    return isNaN(num) ? null : num;
   },
-  z.number().nullable().refine(
-    (val) => val === null || val === 0 || val >= 10,
-    {
-      message:
-        "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł",
-    }
-  )
+  z.number()
+    .int("Cena musi być liczbą całkowitą")
+    .min(0, "Cena nie może być ujemna")
+    .nullable()
 );
 
 const currency = z.nativeEnum(Currency).optional().nullable()
@@ -52,7 +58,7 @@ export const EditCircleSchema = z.object({
   circleId,
   name,
   slug,
-  maxMembers,
+  members,
   street: street.nullable(),
   cityId,
   price: price.nullable(),
