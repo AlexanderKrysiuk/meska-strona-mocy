@@ -392,3 +392,28 @@ export const GetModeratorMeetingsYears = async(moderatorID: string) => {
     const uniqueYears = Array.from(new Set(years.map(y => y.startTime.getFullYear()))).sort((a, b) => b - a)
     return uniqueYears
 }
+
+export const GetFutureMeetingsByCricleId = async(circleId: string, fromDate?: Date) => {
+    return await prisma.meeting.findMany({
+        where: {
+            circleId: circleId, 
+            endTime: { gte: fromDate ?? new Date() }
+        },
+        select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            street: true,
+            price: true,
+            currency: true,
+            city: { select: {
+                name: true,
+                region: { select: {
+                    country: { select: {
+                        timeZone: true
+                    }}
+                }}
+            }}
+        }
+    })
+}

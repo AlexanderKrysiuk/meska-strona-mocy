@@ -105,7 +105,7 @@ const Header = () => {
                                         )}
                                     </DropdownSection>
                                 ) : null}
-                                {auth.roles && 
+                                {auth.roles?.length > 0 ? 
                                     <DropdownSection
                                         title={"Partner"}
                                         showDivider
@@ -122,7 +122,7 @@ const Header = () => {
                                                 className={`${pathname.startsWith(item.href) && "text-primary"}`}
                                             />
                                         )}
-                                    </DropdownSection>
+                                    </DropdownSection> : null
                                 }
                                 <DropdownItem
                                     key="Logout"
@@ -204,7 +204,7 @@ const Header = () => {
                         <Divider/>
                     </div>
                 )}
-                {auth?.roles && 
+                {(auth?.roles?.length ?? 0) > 0 &&
                     <div>
                         <span className="text-sm text-foreground-500">
                             Partner

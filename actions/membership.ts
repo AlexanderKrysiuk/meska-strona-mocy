@@ -5,7 +5,7 @@ import { z } from "zod"
 import { CheckLoginReturnUser, ServerAuth } from "./auth"
 import { prisma } from "@/lib/prisma"
 import { AddMembershipByModeratorSchema, RemoveMembershipSchema, RestoreMembershipSchema } from "@/schema/membership"
-import { Currency, MembershipStatus, ParticipationStatus, Role } from "@prisma/client"
+import { City, Country, Currency, Meeting, MembershipStatus, ParticipationStatus, Role } from "@prisma/client"
 import { sendEmail } from "@/lib/resend"
 import DeleteUserFromCircleEmail, { RemoveMembershipEmail } from "@/components/emails/Remove-Membership"
 import WelcomeBackToCircleEmail from "@/components/emails/WelcomeBackToCircle"
@@ -13,7 +13,10 @@ import { GetCircleByID } from "./circle"
 import { GetUserByEmail, RegisterNewUser } from "./user"
 import { GetFutureParticipationsByUserIDAndCircleID } from "./participation"
 import { textInputRule } from "@tiptap/react"
-import { MembershipConfirmationEmail } from "@/components/emails/Membership-Confirmation"
+import { MembershipInvitationEmail } from "@/components/emails/Membership-Inivitation"
+import { MembershipRejectionEmail } from "@/components/emails/Membership-Rejection"
+import { GetFutureMeetingsByCricleId } from "./meeting"
+import { MembershipAcceptanceEmail } from "@/components/emails/Membership-Acceptance"
 
 export const GetCircleMembersByCircleID = async (ID:string) => {
     try {
@@ -74,7 +77,7 @@ export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershi
             await sendEmail({
                 to: user.email,
                 subject: `Dołączenie do kręgu - ${circle.name}`,
-                react: MembershipConfirmationEmail({
+                react: MembershipInvitationEmail({
                     member: user,
                     circle: circle,
                     moderator: circle.moderator,
@@ -226,6 +229,7 @@ export const GetMembershipByID = async (membershipID: string) => {
         select: {
             id: true,
             status: true,
+            updatedAt: true,
             user: { select: {
                 id: true,
                 name: true,
@@ -265,9 +269,64 @@ export const GetMyMemberships = async () => {
         select: {
             id: true,
             vacationDays: true,
+            status: true,
             circle: { select: {
                 name: true
             }}
         }
     })
+}
+
+export const RespondToMembershipInvitation = async (membershipId: string, accept: boolean) => {
+    const auth = await ServerAuth()
+    const membership = await GetMembershipByID(membershipId)
+    if (membership?.user.id !== auth.id) throw new Error("Brak uprawnień")
+    if (membership.status !== MembershipStatus.Pending) throw new Error("Decyzja została już podjęta")
+
+    let meetings: (Pick<Meeting, "id" | "startTime" | "endTime" | "street" | "price" | "currency"> & {
+        city: Pick<City, "name"> & { region: { country: Pick<Country, "timeZone"> } }
+        })[] = []; // <-- pusty array jako default    
+    try {
+        await prisma.$transaction(async (tx) => {
+            await tx.membership.update({
+                where: { id: membership.id },
+                data: { status: (accept ? MembershipStatus.Active : MembershipStatus.Left) }
+            })
+
+            if (accept) {
+                const meetings = await GetFutureMeetingsByCricleId(membership.circle.id, membership.updatedAt)
+                if (meetings.length > 0) {
+                    await tx.participation.createMany({
+                        data: meetings.map((m) => ({
+                            membershipId: membership.id,
+                            meetingId: m.id
+                        })),
+                        skipDuplicates: true
+                    })
+                }
+            }
+        }) 
+    } catch (error) {
+        console.error(error)
+        throw new Error("Błąd połączenia z bazą danych")
+    }
+
+    try {
+        await sendEmail({
+            to: membership.user.email,
+            subject: accept ? `Witamy w kręgu ${membership.circle.name}!` : `Szkoda, że tym razem nie dołączasz`,
+            react: accept ? MembershipAcceptanceEmail({
+                member: membership.user,
+                circle: membership.circle,
+                moderator: membership.circle.moderator,
+                meetings: meetings
+            }) : MembershipRejectionEmail({
+                member: membership.user,
+                circle: membership.circle,
+                moderator: membership.circle.moderator,
+            })
+        })
+    } catch (error) {
+        console.error(error)
+    }
 }

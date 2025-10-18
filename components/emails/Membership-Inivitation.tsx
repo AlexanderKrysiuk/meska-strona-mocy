@@ -2,7 +2,7 @@ import { Preview, Section, Text } from "@react-email/components";
 import { Header, EmailLayout, Sign, emailStyles } from "./Components";
 import { Circle, User } from "@prisma/client";
 
-export function MembershipConfirmationEmail({
+export function MembershipInvitationEmail({
   member,
   circle,
   moderator,
@@ -54,9 +54,9 @@ export function MembershipConfirmationEmail({
 }
 
 // --- Podgląd ---
-export default function MemberConfirmationEmailPreview() {
+export default function MemberInvitationEmailPreview() {
   return (
-    <MembershipConfirmationEmail
+    <MembershipInvitationEmail
       member={{ name: "Joshamee Gibbs" }}
       circle={{ name: "Załoga Czarnej Perły" }}
       moderator={{
