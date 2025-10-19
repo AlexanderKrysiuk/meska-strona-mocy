@@ -65,7 +65,7 @@ const MeetingsPage = () => {
                     }}
                     isDisabled={!circles}
                     hideEmptyContent
-                    >
+                >
                     {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
                 </Select>
                 <CreateCircleModal/>

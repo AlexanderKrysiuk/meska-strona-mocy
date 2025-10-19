@@ -3,21 +3,28 @@
 import { GetMyMemberships } from "@/actions/membership";
 import Loader from "@/components/loader";
 import MembershipCardInside from "@/components/user/my-circles/membership-card-inside";
+import UnusedBalanceTable from "@/components/user/my-circles/unused-balance-table";
 import ShowUnpaidMeetingsTable from "@/components/user/unpaid-participations-table";
 import { clientAuth } from "@/hooks/auth";
 import { CircleQueries } from "@/utils/query";
-import { Card, CardBody, CardHeader, Divider, Link } from "@heroui/react";
+import { Card, CardBody, CardHeader, Divider, Link, Select, SelectItem } from "@heroui/react";
+import { Membership } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 const MyCirclesPage = () => {
     const auth = clientAuth()
-    const [selectedCircle, setSelectedCircle] = useState<string>()
+    const [selectedMembership, setSelectedMembership] = useState<Partial<Membership> | undefined>()
 
     const { data: memberships, isLoading } = useQuery({
         queryKey: [CircleQueries.MyCircles, auth?.id],
         queryFn: () => GetMyMemberships()
     })
+
+    const selectItems = [
+        { id: "all", circle: { name: "Wszystkie" } }, // opcja Wszystkie
+        ...(memberships ?? []), // reszta kręgów
+    ];
 
     //const Loading = true
     if (isLoading) return <Loader/>
@@ -39,8 +46,27 @@ const MyCirclesPage = () => {
             ))}
         </div>
         <Divider/>
+        {memberships && memberships.length > 1 && <Select
+            label="Krąg"
+            items={selectItems}
+            placeholder="Wybierz krąg"
+            variant="bordered"
+            onSelectionChange={(keys) => {
+                const id = Array.from(keys)[0];
+                const membership = memberships?.find(m => m.id === id)
+                setSelectedMembership(membership)
+            }}
+            isDisabled={!memberships}
+            hideEmptyContent
+            disallowEmptySelection
+            defaultSelectedKeys={["all"]}
+        >                  
+            {(membership) => <SelectItem key={membership.id}>{membership.circle.name}</SelectItem>}
+        </Select>}
+        <UnusedBalanceTable/>
+        <Divider/>
         <pre>
-            WYBRANY MEMBERSHIP {JSON.stringify(selectedCircle,null,2)} <br/>
+            WYBRANY MEMBERSHIP {JSON.stringify(selectedMembership,null,2)} <br/>
             {JSON.stringify(memberships, null ,2)}
         </pre>
     </main>

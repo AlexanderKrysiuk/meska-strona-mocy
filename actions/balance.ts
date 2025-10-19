@@ -1,4 +1,6 @@
-// "use server"
+"use server"
+
+import { prisma } from "@/lib/prisma"
 
 // import { prisma } from "@/lib/prisma"
 // import { OwnBalancePaymentSchema } from "@/schema/payment"
@@ -70,28 +72,21 @@
 //     }
 // }
 
-export async function GetMembershipBalanceByParticipationID(participationId: string) {
-    const result = await prisma.participation.findUnique({
-      where: { id: participationId },
-      select: {
-        meeting: {
-          select: {
-            circleId: true,
-            circle: {
-              select: {
-                members: {
-                  where: {
-                    userId: participation.userId, // nie zadziała bez wcześniejszego fetchu participation.userId
-                  },
-                  include: {
-                    balance: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    })
-  }
+export const GetMembershipBalanceByUserID = async (userId: string) => {
+  return await prisma.membershipBalance.findMany({
+    where: { membership: { userId: userId } },
+    select: {
+      id: true,
+      amount: true,
+      currency: true,
+      method: true,
+      membership: { select: {
+        id: true,
+        circle: { select: { 
+          name: true
+        }}
+      }}
+    }
+  })
+}
   
