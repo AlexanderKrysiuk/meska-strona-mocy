@@ -1,6 +1,6 @@
 //components/emails/Membership-Acceptance
 
-import { Circle, City, Country, Currency, Meeting, Region, User } from "@prisma/client";
+import { Circle, City, Country, Currency, Meeting, User } from "@prisma/client";
 import { EmailLayout, Header, Sign, emailStyles } from "./Components";
 import { Preview, Section, Text } from "@react-email/components";
 import { formatedDate } from "@/utils/date";

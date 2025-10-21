@@ -3,9 +3,9 @@
 import { RespondToMembershipInvitation } from "@/actions/membership";
 import { clientAuth } from "@/hooks/auth";
 import { CircleQueries } from "@/utils/query";
-import { faCheck, faX, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, CardBody, CardFooter, CardHeader, Form, addToast } from "@heroui/react";
+import { Button, CardBody, CardFooter, CardHeader, addToast } from "@heroui/react";
 import { Circle, Membership, MembershipStatus } from "@prisma/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -15,7 +15,7 @@ const MembershipCardInside = ({
     membership
 } : {
     circle: Pick<Circle, "name">
-    membership: Pick<Membership, "id" | "status">
+    membership: Pick<Membership, "id" | "status" | "vacationDays">
 }) => {
     const auth = clientAuth()
     const queryClient = useQueryClient()
@@ -52,6 +52,11 @@ const MembershipCardInside = ({
 
     let content
     switch (membership.status) {
+        case MembershipStatus.Active:
+            content = <CardBody>
+                <strong className="text-amber-600">Dostępne dni urlopowe: {membership.vacationDays > 0 ? membership.vacationDays : 0}</strong>
+            </CardBody>
+            break;
         case MembershipStatus.Pending:
             content = <div>
                 <CardBody>
@@ -94,7 +99,6 @@ const MembershipCardInside = ({
             content = <CardBody>
                 <strong className="text-danger">Nie należysz do tego kręgu</strong>
             </CardBody>
-            
     }
 
     return <main>

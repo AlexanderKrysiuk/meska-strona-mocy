@@ -30,7 +30,8 @@ export enum CircleQueries {
 
 export enum UserQueries {
     User,
-    Balance = "Balance"
+    Balance = "Balance",
+    Participations = "Participations"
 }
 
 export enum StripeQueries {

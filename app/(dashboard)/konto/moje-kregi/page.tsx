@@ -4,17 +4,17 @@ import { GetMyMemberships } from "@/actions/membership";
 import Loader from "@/components/loader";
 import MembershipCardInside from "@/components/user/my-circles/membership-card-inside";
 import UnusedBalanceTable from "@/components/user/my-circles/unused-balance-table";
-import ShowUnpaidMeetingsTable from "@/components/user/unpaid-participations-table";
+import UnpaidMeetingsTable from "@/components/user/my-circles/unpaid-participations-table";
 import { clientAuth } from "@/hooks/auth";
 import { CircleQueries } from "@/utils/query";
-import { Card, CardBody, CardHeader, Divider, Link, Select, SelectItem } from "@heroui/react";
+import { Card, Divider, Select, SelectItem } from "@heroui/react";
 import { Membership } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const MyCirclesPage = () => {
     const auth = clientAuth()
-    const [selectedMembership, setSelectedMembership] = useState<Partial<Membership> | undefined>()
+    const [selectedMembership, setSelectedMembership] = useState<Pick<Membership, "id"> | undefined>()
 
     const { data: memberships, isLoading } = useQuery({
         queryKey: [CircleQueries.MyCircles, auth?.id],
@@ -63,12 +63,13 @@ const MyCirclesPage = () => {
         >                  
             {(membership) => <SelectItem key={membership.id}>{membership.circle.name}</SelectItem>}
         </Select>}
-        <UnusedBalanceTable/>
+        <UnusedBalanceTable membership={selectedMembership}/>
+        <UnpaidMeetingsTable membership={selectedMembership}/>
         <Divider/>
-        <pre>
+        {/* <pre>
             WYBRANY MEMBERSHIP {JSON.stringify(selectedMembership,null,2)} <br/>
             {JSON.stringify(memberships, null ,2)}
-        </pre>
+        </pre> */}
     </main>
 
     // if (isLoading) return <Loader/>

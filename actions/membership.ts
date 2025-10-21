@@ -208,18 +208,25 @@ export const RestoreMembership = async (data: z.infer<typeof RestoreMembershipSc
     }
 }
 
-export const GetMembers = async ({
-    circleID,
+export const GetMembersByCircleIdAndStatus = async ({
+    circleId,
     status,
 } : {
-    circleID?: string
+    circleId?: string
     status?: MembershipStatus
 }) => {
-    return prisma.membership.findMany({
+    return await prisma.membership.findMany({
         where: {
-            ...(circleID && { circleId: circleID }),
-            ...(status && { status }),
+            circleId: circleId,
+            status: status,
         },
+        select: {
+            id: true,
+            user: { select: {
+                name: true,
+                email: true,
+            }}
+        }
     })
 }
 

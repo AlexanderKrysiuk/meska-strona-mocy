@@ -127,7 +127,9 @@ const GetCircleBySlugAndModeratorID = async (slug: string, moderatorId: string) 
 export const GetCircleByID = async (id: string) => {
     return await prisma.circle.findUnique({ 
         where: {id},
-        include: {
+        select: {
+            id: true,
+            name: true,
             moderator: { select: {
                 id: true,
                 name: true,

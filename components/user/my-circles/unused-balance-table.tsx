@@ -26,11 +26,10 @@ const UnusedBalanceTable = ({
     
     return <main className="space-y-4">
         <h6>Niewykorzystane środki</h6>
-        <div className="overflow-x-auto min-w-sm">
-
         <Table
             shadow="sm"
-            >
+            isCompact
+        >
             <TableHeader>
                 <TableColumn>Ilość</TableColumn>
                 <TableColumn>Waluta</TableColumn>
@@ -55,7 +54,6 @@ const UnusedBalanceTable = ({
                 )}
             </TableBody>
         </Table>
-            </div>
         {/* <pre>
             {JSON.stringify(balance,null,2)}
         </pre> */}

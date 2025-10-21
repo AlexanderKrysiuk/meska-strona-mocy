@@ -140,14 +140,9 @@ export const GetParticipantsByMeetingID = async (meetingID: string) => {
     });
 }
 
-export const GetMyUnpaidParticipations = async () => {
-    const auth = await ServerAuth()
-  
-    const participations = await prisma.participation.findMany({
-        where: { 
-            userId: auth.id,
-            status: ParticipationStatus.Active,
-        },
+export const GetParticipationsByUserId = async (userId: string) => {
+    return await prisma.participation.findMany({
+        where: { membership: { userId: userId }},
         select: {
             id: true,
             meeting: { select: {
@@ -156,19 +151,28 @@ export const GetMyUnpaidParticipations = async () => {
                 street: true,
                 price: true,
                 currency: true,
-                circle: { select: { name: true }},
                 city: { select: {
-                    name: true,
-                    region: { select: { country: { select: { timeZone: true }}}}
-                }}
+                    name: true, 
+                    region: { select: { 
+                        country: { select: {
+                            timeZone: true
+                        }}
+                    }}
+                }},
+                circle: { select: {
+                    name: true
+                }},
+            }},
+            payments: { select: {
+                amount: true,
+                currency: true
+            }},
+            membership: { select: {
+                id: true,
             }}
-        },
-        orderBy: { meeting: { startTime: "asc" }}
+        }
     })
-  
-    // tu dopiero odfiltrowujesz nieopłacone
-    //return participations.filter(p => p.amountPaid < p.meeting.price)
-  }
+}
   
 export const GetFutureParticipationsByUserIDAndCircleID = async (userID: string, circleID: string) => {
     return await prisma.participation.findMany({
