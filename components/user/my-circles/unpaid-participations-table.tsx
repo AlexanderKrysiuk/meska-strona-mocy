@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { GetParticipationsByUserId } from "@/actions/participation";
 import { clientAuth } from "@/hooks/auth";
 import { Membership } from "@prisma/client";
+import { PayForParticipationModal } from "./pay-for-participation-modal";
 
 const UnpaidMeetingsTable = ({
     membership
@@ -64,7 +65,12 @@ const UnpaidMeetingsTable = ({
                             <TableCell>{item.meeting.city.name}</TableCell>
                             <TableCell>{item.amountPaid} / {item.meeting.price} {item.meeting.currency}</TableCell>
                             <TableCell>
-                                123
+                                <PayForParticipationModal
+                                    circle={item.meeting.circle}
+                                    meeting={item.meeting}
+                                    country={item.meeting.city.region.country}
+                                    participation={item}
+                                />
                             </TableCell>
                         </TableRow>}
                     </TableBody>

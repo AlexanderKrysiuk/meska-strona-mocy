@@ -1,30 +1,30 @@
 "use client"
 
-import { CreatePaymentForMeetingByParticipationID } from "@/actions/stripe"
+import { CreatePaymentForParticipationById } from "@/actions/stripe"
+import Loader from "@/components/loader"
 import { clientAuth } from "@/hooks/auth"
+import { stripeConnect } from "@/lib/stripe-client"
 import { formatedDate } from "@/utils/date"
-import { PaymentQueries } from "@/utils/query"
+import { PaymentQueries, UserQueries } from "@/utils/query"
 import { faSackDollar } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tab, Tabs, Tooltip, addToast, useDisclosure } from "@heroui/react"
+import { Alert, Button, Form, Modal, ModalBody, ModalContent, ModalHeader, Tab, Tabs, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { Circle, Country, Meeting, Participation } from "@prisma/client"
+import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
+import { PaymentIntent } from "@stripe/stripe-js"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTheme } from "next-themes"
-import Loader from "../loader"
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js"
-import { stripePromise } from "@/lib/stripe-client"
 import { useForm } from "react-hook-form"
-import { PaymentIntent } from "@stripe/stripe-js"
 
-export const PayForMeetingButton = ({
+export const PayForParticipationModal = ({
+    circle,
     meeting,
     country,
-    circle,
-    participation
+    participation,
 } : {
+    circle: Pick<Circle, "name">
     meeting: Pick<Meeting, "startTime" | "endTime">
     country: Pick<Country, "timeZone">
-    circle: Pick<Circle, "name">
     participation: Pick<Participation, "id">
 }) => {
     const { isOpen, onOpen, onClose } = useDisclosure()
@@ -39,12 +39,11 @@ export const PayForMeetingButton = ({
             <Button
                 color="warning"
                 isIconOnly
-                onPressUp={onOpen}
+                onPress={onOpen}
                 variant="light"
                 radius="full"
-            >
-                <FontAwesomeIcon icon={faSackDollar} size="xl"/>
-            </Button>
+                startContent={<FontAwesomeIcon icon={faSackDollar} size="xl"/>}
+            />
         </Tooltip>
         <Modal
             isOpen={isOpen}
@@ -54,9 +53,12 @@ export const PayForMeetingButton = ({
             size="xl"
         >
             <ModalContent>
-                <ModalHeader>Opłać spotkanie kręgu {circle.name} z dnia {formatedDate(meeting.startTime, meeting.endTime, country.timeZone, "onlyDays")}</ModalHeader>
+                <ModalHeader>
+                    Opłać spotkanie kręgu {circle.name}, <br/>
+                    z dnia {formatedDate(meeting.startTime, meeting.endTime, country.timeZone)} 
+                </ModalHeader>
                 <ModalBody>
-                    <Tabs 
+                    <Tabs
                         variant="light"
                         fullWidth
                         defaultSelectedKey="stripe"
@@ -68,11 +70,10 @@ export const PayForMeetingButton = ({
                             />
                         </Tab>
                         <Tab title="Portfel" key="wallet" isDisabled>
-456
+
                         </Tab>
                     </Tabs>
                 </ModalBody>
-                <ModalFooter/>
             </ModalContent>
         </Modal>
     </main>
@@ -82,17 +83,19 @@ const StripePaymentTab = ({
     participation,
     onClose
 } : {
-    participation: Pick<Participation, "id">
+    participation: Pick<Participation,"id">
     onClose: () => void
 }) => {
     const { resolvedTheme } = useTheme()
 
-    const { data: stripePayment, isLoading } = useQuery({
+    const { data: stripePayment, isLoading, error } = useQuery({
         queryKey: [PaymentQueries.Participation, participation.id],
-        queryFn: () => CreatePaymentForMeetingByParticipationID(participation.id)
+        queryFn: () => CreatePaymentForParticipationById(participation.id),
+        enabled: !!participation.id,
+        retry: false
     })
 
-    const theme: "night" | "stripe" = resolvedTheme === "dark" ? "night" : "stripe" 
+    const theme: "night" | "stripe" = resolvedTheme === "dark" ? "night" : "stripe"
 
     const appearance = {
         theme,
@@ -100,12 +103,19 @@ const StripePaymentTab = ({
             colorPrimary: resolvedTheme === "dark" ? "#facc15" : "#f59e0b",
         }
     }
-     
+
     if (isLoading) return <Loader/>
 
-    if (!stripePayment) return null
+    if (error || !stripePayment) return <Alert
+        color="danger"
+    >
+        {error instanceof Error ? error.message : "Nie można utworzyć płatności"} 
+    </Alert>
 
-    return <Elements stripe={stripePromise} options={{ clientSecret: stripePayment.client_secret, appearance}}>
+    return <Elements 
+        stripe={stripeConnect(stripePayment.stripeAccountId)} 
+        options={{ clientSecret: stripePayment.client_secret, appearance}}
+    >
         <StripePaymentForm
             paymentIntent={stripePayment}
             onClose={onClose}
@@ -150,8 +160,8 @@ const StripePaymentForm = ({
 
         if (result.error) return
 
+        queryClient.invalidateQueries({ queryKey: [UserQueries.Participations, auth?.id]})
         setTimeout(()=>{},3000)
-        queryClient.invalidateQueries({ queryKey: [PaymentQueries.UnpaidMeetings, auth?.id]})
         onClose() 
     }
 

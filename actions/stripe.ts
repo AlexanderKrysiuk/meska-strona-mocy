@@ -1,7 +1,7 @@
 "use server"
 
 import { stripe } from "@/lib/stripe-server"
-import { GetParticipationByID, GetTotalParticipationPaid } from "./participation"
+import { GetParticipationById, GetTotalParticipationPaid } from "./participation"
 import { ParticipationStatus, SubscriptionPeriod } from "@prisma/client"
 import { ServerAuth } from "./auth"
 import { GetUserByID } from "./user"
@@ -20,24 +20,24 @@ export const GetAccountPayments = async (accountID: string) => {
     return payments.data
 }
 
-export const CreatePaymentForParticipationByID = async (participationID: string, membershipID: string) => {
-    const participation = await GetParticipationByID(participationID);
+export const CreatePaymentForParticipationById = async (participationID: string) => {
+    const participation = await GetParticipationById(participationID);
     if (!participation) throw new Error("Brak danych o uczestnictwie");
     if (participation.status !== ParticipationStatus.Active) throw new Error("Użytkownik nie będzie na tym spotkaniu");
-  
-    if (!participation.meeting.moderator.stripeAccountId) throw new Error("Nie można wygenerować płatności");
+    if (!participation.meeting.moderator.stripeAccountId) throw new Error("Moderator nie przyjmuje płatności online")
+
+    //if (!participation.meeting.moderator.stripeAccountId) throw new Error("Nie można wygenerować płatności");
     //const account = await stripe.accounts.retrieve(participation.meeting.moderator.stripeAccountId);
     //console.log("TYP KONTA:",account.type)
     //console.log(account.charges_enabled); // true / false
     //console.log(account.payouts_enabled); 
 
-    const totalPaid = await GetTotalParticipationPaid({
-        participationId: participation.id,
-        currency: participation.meeting.currency
-    })
+    const totalPaid = participation.payments
+        .filter((p) => p.currency === participation.meeting.currency)
+        .reduce((sum, p) => sum + p.amount, 0)
 
     const amount = (participation.meeting.price - totalPaid) * 100;
-    if (amount <= 0) return null; // Spotkanie już opłacone
+    if (amount <= 0) throw new Error("Spotkanie opłacone")
   
     try {
         const paymentIntent = await stripe.paymentIntents.create({
@@ -51,7 +51,6 @@ export const CreatePaymentForParticipationByID = async (participationID: string,
             metadata: { 
                 type: StripeWebhook.Participations,
                 participationIds: JSON.stringify([participation.id]),
-                membershipID: membershipID
             },
         },
         {

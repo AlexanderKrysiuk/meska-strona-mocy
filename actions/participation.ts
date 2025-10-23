@@ -72,14 +72,16 @@ export const ToggleVacationStatus = async (participationID: string) => {
     }
 }
 
-export const GetParticipationByID = async (ID: string) => {
+export const GetParticipationById = async (Id: string) => {
     return await prisma.participation.findUnique({
-        where: { id: ID },
+        where: { id: Id },
         select: {
             id: true,
             status: true,
-            user: { select: {
-                id: true
+            membership: { select: {
+                user: { select: {
+                    id: true
+                }}
             }},
             payments: { select: {
                 id: true,

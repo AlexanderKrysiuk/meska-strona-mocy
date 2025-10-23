@@ -54,7 +54,7 @@ const DashboadLayout = ({
                                 )}
                             </ListboxSection>
                         ) : null}
-                        {user.roles && 
+                        {user.roles.length > 0 ? 
                             <ListboxSection
                                 showDivider
                                 title="Partner"
@@ -71,7 +71,7 @@ const DashboadLayout = ({
                                     />
                                 )}
                             </ListboxSection>
-                        }
+                        : null }
                     </Listbox>
                 )}
             </div>
