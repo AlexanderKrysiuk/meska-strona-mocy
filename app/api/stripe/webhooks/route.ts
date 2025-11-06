@@ -1,6 +1,6 @@
 //app/api/stripe/webhooks/route
 import { GetMembershipByUserIdAndCircleId } from "@/actions/membership"
-import { GetParticipationByID } from "@/actions/participation"
+import { GetParticipationById, GetParticipationsByIds } from "@/actions/participation"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe-server"
 import { StripeWebhook } from "@/utils/stripe-webhook"
@@ -18,7 +18,11 @@ export async function POST(req: Request) {
         return new Response("Stripe Webhook error", { status: 400 })
     }
 
-    if (event.type === "payment_intent.succeeded") {
+    console.log("Stripe event received:", event.type, event.id);
+
+
+    if (event.type === "application_fee.created") {
+        console.log("Metadata:", event.data.object.metadata);
         const paymentIntent = event.data.object
         const { type } = paymentIntent.metadata
         if (type === StripeWebhook.Participations) {
@@ -35,50 +39,45 @@ export async function POST(req: Request) {
                 let remainingAmount = paymentIntent.amount_received
                 const currency = paymentIntent.currency.toUpperCase() as Currency
 
-                for (const id of ids) {
-                    const participation = await GetParticipationByID(id)
-                    if (!participation) continue
-
+                const participations = await GetParticipationsByIds(ids)
+                for (const participation of participations) {
                     const { meeting } = participation
 
                     const alreadyPaid = participation.payments
                         .filter((p) => p.currency === meeting.currency)
-                        .reduce((sum, p) => sum + p.amount, 0)
+                        .reduce((sum, p) => sum + p.amount * 100, 0)
 
-                    const remainingForMeeting = meeting.price - alreadyPaid
-                    if (remainingForMeeting <= 0) continue
+                    const remainingForMeeting = Math.round(meeting.price * 100) - alreadyPaid;
+                    if (remainingForMeeting <= 0) continue;
 
-                    const paidNow = Math.min(remainingForMeeting, remainingAmount / 100); // przeliczenie z groszy
-                    
+                    const paidNow = Math.min(remainingForMeeting, remainingAmount);
+
                     if (paidNow > 0) {
                         await tx.participationPayment.create({
                             data: {
-                                participationId: id,
-                                amount: Math.round(paidNow),
+                                participationId: participation.id,
+                                amount: Math.round(paidNow / 100), // zapis w złotych
                                 currency: currency,
                                 stripePaymentId: paymentIntent.id
-
-
                             }
-                        })
-                        remainingAmount -= paidNow * 100;
+                        });
+                        remainingAmount -= paidNow;
                     }
+
                     if (remainingAmount <= 0) break;
                 }
 
-                if (remainingAmount > 0) {
+                if (remainingAmount > 0 && membershipID) {
                     await tx.membershipBalance.create({
                         data: {
-                            membershipId: paymentIntent.metadata.membershipID,
-                            amount: Math.round(remainingAmount/100),
+                            membershipId: membershipID,
+                            amount: Math.round(remainingAmount / 100),
                             currency: currency,
                             stripePaymentId: paymentIntent.id
                         }
-                    })
+                    });
                 }
             })
-
-
         }
     }
     return Response.json({ received: true });

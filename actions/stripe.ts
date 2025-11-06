@@ -2,12 +2,64 @@
 
 import { stripe } from "@/lib/stripe-server"
 import { GetParticipationById, GetTotalParticipationPaid } from "./participation"
-import { ParticipationStatus, SubscriptionPeriod } from "@prisma/client"
+import { Participation, ParticipationStatus, SubscriptionPeriod } from "@prisma/client"
 import { ServerAuth } from "./auth"
 import { GetUserByID } from "./user"
 import { prisma } from "@/lib/prisma"
 import { StripeWebhook } from "@/utils/stripe-webhook"
 import { GetMembershipByUserIdAndCircleId } from "./membership"
+
+export const CreateOrUpdateExpressAccount = async () => {
+    const auth = await ServerAuth()
+
+    const user = await GetUserByID(auth.id)
+    if (!user) throw new Error("Brak autoryzacji")
+    let stripeAccountId = user.stripeAccountId
+    if (!stripeAccountId) {
+        const account = await stripe.accounts.create({
+            type: "express",
+            email: auth.email,
+        })
+
+        await prisma.user.update({
+            where: { id: auth.id},
+            data: { stripeAccountId: account.id }
+        })
+
+        stripeAccountId = account.id
+    }
+
+    // 3️⃣ Pobieramy dane konta i sprawdzamy, czy wymaga uzupełnienia
+    const account = await stripe.accounts.retrieve(stripeAccountId);
+
+    const currentlyDue = account.requirements?.currently_due ?? [];
+    const pastDue = account.requirements?.past_due ?? [];
+    const detailsSubmitted = account.details_submitted ?? false;
+
+    const needsOnboarding =
+        currentlyDue.length > 0 || pastDue.length > 0 || !detailsSubmitted;
+
+    // 4️⃣ Tworzymy embedded onboarding session
+    const onboardingSession = await stripe.accountSessions.create({
+        account: stripeAccountId,
+        components: {
+            account_onboarding: { 
+                enabled: needsOnboarding,
+            },
+            account_management: {enabled: true},
+            notification_banner: {enabled: true},
+        },
+        
+
+    });
+
+    // 5️⃣ Zwracamy client secret dla frontendu
+    return {
+        clientSecret: onboardingSession.client_secret,
+        stripeAccountId,
+        needsOnboarding,
+    };
+}
 
 export const GetAccountPayments = async (accountID: string) => {
     if (!accountID) throw new Error("Brak identyfikatora")
@@ -51,6 +103,7 @@ export const CreatePaymentForParticipationById = async (participationID: string)
             metadata: { 
                 type: StripeWebhook.Participations,
                 participationIds: JSON.stringify([participation.id]),
+                membershipID: participation.membership.id
             },
         },
         {
