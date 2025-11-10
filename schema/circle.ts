@@ -6,7 +6,7 @@ const circleId = z.string().uuid()
 const name = z.string({
   required_error: "Pole nie może być puste",
   invalid_type_error: "Pole nie moze być puste"
-  }).min(1, "Grupa musi posiadać nazwę")
+  }).min(1, "Krąg musi posiadać nazwę")
 
 const members = z.object({
   min: z.number()
@@ -30,21 +30,35 @@ const slug = z.string({
   // .refine((val) => !uuidRegex.test(val), {
   //   message: "Slug nie może wyglądać jak identyfikator systemowy (UUID)"
   // })
-const street = z.string().min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi")
-const cityId = z.string().uuid().nullable()
+const street = z
+  .string()
+  .min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki")
+  .trim()
+  .max(255, "Adres jest zbyt długi")
+  .nullable()
+
+const cityId = z
+  .string()
+  .uuid()
+  .nullable()
 
 const price = z.preprocess(
   (val) => {
+    if (val === "" || val === undefined || val === null) return null; // brak ceny = null
     const num = Number(val);
     return isNaN(num) ? null : num;
   },
   z.number()
     .int("Cena musi być liczbą całkowitą")
-    .min(0, "Cena nie może być ujemna")
+    .min(10, "Cena musi wynosić minimum 10 zł")
     .nullable()
 );
 
-const currency = z.nativeEnum(Currency).optional().nullable()
+const currency = z
+  .nativeEnum(Currency)
+  .nullable()
+
+const isPublic = z.boolean()
 // const price = z.number().nullable()
 //   .refine((val) => val === null || val === 0 || val >= 10, {
 //     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
@@ -59,12 +73,10 @@ export const EditCircleSchema = z.object({
   name,
   slug,
   members,
-  street: street.nullable(),
+  street,
   cityId,
-  price: price.nullable(),
-  currency
-})
-
-export const EditCircleSlugSchema = z.object({
-  slug
+  isPublic,
+  price,
+  newUserPrice: price,
+  currency,
 })

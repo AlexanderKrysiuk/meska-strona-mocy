@@ -39,17 +39,12 @@ export const ModeratorItems = [
         href: "/moderator/spotkania-kregow",
         icon: <FontAwesomeIcon icon={faCalendar}/>,
         title: "Spotkania kręgów"
-    },
-    {
-        href: "/moderator/subskrypcja",
-        icon: <FontAwesomeIcon icon={faRepeat}/>,
-        title: "Subskrypcja"
     }
 ]
 
 export const PartnerItems = [
     {
-        href: "/partner/wprowadzenie",
+        href: "/partner/ustawienia",
         icon: <FontAwesomeIcon icon={faGear}/>,
         title: "Ustawienia"
     },

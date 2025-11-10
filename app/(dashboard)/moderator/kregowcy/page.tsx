@@ -4,7 +4,7 @@ import { GetModeratorCircles } from "@/actions/circle";
 import Loader from "@/components/loader";
 import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal";
 import CircleMembersTable from "@/components/moderator/circle-members-table";
-import CreateCircleModal from "@/components/moderator/create-circle-modal";
+import CreateCircleModal from "@/components/moderator/circles/create-circle-modal";
 import { clientAuth } from "@/hooks/auth";
 import { ModeratorQueries } from "@/utils/query";
 import { Divider, Select, SelectItem } from "@heroui/react";

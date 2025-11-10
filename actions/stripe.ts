@@ -14,9 +14,13 @@ export const CreateOrUpdateExpressAccount = async () => {
 
     const user = await GetUserByID(auth.id)
     if (!user) throw new Error("Brak autoryzacji")
+
     let stripeAccountId = user.stripeAccountId
+    let account = null
+
+
     if (!stripeAccountId) {
-        const account = await stripe.accounts.create({
+        account = await stripe.accounts.create({
             type: "express",
             email: auth.email,
         })
@@ -27,10 +31,12 @@ export const CreateOrUpdateExpressAccount = async () => {
         })
 
         stripeAccountId = account.id
+    } else {
+        account = await stripe.accounts.retrieve(stripeAccountId)
     }
 
     // 3️⃣ Pobieramy dane konta i sprawdzamy, czy wymaga uzupełnienia
-    const account = await stripe.accounts.retrieve(stripeAccountId);
+    //const account = await stripe.accounts.retrieve(stripeAccountId);
 
     const currentlyDue = account.requirements?.currently_due ?? [];
     const pastDue = account.requirements?.past_due ?? [];
@@ -46,7 +52,7 @@ export const CreateOrUpdateExpressAccount = async () => {
             account_onboarding: { 
                 enabled: needsOnboarding,
             },
-            account_management: {enabled: true},
+            account_management: {enabled: !needsOnboarding},
             notification_banner: {enabled: true},
         },
         

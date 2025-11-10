@@ -187,7 +187,10 @@ model Circle {
   city   City? @relation(fields: [cityId], references: [id])
 
   price Int?
-  
+  newUserPrice Int?
+
+  public Boolean @default(false)
+
   currency Currency?
 
   meetings Meeting[]

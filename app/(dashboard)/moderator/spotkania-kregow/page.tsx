@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { clientAuth } from "@/hooks/auth";
 import { useState } from "react";
 import { Divider, Select, SelectItem } from "@heroui/react";
-import CreateCircleModal from "@/components/moderator/create-circle-modal";
+import CreateCircleModal from "@/components/moderator/circles/create-circle-modal";
 import { ModeratorQueries } from "@/utils/query";
 import Loader from "@/components/loader";
 import { Circle } from "@prisma/client";

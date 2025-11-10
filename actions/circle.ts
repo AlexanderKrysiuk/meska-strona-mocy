@@ -17,12 +17,12 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
 
     if (!auth) return {
         success: false,
-        message: "Musisz być zalogowanym by utworzyć grupę"
+        message: "Musisz być zalogowanym by utworzyć krąg"
     }
 
     if (!auth.roles.includes(Role.Moderator) && !auth.roles.includes(Role.Admin)) return {
         success: false,
-        message: "Brak uprawnień do dodania grupy"
+        message: "Brak uprawnień do dodania kręgu"
     }
  
     let counter = 1
@@ -63,7 +63,7 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
 
     if (!auth) return {
         success: false,
-        message: "Musisz być zalogowanym aby edytować grupę"
+        message: "Musisz być zalogowanym aby edytować krąg"
     }
 
     const circle = await GetCircleByID(data.circleId)
@@ -73,13 +73,13 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Dana grupa nie istnieje"
     }
 
-    if (!(auth.roles.includes(Role.Admin) || (auth.roles.includes(Role.Moderator) && auth.id === circle.moderatorId))) return {
+    if (!(auth.roles.includes(Role.Admin) || (auth.roles.includes(Role.Moderator) && auth.id === circle.moderator.id))) return {
         success: false,
         message: "Brak uprawień do edycji grupy"
     }
 
     if (circle.slug !== data.slug) {
-        const existingSlug = await GetCircleBySlugAndModeratorID(data.slug, circle.moderatorId)
+        const existingSlug = await GetCircleBySlugAndModeratorID(data.slug, circle.moderator.id)
 
         if (existingSlug) return {
             success: false,
@@ -99,7 +99,9 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
                 street: data.street,
                 cityId: data.cityId,
                 price: data.price,
-                currency: data.currency
+                newUserPrice: data.newUserPrice,
+                currency: data.currency,
+                public: data.isPublic
             }
         })
     } catch {
@@ -130,6 +132,7 @@ export const GetCircleByID = async (id: string) => {
         select: {
             id: true,
             name: true,
+            slug: true,
             moderator: { select: {
                 id: true,
                 name: true,

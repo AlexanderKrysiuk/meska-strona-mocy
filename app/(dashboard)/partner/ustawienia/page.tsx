@@ -2,23 +2,16 @@
 
 import { CreateOrUpdateExpressAccount } from "@/actions/stripe";
 import Loader from "@/components/loader";
-//import { ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
-//import { loadConnectAndInitialize } from '@stripe/connect-js';
-
-
-//import Loader from "@/components/loader";
-//import { useQuery } from "@tanstack/react-query";
-//import { useEffect, useState } from "react";
-import StripeOnboardingComponent from "@/components/stripe/stripe-onboarding-component";
-import { Card, CardBody } from "@heroui/react";
+import { addToast } from "@heroui/react";
 import { loadConnectAndInitialize } from "@stripe/connect-js/pure";
 import { ConnectAccountManagement, ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { setTimeout } from "timers";
 
 const OnBoardingPage = () => {
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, refetch } = useQuery({
         queryKey: ["stripeOnboarding"],
         queryFn: CreateOrUpdateExpressAccount,
       });
@@ -49,8 +42,17 @@ const OnBoardingPage = () => {
       return (
         <main className="p-4 flex flex-grow">
             <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-                <ConnectAccountOnboarding onExit={() => { console.log("exit") }} />
-                <ConnectAccountManagement/>
+              {data?.needsOnboarding ? 
+                  <ConnectAccountOnboarding onExit={() => {
+                    addToast({
+                      title: "Konfiguracja ukończona",
+                      color: "success",
+                    })
+                    setTimeout(()=>{},3000)
+                    refetch()
+                  }} />
+                : 
+                  <ConnectAccountManagement/>}
             </ConnectComponentsProvider>    
         </main>
       );
