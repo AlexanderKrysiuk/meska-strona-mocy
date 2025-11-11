@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client'
 import * as z from 'zod'
 
 const circleId = z.string().uuid()
@@ -14,7 +15,14 @@ const newPassword = z.string()
 .regex(/[\W_]/, "Hasło musi zawierać co najmniej jeden znak specjalny" )
 const confirmPassword = z.string()
 const password = z.string().min(1)
-const description = z.string().optional().nullable()
+const description = z.string().nullable()
+const slug = z.string()
+    .min(1, "Unikalny odnośnik nie może być pusty")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Unikalny odnośnik może zawierać tylko małe litery, cyfry i myślniki")
+    .nullable()
+
+//const roles = z.array(z.nativeEnum(Role)).optional() // tablica ról
+    
 
 export const RegisterSchema = z.object({
     name,
@@ -43,5 +51,7 @@ export const AddUserToCircleSchema = RegisterSchema.extend({
 })
 
 export const EditUserSchema = z.object({
-    description
+    name,
+    description,
+    slug,
 })

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { EditUserSchema, RegisterSchema } from "@/schema/user"
 import { z } from "zod"
 import { GenerateVerificationToken } from "./tokens"
-import { CheckLoginReturnUser } from "./auth"
+import { CheckLoginReturnUser, ServerAuth } from "./auth"
 import { SendRegisterNewUserEmail } from "./resend"
 
 export const GetUserByEmail = async (email:string) => {
@@ -56,14 +56,27 @@ export const RegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
 }
 
 export const UpdateUser = async (data: z.infer<typeof EditUserSchema>) => {
-    const user = await CheckLoginReturnUser()
-    if (!user) return { success: false, message: "Nie znaleziono użytkownika"}
+    const auth = await ServerAuth()
+    if (!auth) return { success: false, message: "Musisz być zalogowany"}
+
+    const role = auth.roles && auth.roles.length > 0
+
+    if (data.slug) {
+        const existingSlug = await checkPartnerSlug(data.slug)
+        if (existingSlug) return {
+            success: false,
+            message: "Nie udało się zaktualizować grupy",
+            fieldErrors: { slug: "Podany odnośnik jest już zajęty"}
+        }
+    }
 
     try {
         await prisma.user.update({
-            where: { id: user.id },
+            where: { id: auth.id },
             data: {
-                description: data.description
+                name: data.name,
+                slug: role ? data.slug : null,
+                description: role ? data.description : null
             }
         })
         return { success: true, message: "Zaktualizowano dane"}
@@ -71,4 +84,15 @@ export const UpdateUser = async (data: z.infer<typeof EditUserSchema>) => {
         console.error(error)
         return { success: false, message: "Błąd połączenia z bazą danych"}
     }
+}
+
+const checkPartnerSlug = async (slug: string) => {
+    const auth = await ServerAuth()
+    const existing =  await prisma.user.findFirst({
+        where: { slug: slug },
+        select: { id: true }
+    })
+
+    if (!existing) return false
+    return existing.id !== auth.id
 }
