@@ -148,3 +148,58 @@ export const GetModeratorCircles = async (moderatorID:string) => {
         where: {moderatorId: moderatorID}
     })
 }
+
+export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
+    //const PAGE_SIZE = 1
+   //const page = 0
+
+    const circles = await prisma.circle.findMany({
+        select: {
+            id: true,
+            name: true,
+            maxMembers: true,
+            street: true,
+            price: true,
+            newUserPrice: true,
+            currency: true,
+            _count: { select: { members: { where: { status: {in: ["Active", "Pending"]} }}}},
+            moderator: { select: {
+                name: true,
+                image: true
+            }},
+            city: { select: {
+                name: true,
+                region: { select: {
+                    country: { select: {
+                        timeZone: true,
+                        locale: true
+                    }}
+                }}
+            }},
+            meetings: { 
+                where: {
+                    startTime: { gte: new Date() }
+                },
+                select: {
+                    id: true,
+                    startTime: true,
+                    endTime: true,
+                },
+                orderBy: {
+                    startTime: "asc"
+                },
+                take: 3
+            }
+        },
+        skip: page * PAGE_SIZE,
+        take: PAGE_SIZE
+    })
+
+    return circles
+        .filter((circle) => circle._count.members < circle.maxMembers)
+        .sort((a,b) => {
+            const aDate = a.meetings[0]?.startTime?.getTime() ?? Infinity
+            const bDate = b.meetings[0]?.startTime?.getTime() ?? Infinity
+            return aDate - bDate
+        })
+}

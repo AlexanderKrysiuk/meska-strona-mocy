@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "@prisma/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { SubmitHandler, useForm } from "react-hook-form";
-import z, { setErrorMap } from "zod";
+import z from "zod";
 
 const EditUserForm = ({
     user

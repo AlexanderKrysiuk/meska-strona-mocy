@@ -25,7 +25,8 @@ export enum PaymentQueries {
 }
 
 export enum CircleQueries {
-    MyCircles = "My-Circles"
+    MyCircles = "My-Circles",
+    LandingPage = "Landing-Page"
 }
 
 export enum UserQueries {

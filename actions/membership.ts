@@ -52,7 +52,7 @@ export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershi
         const circle = await GetCircleByID(data.circleId)
         if (!circle) return { success: false, message: "Brak danych o kręgu" }
 
-        if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
+        if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderator.id || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
     
         // Spróbuj pobrać użytkownika
         let user = await GetUserByEmail(data.email)

@@ -1,9 +1,10 @@
+// app/(dashboard)/partner/ustawienia/page.tsx
 "use client"
 
 import { CreateOrUpdateExpressAccount } from "@/actions/stripe";
 import Loader from "@/components/loader";
 import { addToast } from "@heroui/react";
-import { loadConnectAndInitialize } from "@stripe/connect-js/pure";
+import { loadConnectAndInitialize, type StripeConnectInstance } from "@stripe/connect-js/pure";
 import { ConnectAccountManagement, ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ const OnBoardingPage = () => {
         queryFn: CreateOrUpdateExpressAccount,
       });
     
-      const [stripeConnectInstance, setStripeConnectInstance] = useState<any | null>(null);
+      const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
     
       useEffect(() => {
         const init = async () => {

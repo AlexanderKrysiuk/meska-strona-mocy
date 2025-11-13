@@ -1,6 +1,6 @@
 "use client"
 
-import { faCalendar, faGear, faGears, faPeopleGroup, faRepeat, faRocket, faUser, faWallet } from "@fortawesome/free-solid-svg-icons"
+import { faGear, faGears, faPeopleGroup, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 export const AllItems = [
@@ -25,21 +25,21 @@ export const userItems = [
 ]
 
 export const ModeratorItems = [
-    {
-        href: "/moderator/kregowcy",
-        icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
-        title: "kręgowcy"
-    },
+    // {
+    //     href: "/moderator/kregowcy",
+    //     icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
+    //     title: "kręgowcy"
+    // },
     {
         href: "/moderator/ustawienia-kregow",
         icon: <FontAwesomeIcon icon={faGears}/>,
         title: "Ustawienia kręgów"
     },
-    {
-        href: "/moderator/spotkania-kregow",
-        icon: <FontAwesomeIcon icon={faCalendar}/>,
-        title: "Spotkania kręgów"
-    }
+//     {
+//         href: "/moderator/spotkania-kregow",
+//         icon: <FontAwesomeIcon icon={faCalendar}/>,
+//         title: "Spotkania kręgów"
+//     }
 ]
 
 export const PartnerItems = [
@@ -48,9 +48,9 @@ export const PartnerItems = [
         icon: <FontAwesomeIcon icon={faGear}/>,
         title: "Ustawienia"
     },
-    {
-        href: "/partner/platnosci",
-        icon: <FontAwesomeIcon icon={faWallet}/>,
-        title: "Płatności"
-    }
+    // {
+    //     href: "/partner/platnosci",
+    //     icon: <FontAwesomeIcon icon={faWallet}/>,
+    //     title: "Płatności"
+    // }
 ]

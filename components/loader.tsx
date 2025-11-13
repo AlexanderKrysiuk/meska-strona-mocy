@@ -3,8 +3,8 @@
 import { Spinner } from "@heroui/react";
 
 const Loader = () => {
-    return <main className="w-full h-full p-4">
-        <Spinner label="Ładowanie..." className="w-full h-full justify-center items-center"/>
+    return <main className="flex flex-grow items-center justify-center">
+        <Spinner label="Ładowanie..."/>
     </main>;
 }
  
