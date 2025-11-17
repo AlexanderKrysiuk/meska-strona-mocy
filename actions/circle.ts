@@ -11,6 +11,8 @@ import { customAlphabet } from 'nanoid'
 import { finalSlugify, liveSlugify } from "@/utils/slug"
 import { PermissionGate } from "@/utils/gate"
 import { setTimeout } from "timers"
+import { sendEmail } from "@/lib/resend"
+import { CircleChangeEmail } from "@/components/emails/Circle-Change"
 
 export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => {
     const auth = await ServerAuth()
@@ -89,7 +91,7 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
     }
 
     try {
-        await prisma.circle.update({
+        const updated = await prisma.circle.update({
             where: { id: data.circleId },
             data: {
                 name: data.name,
@@ -102,9 +104,57 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
                 newUserPrice: data.newUserPrice,
                 currency: data.currency,
                 public: data.isPublic
+            },
+            select: {
+                name: true,
+                street: true,
+                price: true,
+                currency: true,
+                city: { select:{
+                    id: true,
+                    name: true,
+                }},
+                members: { 
+                    where: {
+                        status: "Active"
+                    },
+                    select: { 
+                        user: { select: {
+                            name: true,
+                            email: true,
+                    }}
+                }}
             }
         })
-    } catch {
+
+        if (
+            circle.name !== updated.name ||
+            circle.street !== updated.street ||
+            circle.city?.id !== updated.city?.id ||
+            circle.price !== updated.price ||
+            circle.currency !== updated.currency
+        ) {
+            try {
+                for (const member of updated.members) {
+                    await sendEmail({
+                        to: member.user.email,
+                        subject: `Zmiany w kręgu ${circle.name}`,
+                        react: CircleChangeEmail({
+                            oldCircle: circle,
+                            newCircle: updated,
+                            member: member.user,
+                            moderator: circle.moderator,
+                            
+                        })
+                    })
+                }
+            } catch(error) {
+                console.error(error)
+            }
+        }
+
+    } catch(error) {
+        console.error(error)
         return {
             success: false,
             message: "Błąd połączenia z bazą danych"
@@ -133,6 +183,13 @@ export const GetCircleByID = async (id: string) => {
             id: true,
             name: true,
             slug: true,
+            street: true,
+            price: true,
+            currency: true,
+            city: { select: {
+                id: true,
+                name: true
+            }},
             moderator: { select: {
                 id: true,
                 name: true,
@@ -154,6 +211,7 @@ export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
    //const page = 0
 
     const circles = await prisma.circle.findMany({
+        where: { public: true },
         select: {
             id: true,
             name: true,

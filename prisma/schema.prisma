@@ -29,7 +29,7 @@ model User {
   stripeCustomerId String?
   subscriptionEndsAt DateTime?
 
-  transactions  Transaction[]
+//  transactions  Transaction[]
   roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]
   sessions      Session[]
@@ -47,19 +47,19 @@ model User {
   moderatedMeetings Meeting[] @relation("Moderator")
 }
 
-model MembershipBalance {
-  id String @id @default(uuid())
-  membershipId String
-  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+//model MembershipBalance {
+//  id String @id @default(uuid())
+//  membershipId String
+//  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
 
-  amount Int
-  currency Currency
-  stripePaymentId String?
-  method PaymentMethod?
+//  amount Int
+//  currency Currency
+//  stripePaymentId String?
+//  method PaymentMethod?
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
+//  createdAt DateTime  @default(now())
+//  updatedAt DateTime  @updatedAt
+//}
 
 model Subscription {
   id  String  @id @default(uuid())
@@ -206,17 +206,17 @@ model Meeting {
   startTime DateTime
   endTime   DateTime
 
-  street String
+//  street String
   status MeetingStatus
   
-  cityId String
-  city City @relation(fields: [cityId], references: [id])
+//  cityId String
+//  city City @relation(fields: [cityId], references: [id])
 
-  number Int
+//  number Int
   
-  price  Int
+//  price  Int
 
-  currency Currency 
+//  currency Currency 
 
   circleId      String
   circle        Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
@@ -229,7 +229,6 @@ model Meeting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 enum MeetingStatus {
   Scheduled
@@ -246,10 +245,13 @@ model Participation {
   meetingId  String
   meeting    Meeting @relation(fields: [meetingId], references: [id])
 
-  status     ParticipationStatus @default(Active)
-  payments  ParticipationPayment[]
+  onVacation Boolean @default(false)
 
-  paymentDate DateTime?
+//  status     ParticipationStatus @default(Active)
+//  payments  ParticipationPayment[]
+  stripePaymentIntentId String? @unique
+
+//  paymentDate DateTime?
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -257,29 +259,29 @@ model Participation {
   @@unique([membershipId, meetingId])
 }
 
-model ParticipationPayment {
-  id  String  @id @default(uuid())
-  participationId String
-  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+//model ParticipationPayment {
+//  id  String  @id @default(uuid())
+//  participationId String
+//  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
 
-  amount  Int
-  currency  Currency
-  stripePaymentId String?
-  method PaymentMethod?
+//  amount  Int
+//  currency  Currency
+//  stripePaymentId String?
+//  method PaymentMethod?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+//  createdAt DateTime @default(now())
+//  updatedAt DateTime @updatedAt
+//}
 
-enum PaymentMethod {
-  Stripe
-}
+// enum PaymentMethod {
+//   Stripe
+// }
 
-enum ParticipationStatus {
-  Active
-  Vacation
-  Cancelled
-}
+// enum ParticipationStatus {
+//   Active
+//   Vacation
+//   Cancelled
+// }
 
 model Membership {
   id String @id @default(uuid())
@@ -292,7 +294,7 @@ model Membership {
   circleId String
   circle   Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
 
-  balance MembershipBalance[]
+//  balance MembershipBalance[]
   participations Participation[]
 
   createdAt DateTime @default(now())
@@ -334,7 +336,7 @@ model City {
   region Region @relation(fields: [regionId], references: [id])
 
   circles Circle[]
-  circleMeetings Meeting[]
+//  circleMeetings Meeting[]
 }
 
 model BusinessInfo {
@@ -347,36 +349,36 @@ model BusinessInfo {
   updatedAt DateTime @updatedAt
 }
 
-model Transaction {
-  id              String   @id @default(cuid())
+// model Transaction {
+//   id              String   @id @default(cuid())
   
-  userId          String   // klient (User.id)
-  user            User  @relation(fields: [userId], references: [id])
+//   userId          String   // klient (User.id)
+//   user            User  @relation(fields: [userId], references: [id])
 
-  amount          Int      // kwota w najdrobniejszych jednostkach (np. grosze)
+//   amount          Int      // kwota w najdrobniejszych jednostkach (np. grosze)
   
-  currency        Currency   // PLN, USD itd.
-  status          TransactionStatus   // np. "succeeded", "failed", "pending"
-  type            TransactionType
-  paymentIntentId String?   // Stripe PaymentIntent.id
-  createdAt       DateTime @default(now())
+//   currency        Currency   // PLN, USD itd.
+//   status          TransactionStatus   // np. "succeeded", "failed", "pending"
+//   type            TransactionType
+//   paymentIntentId String?   // Stripe PaymentIntent.id
+//   createdAt       DateTime @default(now())
 
-  // snapshot danych wystawcy w momencie transakcji
-  businessName    String
-  businessAddress String?
-  businessTaxId   String?
-}
+//   // snapshot danych wystawcy w momencie transakcji
+//   businessName    String
+//   businessAddress String?
+//   businessTaxId   String?
+// }
 
-enum TransactionStatus {
-  Succeeded
-  Failed
-  Pending
-  Refunded_to_wallet
-  Used_from_wallet
-}
+// enum TransactionStatus {
+//   Succeeded
+//   Failed
+//   Pending
+//   Refunded_to_wallet
+//   Used_from_wallet
+// }
 
-enum TransactionType {
-  Incoming   // wpłata od użytkownika
-  Outgoing   // zwrot do portfela lub na kartę
-  Internal   // operacje wewnętrzne (np. przeniesienie środków)
-}
+// enum TransactionType {
+//   Incoming   // wpłata od użytkownika
+//   Outgoing   // zwrot do portfela lub na kartę
+//   Internal   // operacje wewnętrzne (np. przeniesienie środków)
+// }

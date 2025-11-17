@@ -56,7 +56,6 @@ const price = z.preprocess(
 
 const currency = z
   .nativeEnum(Currency)
-  .nullable()
 
 const isPublic = z.boolean()
 // const price = z.number().nullable()
