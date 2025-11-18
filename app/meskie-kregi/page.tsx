@@ -64,7 +64,7 @@ const MensCirclePage = () => {
                                 Wkład energetyczny: {circle.price === circle.newUserPrice ? (
                                     circle.price
                                         ? <span> {circle.price} {circle.price}</span>
-                                        : <span> spotkanie bezpłatne </span>
+                                        : <span> spotkania bezpłatne </span>
                                 ) : (
                                     <ul>
                                         <li>

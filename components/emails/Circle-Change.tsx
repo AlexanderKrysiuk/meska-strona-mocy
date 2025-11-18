@@ -1,5 +1,5 @@
 import { Circle, City, User } from "@prisma/client";
-import { EmailLayout, Header, Sign } from "./Components";
+import { EmailLayout, Header, Sign, emailStyles } from "./Components";
 import { Preview, Section, Text } from "@react-email/components";
 
 export function CircleChangeEmail({
@@ -17,8 +17,11 @@ export function CircleChangeEmail({
     moderator: Pick<User, "name" | "image" | "title">
     member: Pick<User, "name">
 }) {
+    const oldStyle = { color: "#ff5555", textDecoration: "line-through" };
+    const newStyle = { color: "#55ff55" };
+    
     const formatAddress = (street?: string | null, cityName?: string | null) => {
-        if (!cityName) return "spotykamy się online";
+        if (!cityName) return "spotykamy się online 🌐";
         if (!street) return `ulica nie została jeszcze ustalona, ${cityName}`;
         return `${street}, ${cityName}`;
     };
@@ -45,21 +48,45 @@ export function CircleChangeEmail({
         <Header title={`Zmiany w kręgu ${oldCircle.name}`}/>
 
         <Section>
-            <Text>
-                {`Cześć${" " + member.name}, Od dzisiaj w kręgu ${oldCircle.name} zaszły następujące zmiany:`}
+            <Text style={{ ...emailStyles.paragraph }}>
+                {`Cześć${" " + member.name}, Od dzisiaj dane kręgu ${oldCircle.name} zostały zaktualizowane:`}
             </Text>
 
-            {oldCircle.name !== newCircle.name && <Text>
-                Krąg ma nową nazwę: {newCircle.name}    
-            </Text>} 
-            
-            {oldAddress !== newAddress && <Text>
-                Spotykamy się w nowym miejscu: {newAddress}    
-            </Text>}
+            <Text style={{ ...emailStyles.paragraph }}>
+                <strong>🔖 Nazwa: </strong>
+                {oldCircle.name !== newCircle.name ? 
+                    <>
+                        <br/><span style={oldStyle}>❌ {oldCircle.name}</span>
+                        <br/><span style={newStyle}>✅ {newCircle.name}</span>
+                    </> 
+                    : 
+                    <span>{oldCircle.name}</span>
+                } 
+            </Text>
 
-            {oldPrice !== newPrice && <Text>
-                Spotkania mają nową cenę: {newPrice}    
-            </Text>}
+            <Text style={{ ...emailStyles.paragraph }}>
+                <strong>🏠 Adres:</strong>
+                {oldAddress !== newAddress ?
+                    <>
+                        <br/><span style={oldStyle}>❌ {oldAddress}</span>
+                        <br/><span style={newStyle}>✅ {newAddress}</span>
+                    </>
+                    :
+                    <span>{oldAddress}</span>
+                }
+            </Text>
+            
+            <Text style={{ ...emailStyles.paragraph }}>
+                <strong>🎫 Cena:</strong>
+                {oldPrice !== newPrice ?
+                    <>
+                        <br/><span style={oldStyle}>❌ {oldPrice}</span>
+                        <br/><span style={newStyle}>✅ {newPrice}</span>
+                    </>
+                    :
+                    <span>{oldPrice}</span>
+                }
+            </Text>
         </Section>
     </EmailLayout>
 }
@@ -76,7 +103,7 @@ export default function CircleChangeEmailPreview() {
         newCircle={{
             name: "Latający Holender",
             street: "Tortuga 420",
-            price: 200,
+            price: 150,
             currency: "PLN",
             city: { name: "Port Royal"}
         }}
