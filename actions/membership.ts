@@ -22,7 +22,9 @@ export const GetCircleMembersByCircleID = async (ID:string) => {
     try {
         return await prisma.membership.findMany({
             where: {circleId: ID},
-            include: {
+            select: {
+                id: true,
+                status: true,
                 user: {
                     select: {
                         id: true,
@@ -43,6 +45,43 @@ export const GetCircleMembersByCircleID = async (ID:string) => {
         console.error(error)
         return null
     }
+}
+
+export const GetMembershipByID = async (membershipID: string) => {
+    return await prisma.membership.findUnique({
+        where: { id: membershipID },
+        select: {
+            id: true,
+            status: true,
+            updatedAt: true,
+            user: { select: {
+                id: true,
+                name: true,
+                email: true,
+            }},
+            circle: { select: {
+                id: true,
+                name: true,
+                moderatorId: true,
+                moderator: { select: {
+                    name: true,
+                    image: true,
+                    title: true
+                }}
+            }},
+            participations: { 
+                where: {
+                    meeting: {
+                        startTime: { gte: new Date() }
+                    }
+                },
+                select: {
+                    id: true,
+                    status: true,
+                }
+            }
+        }
+    })
 }
 
 export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershipByModeratorSchema>) => {
@@ -94,7 +133,7 @@ export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershi
     }
 }
 
-export const RemoveMembership = async (data: z.infer<typeof RemoveMembershipSchema>) => {
+export const RemoveMembershipByModerator  = async (data: z.infer<typeof RemoveMembershipSchema>) => {
     try {
         const auth = await ServerAuth()
 
@@ -103,58 +142,69 @@ export const RemoveMembership = async (data: z.infer<typeof RemoveMembershipSche
         
         if (!auth.roles.includes(Role.Admin) && (auth.id !== membership.circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
 
-        const participations = await GetFutureParticipationsByUserIDAndCircleID(membership.user.id, membership.circle.id)
-
         await prisma.$transaction(async (tx) => {
+            // 1. Zmień status członkostwa
             await tx.membership.update({
                 where: { id: membership.id },
-                data: { status: MembershipStatus.Removed }
-            })
-            
-            if (participations.length > 0) {
-                for (const participation of participations) {
-                    if (participation.amountPaid > 0) {
-                        await tx.membershipBalance.upsert({
-                            where: { membershipId_currency: {
-                                membershipId: membership.id,
-                                currency: participation.meeting.currency
-                            }},
-                            update: {
-                                amount: { increment: participation.amountPaid }
-                            },
-                            create: {
-                                membershipId: membership.id,
-                                currency: participation.meeting.currency,
-                                amount: participation.amountPaid
-                            }
-                        })
-                        await tx.participation.update({
-                            where: { id: participation.id },
-                            data: { 
-                                amountPaid: 0,
-                                status: ParticipationStatus.Cancelled
-                            }
-                        })
-                    }
-                }
-            }
-        })
+                data: { status: MembershipStatus.Removed },
+            });
 
-        if (membership.status !== MembershipStatus.Pending) {
-            try {
-                await sendEmail({
-                    to: membership.user.email,
-                    subject: `Usunięcie z kręgu - ${membership.circle.name}`,
-                    react: RemoveMembershipEmail({
-                        member: membership.user,
-                        circle: membership.circle,
-                        moderator: membership.circle.moderator,
-                        reason: data.reason
-                    })
+            // 2. Anuluj wszystkie przyszłe participations
+            await tx.participation.updateMany({
+                where: { id: { in: membership.participations.map((p) => p.id) } },
+                data: { status: ParticipationStatus.Cancelled },
+            });
+        })
+        //const participations = await GetFutureParticipationsByUserIDAndCircleID(membership.user.id, membership.circle.id)
+
+        // await prisma.$transaction(async (tx) => {
+        //     await tx.membership.update({
+        //         where: { id: membership.id },
+        //         data: { status: MembershipStatus.Removed }
+        //     })
+            
+        //     if (participations.length > 0) {
+        //         for (const participation of participations) {
+        //             if (participation.amountPaid > 0) {
+        //                 await tx.membershipBalance.upsert({
+        //                     where: { membershipId_currency: {
+        //                         membershipId: membership.id,
+        //                         currency: participation.meeting.currency
+        //                     }},
+        //                     update: {
+        //                         amount: { increment: participation.amountPaid }
+        //                     },
+        //                     create: {
+        //                         membershipId: membership.id,
+        //                         currency: participation.meeting.currency,
+        //                         amount: participation.amountPaid
+        //                     }
+        //                 })
+        //                 await tx.participation.update({
+        //                     where: { id: participation.id },
+        //                     data: { 
+        //                         amountPaid: 0,
+        //                         status: ParticipationStatus.Cancelled
+        //                     }
+        //                 })
+        //             }
+        //         }
+        //     }
+        // })
+
+        try {
+            await sendEmail({
+                to: membership.user.email,
+                subject: `Usunięcie z kręgu - ${membership.circle.name}`,
+                react: RemoveMembershipEmail({
+                    member: membership.user,
+                    circle: membership.circle,
+                    moderator: membership.circle.moderator,
+                    reason: data.reason
                 })
-            } catch (error) {
-                console.error(error)
-            }
+            })
+        } catch (error) {
+            console.error(error)
         }
             
         return {
@@ -188,7 +238,7 @@ export const RestoreMembership = async (data: z.infer<typeof RestoreMembershipSc
             await sendEmail({
                 to: membership.user.email,
                 subject: `Dołączenie do kręgu - ${membership.circle.name}`,
-                react: MembershipConfirmationEmail({
+                react: MembershipInvitationEmail({
                     member: membership.user,
                     circle: membership.circle,
                     moderator: membership.circle.moderator,
@@ -225,32 +275,6 @@ export const GetMembersByCircleIdAndStatus = async ({
             user: { select: {
                 name: true,
                 email: true,
-            }}
-        }
-    })
-}
-
-export const GetMembershipByID = async (membershipID: string) => {
-    return await prisma.membership.findUnique({
-        where: { id: membershipID },
-        select: {
-            id: true,
-            status: true,
-            updatedAt: true,
-            user: { select: {
-                id: true,
-                name: true,
-                email: true,
-            }},
-            circle: { select: {
-                id: true,
-                name: true,
-                moderatorId: true,
-                moderator: { select: {
-                    name: true,
-                    image: true,
-                    title: true
-                }}
             }}
         }
     })

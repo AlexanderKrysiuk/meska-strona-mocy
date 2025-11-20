@@ -25,11 +25,11 @@ export const userItems = [
 ]
 
 export const ModeratorItems = [
-    // {
-    //     href: "/moderator/kregowcy",
-    //     icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
-    //     title: "kręgowcy"
-    // },
+    {
+        href: "/moderator/kregowcy",
+        icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
+        title: "kręgowcy"
+    },
     {
         href: "/moderator/ustawienia-kregow",
         icon: <FontAwesomeIcon icon={faGears}/>,

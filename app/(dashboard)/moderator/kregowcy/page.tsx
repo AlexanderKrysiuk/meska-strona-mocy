@@ -2,8 +2,8 @@
 
 import { GetModeratorCircles } from "@/actions/circle";
 import Loader from "@/components/loader";
-import AddCircleMemberModal from "@/components/moderator/add-circle-member-modal";
-import CircleMembersTable from "@/components/moderator/circle-members-table";
+import AddCircleMemberModal from "@/components/moderator/members/add-circle-member-modal";
+import CircleMembersTable from "@/components/moderator/members/circle-members-table";
 import CreateCircleModal from "@/components/moderator/circles/create-circle-modal";
 import { clientAuth } from "@/hooks/auth";
 import { ModeratorQueries } from "@/utils/query";
@@ -15,7 +15,7 @@ import { useState } from "react";
 const CircleMembersPage = () => {
     const moderator = clientAuth()
 
-    const { data: circles } = useQuery({
+    const { data: circles = [], isLoading } = useQuery({
         queryKey: [ModeratorQueries.Circles, moderator?.id],
         queryFn: () => GetModeratorCircles(moderator!.id),
         enabled: !!moderator
@@ -23,7 +23,7 @@ const CircleMembersPage = () => {
 
     const [circle, setCircle] = useState<Circle | undefined>()
 
-    if (!circles) return <Loader/>
+    if (isLoading) return <Loader/>
     
     return ( 
         <main className="p-4 space-y-4">
@@ -40,7 +40,7 @@ const CircleMembersPage = () => {
                     }}
                     isDisabled={circles.length < 1}
                     hideEmptyContent
-                    >
+                >
                     {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
                 </Select>
                 <CreateCircleModal/>

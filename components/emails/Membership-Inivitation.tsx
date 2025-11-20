@@ -40,7 +40,7 @@ export function MembershipInvitationEmail({
         </Text>
 
         <Text style={emailStyles.paragraph}>
-          Zaloguj się, aby potwierdzić lub odrzucić zaproszenie:
+          Zaloguj się, aby potwierdzić lub odrzucić zaproszenie
         </Text>
 
         {/* <div style={{ textAlign: "center", margin: "20px 0" }}>

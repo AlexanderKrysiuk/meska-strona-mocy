@@ -245,9 +245,9 @@ model Participation {
   meetingId  String
   meeting    Meeting @relation(fields: [meetingId], references: [id])
 
-  onVacation Boolean @default(false)
+  //onVacation Boolean @default(false)
 
-//  status     ParticipationStatus @default(Active)
+  status     ParticipationStatus @default(Active)
 //  payments  ParticipationPayment[]
   stripePaymentIntentId String? @unique
 
@@ -257,6 +257,12 @@ model Participation {
   updatedAt  DateTime @updatedAt
 
   @@unique([membershipId, meetingId])
+}
+
+enum ParticipationStatus {
+  Active
+  Vacation
+  Cancelled
 }
 
 //model ParticipationPayment {
@@ -277,11 +283,6 @@ model Participation {
 //   Stripe
 // }
 
-// enum ParticipationStatus {
-//   Active
-//   Vacation
-//   Cancelled
-// }
 
 model Membership {
   id String @id @default(uuid())

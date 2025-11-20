@@ -7,7 +7,7 @@ import { Chip, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, T
 import { Circle, MembershipStatus } from "@prisma/client";
 import { useQueries } from "@tanstack/react-query";
 import DeleteCircleMemberModal from "./delete-circle-member-modal";
-import RestoreUserToCircleModal from "./restore-user-to-circle-modal";
+import RestoreMembershipModal from "./restore-membership-modal";
 
 const StatusChip = ({ status }: { status: MembershipStatus }) => {
     let color: "success" | "danger" | "default" = "default";
@@ -58,13 +58,11 @@ const CircleMembersTable = ({
 
     // Filtrujemy po wybranym kręgu jeśli jest selectedCircleId
     const displayedMembers = circle?.id 
-        ? allMembers.filter(m => m.circleId === circle.id)
+        ? allMembers.filter(m => m.circle.id === circle.id)
         : allMembers;
-
     
     return (
         <main>
-            
             <div className="w-full overflow-x-auto p-2">
                 <Table>
                     <TableHeader>
@@ -98,20 +96,23 @@ const CircleMembersTable = ({
                                 <TableCell>{item.circle.name}</TableCell>
                                 <TableCell><StatusChip status={item.status}/></TableCell>
                                 <TableCell align="center">
-                                    {(item.status === MembershipStatus.Active || item.status === MembershipStatus.Pending) && (
-                                        <DeleteCircleMemberModal
-                                            membership={item}
-                                            memberName={item.user.name}
-                                            circleName={item.circle.name}
-                                        />
-                                    )}
-                                    {item.status === MembershipStatus.Removed && (
+                                    <DeleteCircleMemberModal
+                                        membership={item}
+                                        member={item.user}
+                                        circle={item.circle}
+                                    />
+                                    <RestoreMembershipModal 
+                                        membership={item} 
+                                        member={item.user} 
+                                        circle={item.circle}                                        
+                                    />
+                                    {/* {item.status === MembershipStatus.Removed && (
                                         <RestoreUserToCircleModal
                                             membership={item}
                                             member={item.user}
                                             circle={item.circle}
                                         />
-                                    )}
+                                    )} */}
                                 </TableCell>
                             </TableRow>
                         )}
