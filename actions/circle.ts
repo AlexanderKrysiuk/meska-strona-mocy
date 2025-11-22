@@ -202,7 +202,35 @@ export const GetCircleByID = async (id: string) => {
 
 export const GetModeratorCircles = async (moderatorID:string) => {
     return await prisma.circle.findMany({
-        where: {moderatorId: moderatorID}
+        where: {moderatorId: moderatorID},
+        select: {
+            id: true,
+            name: true,
+            slug: true,
+            maxMembers: true,
+            minMembers: true,
+            street: true,
+            public: true,
+            price: true,
+            newUserPrice: true,
+            currency: true,
+            city: {
+                select: {
+                    id: true,
+                    name: true,
+                    region: {
+                        select: {
+                            country: {
+                                select: {
+                                    name: true,
+                                    timeZone: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     })
 }
 

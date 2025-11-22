@@ -200,8 +200,12 @@ export function formatedDate(
   }
 }
 
-
-
+export function getGMTOffset(timeZone: string) {
+  const date = new Date();
+  const localeString = date.toLocaleString("en-US", { timeZone, timeZoneName: "short" });
+  const match = localeString.match(/GMT([+-]\d{1,2})/);
+  return match ? `GMT${match[1].padStart(2, "0")}` : "GMT";
+}
 // funkcja pomocnicza do porównywania dni
 export const isSameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() &&

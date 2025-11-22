@@ -7,11 +7,11 @@ import { ModeratorQueries } from "@/utils/query"
 import { Chip, Pagination, PaginationItemRenderProps, PaginationItemType, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Circle, MeetingStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
-import { EditMeetingModal } from "./edit-meeting-modal"
-import { CompleteMeetingModal } from "./complete-meeting-modal"
-import { CreateMeetingModal } from "./create-meeting-modal"
+import { EditMeetingModal } from "../edit-meeting-modal"
+import { CompleteMeetingModal } from "../complete-meeting-modal"
+import { CreateMeetingModal } from "../members/create-meeting-modal"
 import { useState } from "react"
-import MeetingParticipantsModal from "./meeting-participants-modal"
+//import MeetingParticipantsModal from "../meeting-participants-modal"
 
 const StatusChip = ({ status }: { status: MeetingStatus }) => {
   let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -115,8 +115,8 @@ export const MeetingsTable = ({
             <TableHeader>
                 <TableColumn>Data</TableColumn>
                 <TableColumn>Krąg</TableColumn>
-                <TableColumn>Ulica</TableColumn>
-                <TableColumn>Miasto</TableColumn>
+                {/* <TableColumn>Ulica</TableColumn> */}
+                {/* <TableColumn>Miasto</TableColumn> */}
                 <TableColumn>Status</TableColumn>
                 <TableColumn align="center">Akcje</TableColumn>
             </TableHeader>
@@ -130,11 +130,12 @@ export const MeetingsTable = ({
                     <TableRow key={item.id}>
                         <TableCell>{formatedDate(item.startTime, item.endTime)}</TableCell>
                         <TableCell>{item.circle.name}</TableCell>
-                        <TableCell>{item.street}</TableCell>
-                        <TableCell>{item.city.name}</TableCell>
-                        <TableCell><StatusChip status={item.status}/></TableCell>
+                        {/* <TableCell>{item.street}</TableCell> */}
+                        {/* <TableCell>{item.city.name}</TableCell> */}
+                        <TableCell align="center"><StatusChip status={item.status}/></TableCell>
                         <TableCell className="flex justify-center">
-                          {item.status === MeetingStatus.Scheduled && <>
+                          123
+                          {/* {item.status === MeetingStatus.Scheduled && <>
                             <EditMeetingModal
                               meeting={item}
                               circle={item.circle}
@@ -149,7 +150,7 @@ export const MeetingsTable = ({
                             meeting={item}
                             circle={item.circle}
                             country={item.city.region.country}
-                          />
+                          /> */}
                         </TableCell>
                     </TableRow>
                 )}

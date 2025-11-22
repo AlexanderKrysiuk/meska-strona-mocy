@@ -1,6 +1,6 @@
 "use client"
 
-import { EditCircle } from "@/actions/circle"
+import { EditCircle, GetModeratorCircles } from "@/actions/circle"
 import { GetCities } from "@/actions/city"
 import { GetCountries } from "@/actions/country"
 import { GetRegions } from "@/actions/region"
@@ -8,7 +8,7 @@ import { clientAuth } from "@/hooks/auth"
 import { EditCircleSchema } from "@/schema/circle"
 import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { liveSlugify } from "@/utils/slug"
-import { Button, Form, Input, NumberInput, Radio, RadioGroup, Select, SelectItem, addToast } from "@heroui/react"
+import { Button, Form, Input, NumberInput, Radio, RadioGroup, Select, SelectItem, Selection, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle, Country, Currency, Region } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
@@ -17,15 +17,16 @@ import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 import Loader from "../../loader"
 
-const EditCircleForm = ({
-    circle
-} : {
-    circle?: Circle
-}) => {
+const EditCircleForm = () => {
     const moderator = clientAuth()
 
     const queries = useQueries({
         queries: [
+            {
+                queryKey: [ModeratorQueries.Circles, moderator?.id],
+                queryFn: () => GetModeratorCircles(moderator!.id),
+                enabled: !!moderator
+            },
             {
                 queryKey: [GeneralQueries.Countries],
                 queryFn: () => GetCountries()
@@ -41,7 +42,7 @@ const EditCircleForm = ({
         ]
     })
 
-    const [countries, regions, cities] = queries
+    const [circles, countries, regions, cities] = queries
 
     const [region, setRegion] = useState<Region | undefined>();
     const [country, setCountry] = useState<Country | undefined>();
@@ -54,31 +55,40 @@ const EditCircleForm = ({
     })
 
     useEffect(() => {      
-        reset({
-          circleId: circle?.id,
-          name: circle?.name,
-          slug: circle?.slug,
-          members: {
-            max: circle?.maxMembers,
-            min: circle?.minMembers
-          },
-          street: circle?.street,
-          cityId: circle?.cityId,
-          isPublic: circle?.public,
-          price: circle?.price,
-          newUserPrice: circle?.newUserPrice,
-          currency: circle?.currency
-        });
-      }, [circle, reset]);
+        const circle = circles.data?.find(c => c.id === watch("circleId"))
 
-    useEffect(()=>{
-        if (!cities.data || !regions.data || !countries.data) return
-        const city = cities.data.find(c => c.id === circle?.cityId)
-        const region = regions.data.find(r => r.id === city?.regionId)
-        const country = countries.data.find(c => c.id === region?.countryId)
+        reset({
+            circleId: circle?.id,
+            name: circle?.name,
+            slug: circle?.slug,
+            members: {
+                max: circle?.maxMembers,
+                min: circle?.minMembers
+            },
+            street: circle?.street,
+            cityId: circle?.city?.id,
+            isPublic: circle?.public,
+            price: circle?.price,
+            newUserPrice: circle?.newUserPrice,
+            currency: circle?.currency
+        });
+
+        const city = cities.data?.find(c => c.id === circle?.city?.id)
+        const region = regions.data?.find(r => r.id === city?.regionId)
+        const country = countries.data?.find(c => c.id === region?.countryId)
         setRegion(region)
         setCountry(country)
-    }, [cities.data, regions.data, countries.data, circle])
+
+    }, [watch("circleId"), reset, cities.data, regions.data, countries.data]);
+
+    // useEffect(()=>{
+    //     if (!cities.data || !regions.data || !countries.data) return
+    //     const city = cities.data.find(c => c.id === circle?.cityId)
+    //     const region = regions.data.find(r => r.id === city?.regionId)
+    //     const country = countries.data.find(c => c.id === region?.countryId)
+    //     setRegion(region)
+    //     setCountry(country)
+    // }, [cities.data, regions.data, countries.data, circle])
 
     const queryClient = useQueryClient()
 
@@ -103,9 +113,24 @@ const EditCircleForm = ({
         }      
     }
 
-    if (queries.some(q => q.isLoading || !q.data)) return <Loader/>
+    if (queries.some(q => q.isLoading)) return <Loader/>
 
     return <Form onSubmit={handleSubmit(submit)}>
+        <Select
+            label="Krąg"
+            labelPlacement="outside"
+            items={circles.data}
+            variant="bordered"
+            placeholder="Wybierz krąg"
+            onSelectionChange={(keys) => {
+                const id = Array.from(keys)[0]
+                setValue("circleId", id as string)
+            }}
+            isDisabled={!circles}
+            hideEmptyContent
+        >
+            {(circle) => <SelectItem key={circle.id}>{circle.name}</SelectItem>}
+        </Select>
         <Input
             label="Nazwa kręgu"
             labelPlacement="outside"

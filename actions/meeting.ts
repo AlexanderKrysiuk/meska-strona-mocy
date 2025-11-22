@@ -11,7 +11,7 @@ import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 import { GetMembersByCircleIdAndStatus } from "./membership"
 import { MeetingUpdatedEmail } from "@/components/emails/Meeting-Update"
 
-const MODERATOR_SHARE = parseFloat(process.env.MODERATOR_SHARE!);
+// const MODERATOR_SHARE = parseFloat(process.env.MODERATOR_SHARE!);
 
 export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {
     try {
@@ -28,12 +28,10 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             data.TimeRangeSchema.endTime
         )
         
-        if (overlappingMeeting) {
-            return {
-                success: false,
-                message: "Nie udało się utworzyć spotkania",
-                fieldErrors: { date: "W tym dniu masz już inne spotkanie" },
-            }
+        if (overlappingMeeting) return {
+            success: false,
+            message: "Nie udało się utworzyć spotkania",
+            fieldErrors: { date: "W tym dniu masz już inne spotkanie" },
         }
         
         const activeMembers = await GetMembersByCircleIdAndStatus({
@@ -41,7 +39,7 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
             status: MembershipStatus.Active
         })
 
-        const existingMeetings = await prisma.meeting.count({ where: { circleId: data.circleId } })
+        //const existingMeetings = await prisma.meeting.count({ where: { circleId: data.circleId } })
 
         const meeting = await prisma.$transaction(async (tx) => {
             const meeting = await tx.meeting.create({
@@ -49,26 +47,24 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                     status: MeetingStatus.Scheduled,
                     startTime: data.TimeRangeSchema.startTime,
                     endTime: data.TimeRangeSchema.endTime,
-                    street: data.street,
-                    cityId: data.cityId,
-                    price: data.price,
-                    currency: data.currency,
                     circleId: data.circleId,
                     moderatorId: circle.moderator.id,
-                    number: existingMeetings + 1,
                 },
                 select: {
                     id: true,
                     startTime: true,
                     endTime: true,
-                    street: true,
-                    price: true,
-                    currency: true,
-                    city: { select: {
+                    circle: { select: {
                         name: true,
-                        region: { select: {
-                            country: { select: {
-                                timeZone: true
+                        street: true,
+                        price: true,
+                        currency: true,
+                        city: { select: {
+                            name: true,
+                            region: { select: {
+                                country: { select: {
+                                    timeZone: true,
+                                }}
                             }}
                         }}
                     }},
@@ -99,9 +95,9 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
                     subject: `Nowe spotkanie ${circle.name}`,
                     react: MeetingInvite({
                         participant: member.user,
-                        circle: circle,
-                        city: meeting.city,
-                        country: meeting.city.region.country,
+                        circle: meeting.circle,
+                        city: meeting.circle.city ?? undefined,
+                        country: meeting.circle.city?.region.country ?? { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
                         meeting: meeting,
                         moderator: meeting.moderator
                     })
@@ -390,9 +386,17 @@ export const GetModeratorMeetings = async (moderatorID: string, status?: Meeting
                 } : {}),
         },
         orderBy: { startTime: "desc" },
-        include: { 
-            city : { include: { region: {include: {country:true}}}},
-            circle: true
+        select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            status: true,
+            circle: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            }
         }
     })
 }

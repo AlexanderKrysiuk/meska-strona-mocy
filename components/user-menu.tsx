@@ -1,6 +1,6 @@
 "use client"
 
-import { faGear, faGears, faPeopleGroup, faUser } from "@fortawesome/free-solid-svg-icons"
+import { faCalendar, faGear, faGears, faPeopleGroup, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
 export const AllItems = [
@@ -35,11 +35,11 @@ export const ModeratorItems = [
         icon: <FontAwesomeIcon icon={faGears}/>,
         title: "Ustawienia kręgów"
     },
-//     {
-//         href: "/moderator/spotkania-kregow",
-//         icon: <FontAwesomeIcon icon={faCalendar}/>,
-//         title: "Spotkania kręgów"
-//     }
+    {
+        href: "/moderator/spotkania-kregow",
+        icon: <FontAwesomeIcon icon={faCalendar}/>,
+        title: "Spotkania kręgów"
+    }
 ]
 
 export const PartnerItems = [

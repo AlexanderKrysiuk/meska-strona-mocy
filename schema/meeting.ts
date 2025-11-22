@@ -12,7 +12,7 @@ const cityId = z.string().min(1,"Wybierz miasto")
 
 const price = z.coerce.number({required_error: "Pole nie może być puste",invalid_type_error: "Pole nie moze być puste"}).refine(price => price === 0 || price >= 10, {message: "spotkanie może być darmowe lub płatne co najmniej 10 zł",});
 
-const date = z.date({ required_error: "Wybierz datę" })
+//const date = z.date({ required_error: "Wybierz datę" })
 
 const currency = z.nativeEnum(Currency)
 
@@ -38,11 +38,17 @@ const EditMeetingDateSchema = (unavailableDates: Date[], startTime: Date) => {
     });
 }
 
-export const TimeRangeSchema = z.object({startTime: z.coerce.date({ message: "Nieprawidłowy format godziny rozpoczęcia" }),endTime: z.coerce.date({ message: "Nieprawidłowy format godziny zakończenia" }),}).superRefine((data, ctx) => { if (data.endTime <= data.startTime) {ctx.addIssue({code: "custom",message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",path: ["endTime"],});} if (data.startTime >= data.endTime) {ctx.addIssue({code: "custom", message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",path: ["startTime"],});}});
+export const TimeRangeSchema = z.object({
+  startTime: z.coerce.date({ message: "Nieprawidłowy format godziny rozpoczęcia" }),
+  endTime: z.coerce.date({ message: "Nieprawidłowy format godziny zakończenia" }),
+}).superRefine((data, ctx) => { 
+  if (data.endTime <= data.startTime) {ctx.addIssue({code: "custom",message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",path: ["endTime"],});} 
+  if (data.startTime >= data.endTime) {ctx.addIssue({code: "custom", message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",path: ["startTime"],});}
+});
 
-const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
+//const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
-const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
+//const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
 export const EditPriceSchema = (
   originalPrice: number,
@@ -64,16 +70,15 @@ export const EditPriceSchema = (
 
 
 export const CreateMeetingSchema = (unavailableDates: Date[]) => {
-    return z
-        .object({
-            circleId,
-            date: CreateMeetingDateSchema(unavailableDates),
-            street,
-            cityId,
-            price,
-            currency,
-            TimeRangeSchema
-        })
+  return z.object({
+    circleId,
+    date: CreateMeetingDateSchema(unavailableDates),
+            //street,
+            //cityId,
+            //price,
+            //currency,
+    TimeRangeSchema
+  })
 };
 
 export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date, originalPrice: number, originalCurrency: Currency) => {  

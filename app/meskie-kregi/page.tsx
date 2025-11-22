@@ -36,13 +36,13 @@ const MensCirclePage = () => {
                         <h6 className="text-white">
                             {circle.name}
                         </h6>
-                            <Avatar
-                                size="lg"
-                                src={circle.moderator.image!}
-                                showFallback
-                                isBordered
-                                className="absolute top-3 right-3"
-                            />
+                        <Avatar
+                            size="lg"
+                            src={circle.moderator.image!}
+                            showFallback
+                            isBordered
+                            className="absolute top-3 right-3"
+                        />
                     </CardHeader>
                     <CardBody>
                         <div>

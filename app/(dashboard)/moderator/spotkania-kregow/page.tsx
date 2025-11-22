@@ -9,7 +9,7 @@ import { ModeratorQueries } from "@/utils/query";
 import Loader from "@/components/loader";
 import { Circle } from "@prisma/client";
 import { GetModeratorCircles } from "@/actions/circle";
-import { MeetingsTable } from "@/components/moderator/meetings-table";
+import { MeetingsTable } from "@/components/moderator/meetings/meetings-table";
 
 const MeetingsPage = () => {
     const [selectedCircle, setSelectedCircle] = useState<Circle | undefined>()
