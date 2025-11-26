@@ -3,7 +3,6 @@
 import { GetMyMemberships } from "@/actions/membership";
 import Loader from "@/components/loader";
 import MembershipCardInside from "@/components/user/my-circles/membership-card-inside";
-import UnusedBalanceTable from "@/components/user/my-circles/unused-balance-table";
 import UnpaidMeetingsTable from "@/components/user/my-circles/unpaid-participations-table";
 import { clientAuth } from "@/hooks/auth";
 import { CircleQueries } from "@/utils/query";
@@ -63,7 +62,6 @@ const MyCirclesPage = () => {
         >                  
             {(membership) => <SelectItem key={membership.id}>{membership.circle.name}</SelectItem>}
         </Select>}
-        <UnusedBalanceTable membership={selectedMembership}/>
         <UnpaidMeetingsTable membership={selectedMembership}/>
         <Divider/>
         {/* <pre>

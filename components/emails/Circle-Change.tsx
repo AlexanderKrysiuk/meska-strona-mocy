@@ -77,7 +77,7 @@ export function CircleChangeEmail({
             </Text>
             
             <Text style={{ ...emailStyles.paragraph }}>
-                <strong>🎫 Cena:</strong>
+                <strong>🎫 Wkład energetyczny:</strong>
                 {oldPrice !== newPrice ?
                     <>
                         <br/><span style={oldStyle}>❌ {oldPrice}</span>

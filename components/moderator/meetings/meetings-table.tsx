@@ -7,11 +7,11 @@ import { ModeratorQueries } from "@/utils/query"
 import { Chip, Pagination, PaginationItemRenderProps, PaginationItemType, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Circle, MeetingStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
-import { EditMeetingModal } from "../edit-meeting-modal"
-import { CompleteMeetingModal } from "../complete-meeting-modal"
-import { CreateMeetingModal } from "../members/create-meeting-modal"
+import { EditMeetingModal } from "./edit-meeting-modal"
+//import { CompleteMeetingModal } from "../complete-meeting-modal"
+import { CreateMeetingModal } from "./create-meeting-modal"
 import { useState } from "react"
-//import MeetingParticipantsModal from "../meeting-participants-modal"
+import MeetingParticipantsModal from "./meeting-participants-modal"
 
 const StatusChip = ({ status }: { status: MeetingStatus }) => {
   let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -89,7 +89,7 @@ export const MeetingsTable = ({
     return <main>
         <div className="flex space-x-4 items-center">
             <h6 className="w-full">Spotkania</h6>
-            <CreateMeetingModal circle={circle}/>
+            <CreateMeetingModal/>
         </div>
         {/* <pre>
             {JSON.stringify(years,null,2)} <br/>
@@ -134,23 +134,23 @@ export const MeetingsTable = ({
                         {/* <TableCell>{item.city.name}</TableCell> */}
                         <TableCell align="center"><StatusChip status={item.status}/></TableCell>
                         <TableCell className="flex justify-center">
-                          123
+                          <EditMeetingModal
+                            meeting={item}
+                            circle={item.circle}
+                            country={item.circle.city?.region.country}
+                          />
                           {/* {item.status === MeetingStatus.Scheduled && <>
-                            <EditMeetingModal
-                              meeting={item}
-                              circle={item.circle}
-                              country={item.city.region.country}
-                            />
                             <CompleteMeetingModal
                               meeting={item}
                               circle={item.circle}
                             />
                           </>}
-                          <MeetingParticipantsModal
+                        */}
+                          {/* <MeetingParticipantsModal
                             meeting={item}
                             circle={item.circle}
                             country={item.city.region.country}
-                          /> */}
+                          />  */}
                         </TableCell>
                     </TableRow>
                 )}

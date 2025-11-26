@@ -1,19 +1,24 @@
 "use client"
 
 import { GetCirclesForLandingPage } from "@/actions/circle";
+import { GetUserByID } from "@/actions/user";
+import { auth } from "@/auth";
+import JoinCircleModal from "@/components/landing-pages/join-circle-modal";
 import Loader from "@/components/loader";
+import { clientAuth } from "@/hooks/auth";
 import { formatedDate } from "@/utils/date";
-import { CircleQueries } from "@/utils/query";
+import { CircleQueries, UserQueries } from "@/utils/query";
 import { faArrowRight, faCalendarDay, faChair, faCity, faGlobe, faRoad, faTicket, faTriangleExclamation, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Button, Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 // import { prisma } from "@/lib/prisma";
 // import MensCircleWrapper from "./wrapper";
 // import { CircleMembershipStatus } from "@prisma/client";
 
 const MensCirclePage = () => {
+    const auth = clientAuth()
     const PAGE_SIZE = 9
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -24,6 +29,8 @@ const MensCirclePage = () => {
         initialPageParam: 0,
     })
 
+    
+
     const circles = data?.pages.flat() ?? []
 
     if (isLoading) return <Loader/>
@@ -31,6 +38,7 @@ const MensCirclePage = () => {
     return <main className="flex-col flex-grow lg:px-[20vw] p-4">
         <div className="py-4 space-y-4 grid gap-4 lg:grid-cols-3">
             {circles?.map((circle) => (
+                
                 <Card key={circle.id} className="relative">
                     <CardHeader className="bg-emerald-800 relative">
                         <h6 className="text-white">
@@ -114,6 +122,11 @@ const MensCirclePage = () => {
                         </p> */}
                     </CardBody>
                     <CardFooter>
+                        <JoinCircleModal
+                            circle={circle}
+                        >
+
+                        </JoinCircleModal>
                         {/* {JSON.stringify(circle,null,2)} */}
                     </CardFooter>
                 </Card>

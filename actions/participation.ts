@@ -130,33 +130,32 @@ export const GetParticipantsByMeetingID = async (meetingID: string) => {
         select: {
             id: true,
             status: true,
-            user: { select: {
-                id: true,
-                email: true,
-                name: true,
-                image: true,
-            }},
-            meeting: { select: {
-                id: true,
-                currency: true
-            }},
-            payments: {select: {
-                amount: true,
-                currency: true
-            }}
+            membership: {
+                select: {
+                    user: {
+                        select: {
+                            name: true,
+                            image: true,
+                            email: true,
+                        }
+                    }
+                }
+            }
         }
     })
+    
+    return participants
 
-    return participants.map(p => {
-        const totalInMeetingCurrency = p.payments
-            .filter(payment => payment.currency === p.meeting.currency)
-            .reduce((sum, payment) => sum + payment.amount, 0);
+    // return participants.map(p => {
+    //     const totalInMeetingCurrency = p.payments
+    //         .filter(payment => payment.currency === p.meeting.currency)
+    //         .reduce((sum, payment) => sum + payment.amount, 0);
 
-        return {
-            ...p,
-            totalInMeetingCurrency
-        };
-    });
+    //     return {
+    //         ...p,
+    //         totalInMeetingCurrency
+    //     };
+    // });
 }
 
 export const GetParticipationsByUserId = async (userId: string) => {

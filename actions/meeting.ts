@@ -10,6 +10,7 @@ import { sendEmail } from "@/lib/resend"
 import { MeetingInvite } from "@/components/emails/Meeting-Invite"
 import { GetMembersByCircleIdAndStatus } from "./membership"
 import { MeetingUpdatedEmail } from "@/components/emails/Meeting-Update"
+import { MeetingAction, moderatorMeetingActions } from "@/utils/meeting"
 
 // const MODERATOR_SHARE = parseFloat(process.env.MODERATOR_SHARE!);
 
@@ -124,10 +125,10 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
             message: "Dane spotkanie nie istnieje"
         }
 
-        if (meeting.status === MeetingStatus.Completed) return {
+        if (!moderatorMeetingActions[meeting.status]?.includes(MeetingAction.Edit)) return {
             success: false,
-            message: "Nie możesz edytować zakończonego spotkania"
-        }
+            message: "Akcja niedozwolona"
+        }    
   
         if (!auth.roles.includes(Role.Admin) && (auth.id !== meeting.moderatorId || !auth.roles.includes(Role.Moderator))) return {
             success: false,
@@ -171,27 +172,20 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                 data: {
                     startTime: data.TimeRangeSchema.startTime,
                     endTime: data.TimeRangeSchema.endTime,
-                    price: data.priceCurrency.price,
-                    currency: data.priceCurrency.currency,
-                    street: data.street,
-                    cityId: data.cityId
                 },
                 select: {
                     startTime: true,
                     endTime: true,
-                    street: true,
-                    price: true,
-                    currency: true,
                     circle: { select: { 
-                        name: true
-                    }},
-                    city: { select: { 
-                        name: true, 
-                        region: { select: { 
-                            country: { select: { 
-                                timeZone: true
-                            }}
-                        }} 
+                        name: true,
+                        street: true,
+                        price: true,
+                        currency: true,
+                        city: {
+                            select: {
+                                name: true,
+                            }
+                        }
                     }},
                     moderator: { select: { 
                         name: true, 
@@ -208,70 +202,11 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                                 email: true,
                             }}
                         }},
-                        payments: { select: {
-                            id: true,
-                            amount: true,
-                            currency: true,
-                            stripePaymentId: true
-                        }}
                     }}
                 }
             });
-
-            // 3️⃣ Korekta wpłat i balansów
-            for (const participant of updated.participants) {
-                const membershipId = participant.membership.id
-
-                const sameCurrencyPayment = participant.payments.filter(p => p.currency === updated.currency)
-                const otherCurrencyPayment = participant.payments.filter(p => p.currency !== updated.currency)
-            
-                const totalPaid = sameCurrencyPayment.reduce((sum, p) => sum + p.amount, 0)
-                let remaining = totalPaid - updated.price
-
-                for (const payment of sameCurrencyPayment) {
-                    if (remaining <= 0) break;
-                
-                    const moveAmount = Math.min(payment.amount, remaining);
-                    
-                    await tx.membershipBalance.create({
-                        data: {
-                            membershipId,
-                            amount: moveAmount,
-                            currency: payment.currency,
-                            stripePaymentId: payment.stripePaymentId,
-                        },
-                    });
-
-                    if (moveAmount === payment.amount) {
-                        await tx.participationPayment.delete({ where: { id: payment.id } });
-                    } else {
-                        await tx.participationPayment.update({
-                            where: { id: payment.id },
-                            data: { amount: { decrement: moveAmount } },
-                        });
-                    }
-                    remaining -= moveAmount
-                }
-
-                for (const payment of otherCurrencyPayment) {
-                    await tx.membershipBalance.create({
-                        data: {
-                            membershipId,
-                            amount: payment.amount,
-                            currency: payment.currency,
-                            stripePaymentId: payment.stripePaymentId
-                        }
-                    })
-                    await tx.participationPayment.delete({
-                        where: {id: payment.id}
-                    })
-                }
-
-            }
             return updated
         })
-
-        await sortMeetings(meeting.circleId);
 
         // 4️⃣ Wysyłka maili poza transakcją
         if (updatedMeeting.startTime > new Date()) {
@@ -283,9 +218,11 @@ export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSch
                             subject: `Zmiana spotkania w kręgu ${updatedMeeting.circle.name}`,
                             react: MeetingUpdatedEmail({
                                 participant: participant.membership.user,
-                                oldMeeting: { ...meeting, city: meeting.city, country: meeting.city.region.country },
-                                newMeeting: { ...updatedMeeting, city: updatedMeeting.city, country: updatedMeeting.city.region.country },
+                                oldMeeting: meeting,
+                                newMeeting: updatedMeeting,
                                 circle: updatedMeeting.circle,
+                                city: updatedMeeting.circle.city ?? undefined,
+                                timeZone: data.timeZone,
                                 moderator: updatedMeeting.moderator
                             })
                         });
@@ -309,32 +246,12 @@ export const GetMeeting = async (id: string) => {
         select: {
             id: true,
             circleId: true,
+            status: true,
             moderatorId: true,
             startTime: true,
             endTime: true,
-            street: true,
-            price: true,
-            currency: true,
-            status: true,
-            city: { select: { name: true, region: { select: { country: { select: { timeZone: true } } } } } }
         }
     })
-}
-
-
-export const sortMeetings = async (circleId: string) => {
-    const meetings = await prisma.meeting.findMany({
-        where: {circleId: circleId},
-        orderBy: { startTime: "asc"}
-    })
-
-    for (let i = 0; i < meetings.length; i++) {
-        const meeting = meetings[i];
-        await prisma.meeting.update({
-          where: { id: meeting.id },
-          data: { number: i + 1 } // najstarszy = 1
-        });
-      }
 }
 
 export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema>) => {
@@ -394,7 +311,20 @@ export const GetModeratorMeetings = async (moderatorID: string, status?: Meeting
             circle: {
                 select: {
                     id: true,
-                    name: true
+                    name: true,
+                    city: {
+                        select: {
+                            region: {
+                                select: {
+                                    country: {
+                                        select: {
+                                            timeZone: true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -443,17 +373,6 @@ export const GetFutureMeetingsByCricleId = async(circleId: string, fromDate?: Da
             id: true,
             startTime: true,
             endTime: true,
-            street: true,
-            price: true,
-            currency: true,
-            city: { select: {
-                name: true,
-                region: { select: {
-                    country: { select: {
-                        timeZone: true
-                    }}
-                }}
-            }}
         }
     })
 }

@@ -9,30 +9,31 @@ import { EditMeetingSchema } from "@/schema/meeting"
 import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { faPen } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Button, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, Tooltip, addToast, useDisclosure } from "@heroui/react"
+import { Button, DateInputValue, DatePicker, DateValue, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Select, SelectItem, TimeInput, TimeInputValue, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle, Meeting, Country, Region, Currency } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
-import Loader from "../loader"
+import Loader from "../../loader"
 import { getLocalTimeZone, today } from "@internationalized/date"
 import { combineDateAndTime, convertDateToNative, convertDateToTimeInputValue, formatedDate, isSameDay } from "@/utils/date"
 import { I18nProvider } from "@react-aria/i18n"
+import { MeetingAction, moderatorMeetingActions } from "@/utils/meeting"
 
 export const EditMeetingModal = ({
     meeting,
     circle,
     country
 } : {
-    meeting: Meeting
-    circle: Circle
-    country: Country
+    meeting: Pick<Meeting, "id" | "startTime" | "endTime" | "status">
+    circle: Pick<Circle, "name">
+    country?: Pick<Country, "timeZone">
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
 
-    return <main>
+    if (moderatorMeetingActions[meeting.status].includes(MeetingAction.Edit)) return <main>
         <Tooltip
             color="primary"
             placement="top"
@@ -57,10 +58,14 @@ export const EditMeetingModal = ({
         >
             <ModalContent>
                 <ModalHeader>
-                    Edytujesz spotkanie z dnia: {formatedDate(meeting.startTime, meeting.endTime, country.timeZone, "onlyDays")}<br/>
+                    Edytujesz spotkanie z dnia: {formatedDate(meeting.startTime, meeting.endTime, country?.timeZone, "onlyDays")}<br/>
                     Dla kręgu: {circle.name}
                 </ModalHeader>
-                <EditMeetingForm meeting={meeting} onClose={onClose}/>
+                <EditMeetingForm 
+                    meeting={meeting} 
+                    country={country}
+                    onClose={onClose}
+                />
             </ModalContent>
         </Modal>
     </main>
@@ -68,10 +73,12 @@ export const EditMeetingModal = ({
 
 const EditMeetingForm = ({
     meeting,
+    country,
     onClose
 } : {
-    meeting: Meeting
+    meeting: Pick<Meeting, "id" | "startTime" | "endTime">
     onClose: () => void;
+    country?: Pick<Country, "timeZone">
 }) => {
     const moderator = clientAuth()
 
@@ -82,22 +89,25 @@ const EditMeetingForm = ({
                 queryFn: () => GetModeratorMeetingsDates(moderator!.id),
                 enabled: !!moderator?.id
             },  
-            {
-                queryKey: [GeneralQueries.Countries],
-                queryFn: () => GetCountries(),
-            },
-            {
-                queryKey: [GeneralQueries.Regions],
-                queryFn: () => GetRegions()
-            },
-            { 
-                queryKey: [GeneralQueries.Cities],
-                queryFn: () => GetCities()
-            }
+            // {
+            //     queryKey: [GeneralQueries.Countries],
+            //     queryFn: () => GetCountries(),
+            // },
+            // {
+            //     queryKey: [GeneralQueries.Regions],
+            //     queryFn: () => GetRegions()
+            // },
+            // { 
+            //     queryKey: [GeneralQueries.Cities],
+            //     queryFn: () => GetCities()
+            // }
         ]
     })
 
-    const [allMeetingsDates, countries, regions, cities] = queries
+    const [allMeetingsDates, 
+        //countries, regions, cities
+    ] 
+        = queries
     
     const unavailableDates = useMemo(() => allMeetingsDates.data ?? [], [allMeetingsDates]);
 
@@ -110,43 +120,56 @@ const EditMeetingForm = ({
     );
 
     type FormFields = z.infer<ReturnType<typeof EditMeetingSchema>>
+    const timeZone = country?.timeZone ?? getLocalTimeZone();
 
     const { handleSubmit, watch, trigger, reset, setValue, setError, formState: { errors, isValid, isSubmitting, isDirty } } = useForm<FormFields>({
-        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime, meeting.price, meeting.currency)),
+        resolver: zodResolver(EditMeetingSchema(unavailableDates, meeting.startTime)),
         mode: "all",
         defaultValues: {
             meetingId: meeting.id,
-            circleId: meeting.circleId,
+            //circleId: meeting.circleId,
             date: meeting.startTime,
             TimeRangeSchema: {
                 startTime: meeting.startTime,
                 endTime: meeting.endTime
             },
-            street: meeting.street,
-            cityId: meeting.cityId,
-            priceCurrency: {
-                price: meeting.price,
-                currency: meeting.currency
-            }
+            timeZone
+            //street: meeting.street,
+            //cityId: meeting.cityId,
+            //priceCurrency: {
+            //    price: meeting.price,
+            //    currency: meeting.currency
+            //}
         }
     })
 
-    const [region, setRegion] = useState<Region | undefined>();
-    const [country, setCountry] = useState<Country | undefined>();
+    //const [region, setRegion] = useState<Region | undefined>();
+    //const [country, setCountry] = useState<Country | undefined>();
     const [startHour, setStartHour] = useState<TimeInputValue | null>(convertDateToTimeInputValue(meeting.startTime));
     const [endHour, setEndHour] = useState<TimeInputValue | null>(convertDateToTimeInputValue(meeting.endTime))
+    const [date, setDate] = useState<DateInputValue | null>(convertDateToNative(meeting.startTime))
+    // useEffect(() => {
+    //   if (!cities.data || !regions.data || !countries.data) return;
+    
+    //   const defaultCity = cities.data.find(c => c.id === meeting.cityId);
+    //   const defaultRegion = regions.data.find(r => r.id === defaultCity?.regionId);
+    //   const defaultCountry = countries.data.find(c => c.id === defaultRegion?.countryId);
+    
+    //   setRegion(defaultRegion);
+    //   setCountry(defaultCountry);
+    // }, [cities.data, regions.data, countries.data, meeting]);
     
     useEffect(() => {
-      if (!cities.data || !regions.data || !countries.data) return;
+        if (!date) return
+        setValue("date", combineDateAndTime(date, undefined, timeZone), {shouldValidate: true})
+
+        if (startHour) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startHour, timeZone), {shouldValidate: true})
+        if (endHour) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endHour, timeZone), {shouldValidate: true})
     
-      const defaultCity = cities.data.find(c => c.id === meeting.cityId);
-      const defaultRegion = regions.data.find(r => r.id === defaultCity?.regionId);
-      const defaultCountry = countries.data.find(c => c.id === defaultRegion?.countryId);
-    
-      setRegion(defaultRegion);
-      setCountry(defaultCountry);
-    }, [cities.data, regions.data, countries.data, meeting]);
-    
+        // opcjonalnie trigger dla walidacji zależnych pól
+        if (startHour) trigger("TimeRangeSchema.startTime");
+        if (endHour) trigger("TimeRangeSchema.endTime");
+    }, [date, startHour, endHour, timeZone, setValue, trigger])
 
     const queryClient = useQueryClient()
 
@@ -176,8 +199,6 @@ const EditMeetingForm = ({
 
     if (queries.some(q => q.isLoading || !q.data)) return <Loader/>
 
-    
-
     return <Form onSubmit={handleSubmit(submit)}>
         <ModalBody className="w-full">
             <I18nProvider locale="pl-PL">
@@ -188,27 +209,31 @@ const EditMeetingForm = ({
                     description="Zawsze podawaj czas lokalny, w którym chcesz umówić spotkanie. Po wybraniu kraju wartości się automatycznie zaktualizują."
                     defaultValue={convertDateToNative(meeting.startTime)}
                     isDateUnavailable={isDateUnavailable}
-                    minValue={
-                        (() => {
-                            const tomorrow = country?.timeZone
-                            ? today(country.timeZone).add({ days: 1 })
-                            : today(getLocalTimeZone()).add({ days: 1 })
-                            const startMeeting = convertDateToNative(meeting.startTime)
-                            return tomorrow > startMeeting ? startMeeting : tomorrow
+                    minValue={(() => {
+                        const tomorrow = today(timeZone).add({ days: 1 });
+                        const startMeeting = convertDateToNative(meeting.startTime);
+                        return tomorrow > startMeeting ? startMeeting : tomorrow;
+
+                        //const tomorrow = country?.timeZone
+                        //    ? today(country.timeZone).add({ days: 1 })
+                        //    : today(getLocalTimeZone()).add({ days: 1 })
+                           //const startMeeting = convertDateToNative(meeting.startTime)
+                           // return tomorrow > startMeeting ? startMeeting : tomorrow
                         })()
-                    }               
-                    onChange={(date) => {
-                        if (!date) return;
-                        setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true, shouldDirty: true });
-                        const startTime = watch("TimeRangeSchema.startTime");
-                        const endTime = watch("TimeRangeSchema.endTime");
+                    }   
+                    onChange={setDate}            
+                    // onChange={(date) => {
+                    //     if (!date) return;
+                    //     setValue("date", combineDateAndTime(date, undefined, country?.timeZone), { shouldValidate: true, shouldDirty: true });
+                    //     const startTime = watch("TimeRangeSchema.startTime");
+                    //     const endTime = watch("TimeRangeSchema.endTime");
                     
-                        if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone), {shouldDirty: true});
-                        if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone), {shouldDirty: true});
+                    //     if (startTime) setValue("TimeRangeSchema.startTime", combineDateAndTime(date, startTime, country?.timeZone), {shouldDirty: true});
+                    //     if (endTime) setValue("TimeRangeSchema.endTime", combineDateAndTime(date, endTime, country?.timeZone), {shouldDirty: true});
                     
-                        if (startTime) trigger("TimeRangeSchema.startTime")
-                        if (endTime) trigger("TimeRangeSchema.endTime")          
-                    }}
+                    //     if (startTime) trigger("TimeRangeSchema.startTime")
+                    //     if (endTime) trigger("TimeRangeSchema.endTime")          
+                    // }}
                     isRequired
                     isInvalid={!!errors.date}
                     errorMessage={errors.date?.message}
@@ -221,13 +246,14 @@ const EditMeetingForm = ({
                         variant="bordered"
                         hourCycle={24}
                         defaultValue={convertDateToTimeInputValue(meeting.startTime)}
-                        onChange={(time) => {
-                            setStartHour(time)
-                            const date = watch("date")
-                            if (!time || !date) return;
-                            setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
-                            if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
-                            }}
+                        onChange={setStartHour}
+                        // onChange={(time) => {
+                        //     setStartHour(time)
+                        //     const date = watch("date")
+                        //     if (!time || !date) return;
+                        //     setValue("TimeRangeSchema.startTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
+                        //     if (watch("TimeRangeSchema.endTime")) trigger("TimeRangeSchema.endTime")
+                        //     }}
                         isRequired
                         isDisabled={isSubmitting || !watch("date")}
                         isInvalid={!!errors.TimeRangeSchema?.startTime}
@@ -239,13 +265,14 @@ const EditMeetingForm = ({
                         variant="bordered"
                         hourCycle={24}
                         defaultValue={convertDateToTimeInputValue(meeting.endTime)}
-                        onChange={(time) => {
-                            setEndHour(time)
-                            const date = watch("date")
-                            if (!time || !date) return;
-                            setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
-                            if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
-                        }}
+                        onChange={setEndHour}
+                        // onChange={(time) => {
+                        //     setEndHour(time)
+                        //     const date = watch("date")
+                        //     if (!time || !date) return;
+                        //     setValue("TimeRangeSchema.endTime", combineDateAndTime(date, time, country?.timeZone), {shouldValidate:true, shouldDirty:true})
+                        //     if (watch("TimeRangeSchema.startTime")) trigger("TimeRangeSchema.startTime")
+                        // }}
                         isRequired
                         isDisabled={isSubmitting || !watch("date") || !watch("TimeRangeSchema.startTime")}
                         isInvalid={!!errors.TimeRangeSchema?.endTime}
@@ -253,7 +280,7 @@ const EditMeetingForm = ({
                     />
                 </div>
             </I18nProvider>
-            <Input
+            {/* <Input
                 label="Adres (ulica, numer)"
                 labelPlacement="outside"
                 placeholder="Tortuga 13/7"
@@ -266,8 +293,8 @@ const EditMeetingForm = ({
                 isDisabled={isSubmitting}
                 isInvalid={!!errors.street}
                 errorMessage={errors.street?.message}
-            />
-            <Select
+            /> */}
+            {/* <Select
                 label="Kraj"
                 labelPlacement="outside"
                 placeholder="Karaiby"
@@ -304,8 +331,8 @@ const EditMeetingForm = ({
                 items={countries.data}
             >
                 {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
-            </Select>
-            <Select
+            </Select> */}
+            {/* <Select
                 label="Województwo"
                 labelPlacement="outside"
                 placeholder="Archipelag Czarnej Perły"
@@ -341,8 +368,8 @@ const EditMeetingForm = ({
                 items={regions.data?.filter(region => region.countryId === country?.id)}
             >
                 {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
-            </Select>
-            <Select
+            </Select> */}
+            {/* <Select
                 label="Miasto"
                 labelPlacement="outside"
                 placeholder="Isla de Muerta"
@@ -358,8 +385,8 @@ const EditMeetingForm = ({
                 items={cities.data?.filter(city => city.regionId === region?.id)}
             >
                 {(city) => <SelectItem key={city.id}>{city.name}</SelectItem>}
-            </Select>
-            <NumberInput
+            </Select> */}
+            {/* <NumberInput
                 label="Cena"
                 labelPlacement="outside"
                 variant="bordered"
@@ -387,7 +414,7 @@ const EditMeetingForm = ({
                 isDisabled={isSubmitting}
                 isInvalid={!!errors.priceCurrency?.price}
                 errorMessage={errors.priceCurrency?.price?.message}
-            />
+            /> */}
         </ModalBody>
         <ModalFooter className="w-full">
             <Button

@@ -46,6 +46,7 @@ const LoginForm = () => {
                 label="Email"
                 labelPlacement="outside"
                 type="email"
+                size="lg"
                 autoComplete="email"
                 placeholder="jack.sparrow@piratebay.co.uk"
                 variant="bordered"
@@ -66,6 +67,7 @@ const LoginForm = () => {
                     label="Hasło"
                     labelPlacement="outside"
                     type={visible ? "text" : "password"}
+                    size="lg"
                     autoComplete="password"
                     placeholder="********"
                     variant="bordered"

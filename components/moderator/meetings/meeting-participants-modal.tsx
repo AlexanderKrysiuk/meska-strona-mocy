@@ -9,8 +9,8 @@
 // import { GetParticipantsByMeetingID } from "@/actions/participation"
 // import { formatedDate } from "@/utils/date"
 // //import { PayForParticipantModal } from "./pay-for-participant-modal"
-// import { ParticipantVacationModal } from "./participant-vacation-modal"
-// import { PayForParticipantModal } from "./pay-for-participant-modal"
+// //import { ParticipantVacationModal } from "./participant-vacation-modal"
+// //import { PayForParticipantModal } from "./pay-for-participant-modal"
   
 // const StatusChip = ({ status }: { status: ParticipationStatus }) => {
 //     let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -43,9 +43,9 @@
 //     circle,
 //     country,    
 // } : {
-//     meeting: Meeting
-//     circle: Circle
-//     country: Country
+//     meeting: Pick<Meeting, "id">
+//     circle: Pick<Circle, "name">
+//     country: Pick<Country, "timeZone">
 // }) => {
 //     const {isOpen, onOpen, onClose} = useDisclosure()
 
@@ -113,22 +113,18 @@
 //                                             <User
 //                                                 avatarProps={{
 //                                                     showFallback: true,
-//                                                     src: item.user.image!
+//                                                     src: item.membership.user.image!
 //                                                 }}
-//                                                 name={item.user.name ?? "Brak danych"}
+//                                                 name={item.membership.user.name ?? "Brak danych"}
 //                                             />
 //                                         </TableCell>
-//                                         <TableCell>{item.user.email}</TableCell>
-//                                         <TableCell>{item.status === ParticipationStatus.Vacation ? (
-//                                                 `Nie dotyczy`    
-//                                             ) : (
-//                                                 `${item.totalInMeetingCurrency}/${meeting.price} ${meeting.currency}`
-//                                             )}
+//                                         <TableCell>{item.membership.user.email}</TableCell>
+//                                         <TableCell>123
 //                                         </TableCell>
 //                                         <TableCell><StatusChip status={item.status}/></TableCell>
 //                                         <TableCell align="center">
 //                                             <div className="flex">
-
+// {/* 
 //                                             {meeting.status === MeetingStatus.Scheduled && (
 //                                                 item.status !== ParticipationStatus.Cancelled && (
 //                                                 <ParticipantVacationModal
@@ -148,7 +144,7 @@
 //                                                     user={item.user}
 //                                                     totalPaid={item.totalInMeetingCurrency}
 //                                                 />
-//                                             )}
+//                                             )} */}
 //                                             </div>
 //                                         </TableCell>
 //                                     </TableRow>

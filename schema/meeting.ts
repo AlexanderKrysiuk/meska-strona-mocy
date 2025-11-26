@@ -12,6 +12,12 @@ const cityId = z.string().min(1,"Wybierz miasto")
 
 const price = z.coerce.number({required_error: "Pole nie może być puste",invalid_type_error: "Pole nie moze być puste"}).refine(price => price === 0 || price >= 10, {message: "spotkanie może być darmowe lub płatne co najmniej 10 zł",});
 
+const timeZone = z.string()
+  .refine(val => Intl.supportedValuesOf('timeZone').includes(val), {
+    message: "Nieprawidłowa strefa czasowa",
+  });
+
+
 //const date = z.date({ required_error: "Wybierz datę" })
 
 const currency = z.nativeEnum(Currency)
@@ -81,15 +87,13 @@ export const CreateMeetingSchema = (unavailableDates: Date[]) => {
   })
 };
 
-export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date, originalPrice: number, originalCurrency: Currency) => {  
+export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {  
   return z.object({
     meetingId,
-    circleId,
     date: EditMeetingDateSchema(unavailableDates, originalStartTime),
     TimeRangeSchema,
-    street,
-    cityId,
-    priceCurrency: EditPriceSchema(originalPrice, originalCurrency)
+    timeZone
+    //priceCurrency: EditPriceSchema(originalPrice, originalCurrency)
   })
 };
   

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { EditUserSchema, RegisterSchema } from "@/schema/user"
 import { z } from "zod"
-import { GenerateVerificationToken } from "./tokens"
+import { GenerateVerificationToken, GetVerificationToken } from "./tokens"
 import { CheckLoginReturnUser, ServerAuth } from "./auth"
 import { SendRegisterNewUserEmail } from "./resend"
 
@@ -15,39 +15,46 @@ export const GetUserByEmail = async (email:string) => {
 
 export const GetUserByID = async (id:string) => {
     return await prisma.user.findUnique({
-        where: { id: id }
+        where: { id: id },
+        select: {
+            name: true,
+            email: true,
+            image: true,
+            phone: true,
+            memberships: {
+                select: {
+                    id: true
+                }
+            },
+            moderatedCircles: {
+                select: {
+                    id: true
+                }
+            }
+        }
     })
 }
 
-export const RegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
-    let existingUser = await GetUserByEmail(data.email)
-    
-    if (!existingUser) {
-        try {
-            existingUser = await prisma.user.create({ data })
-        } catch {
-            return {
-                success: false,
-                message: "Rejestracja nie powiodła się. Spróbuj ponownie."
-            }
+export const CreateOrGetUser = async (data: z.infer<typeof RegisterSchema>) => {
+    let user = await GetUserByEmail(data.email)
+
+    if (!user) {
+        user = await prisma.user.create({ data })
+    }
+
+    if (!user.emailVerified) {
+        const token = await GenerateVerificationToken(user.email)
+        if (token) {
+            await SendRegisterNewUserEmail(token, user.name ?? undefined)
         }
     }
 
-    if (!existingUser.emailVerified) {
-        try {
-            const token =  await GenerateVerificationToken(existingUser.email)
-            if (!token) return {
-                success: false,
-                message: "Rejestracja nie powiodła się. Spróbuj ponownie."
-            }
-            await SendRegisterNewUserEmail(token, existingUser.name ?? undefined)
-        } catch {
-            return {
-                success: false,
-                message: "Rejestracja nie powiodła się. Spróbuj ponownie."
-            }
-        }
-    }
+    return user
+}
+
+export const RegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
+
+    await CreateOrGetUser(data)
 
     return {
         success: true,

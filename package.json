@@ -41,6 +41,7 @@
     "bcryptjs": "^3.0.2",
     "cropperjs": "^1.5.13",
     "framer-motion": "^12.23.12",
+    "libphonenumber-js": "^1.12.29",
     "luxon": "^3.7.1",
     "next": "15.1.7",
     "next-auth": "^5.0.0-beta.25",

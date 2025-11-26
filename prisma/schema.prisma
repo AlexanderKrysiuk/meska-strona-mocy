@@ -23,6 +23,7 @@ model User {
   title         String?
   description   String?
   slug          String? @unique
+  phone         String? @unique
 
   stripeAccountId String?
 

@@ -1,20 +1,16 @@
 //Meeting-Update.tsx
 import { Preview, Section, Text } from "@react-email/components";
 import { EmailLayout, Header, Sign, emailStyles } from "./Components";
-import { formatedDate } from "@/utils/date";
+import { formatedDate, getGMTOffset } from "@/utils/date";
 import { Circle, City, Country, Meeting, User } from "@prisma/client";
 
 interface MeetingUpdatedEmailProps {
   participant: Pick<User, "name"> 
-  oldMeeting: Pick<Meeting, "startTime" | "endTime" | "street" | "price" | "currency"> & { 
-    city: Pick<City, "name">
-    country:  Pick<Country, "timeZone">
-  }
-  newMeeting: Pick<Meeting, "startTime" | "endTime" | "street" | "price" | "currency"> & {
-    city: Pick<City, "name"> 
-    country: Pick<Country, "timeZone">
-  }
-  circle: Pick<Circle, "name">
+  oldMeeting: Pick<Meeting, "startTime" | "endTime" >
+  newMeeting: Pick<Meeting, "startTime" | "endTime" >
+  circle: Pick<Circle, "name" | "street" | "price" | "currency">
+  city?: Pick<City, "name"> | null
+  timeZone: string
   moderator: Pick<User, "name" | "image" | "title">
 }
 
@@ -23,10 +19,23 @@ export function MeetingUpdatedEmail({
   oldMeeting,
   newMeeting,
   circle,
+  city,
+  timeZone,
   moderator
 }: MeetingUpdatedEmailProps) {
-  const oldDate = formatedDate(oldMeeting.startTime, oldMeeting.endTime, oldMeeting.country.timeZone);
-  const newDate = formatedDate(newMeeting.startTime, newMeeting.endTime, newMeeting.country.timeZone);
+  const oldDate = formatedDate(oldMeeting.startTime, oldMeeting.endTime, timeZone);
+  const newDate = formatedDate(newMeeting.startTime, newMeeting.endTime, timeZone);
+
+  const address = (() => {
+    if (!city?.name) return `spotykamy się online 🌐 (${getGMTOffset(timeZone)})`;
+    if (!circle.street) return `ulica nie została jeszcze ustalona, ${city.name}`;
+    return `${circle.street}, ${city.name}`;
+  })();
+  
+  const price = (() => {
+    if (!circle.price || !circle.currency) return "bezpłatne";
+    return `${circle.price} ${circle.currency}`;
+  })();
 
   const oldStyle = { color: "#ff5555", textDecoration: "line-through", marginRight: "4px" };
   const newStyle = { color: "#55ff55", fontWeight: "bold" };
@@ -44,52 +53,27 @@ export function MeetingUpdatedEmail({
 
       <Section style={{ marginBottom: "32px" }}>
         <Text style={{ ...emailStyles.paragraph }}>
-          {`Cześć${" " + participant.name},`} Spotkanie w kręgu <strong>{circle.name}</strong> zostało zmienione przez moderatora<strong>{" " + moderator.name}.</strong>
+          Cześć<strong>{" " + participant.name}</strong>, Spotkanie w kręgu <strong>{circle.name}</strong> zostało zmienione przez moderatora<strong>{" " + moderator.name}.</strong>
+        </Text>
+        
+        <Text style={{ ...emailStyles.paragraph }}>
+          <strong>📅 Data: </strong>
+          {oldDate !== newDate ? 
+            <>
+              <br/><span style={oldStyle}>❌ {oldDate}</span>
+              <br/><span style={newStyle}>✅ {newDate}</span>
+            </>
+            :
+            <span>{oldDate}</span>  
+          } 
         </Text>
 
         <Text style={{ ...emailStyles.paragraph }}>
-          <strong>Miasto:</strong>{" "}
-          {oldMeeting.city.name !== newMeeting.city.name ? (
-            <>
-              <span style={oldStyle}>❌ {oldMeeting.city.name}</span>
-              <span style={newStyle}>✅ {newMeeting.city.name}</span>
-            </>
-          ) : (
-            <span>{newMeeting.city.name}</span>
-          )}
-          <br />
+          <strong>🏠 Adres: {address}</strong>
+        </Text>
 
-          <strong>Ulica:</strong>{" "}
-          {oldMeeting.street !== newMeeting.street ? (
-            <>
-              <span style={oldStyle}>❌ {oldMeeting.street}</span>
-              <span style={newStyle}>✅ {newMeeting.street}</span>
-            </>
-          ) : (
-            <span>{newMeeting.street}</span>
-          )}
-          <br />
-
-          <strong>Data:</strong>{" "}
-          {oldDate !== newDate ? (
-            <>
-              <span style={oldStyle}>❌ {oldDate}</span>
-              <span style={newStyle}>✅ {newDate}</span>
-            </>
-          ) : (
-            <span>{newDate}</span>
-          )}
-          <br />
-
-          <strong>Cena:</strong>{" "}
-          {oldMeeting.price !== newMeeting.price ? (
-            <>
-              <span style={oldStyle}>❌ {oldMeeting.price.toFixed(2)} {oldMeeting.currency}</span>
-              <span style={newStyle}>✅ {newMeeting.price.toFixed(2)} {newMeeting.currency}</span>
-            </>
-          ) : (
-            <span>{newMeeting.price.toFixed(2)} PLN</span>
-          )}
+        <Text style={{ ...emailStyles.paragraph }}>
+          <strong>🎫 Wkład energetyczny: {price}</strong>
         </Text>
       </Section>
     </EmailLayout>
@@ -100,24 +84,21 @@ export default function MeetingUpdatedEmailPreview() {
   return (
     <MeetingUpdatedEmail
       participant={{ name: "Joshamee Gibbs" }}
-      circle={{ name: "Załoga Czarnej Perły" }}
+      circle={{ 
+        name: "Załoga Czarnej Perły", 
+        street: "ul. Tortuga 21", 
+        price: 37, 
+        currency: "PLN" 
+      }}
+      city={{ name: "Isla De Muerta" }}
+      timeZone="Europe/Warsaw"
       oldMeeting={{
         startTime: new Date("2025-09-20T18:00:00Z"),
         endTime: new Date("2025-09-20T20:00:00Z"),
-        street: "ul. Tortuga 21",
-        price: 37,
-        currency: "PLN",
-        city: { name: "Isla De Muerta" },
-        country: { timeZone: "Europe/Warsaw" },
       }}
       newMeeting={{
         startTime: new Date("2025-09-22T19:00:00Z"),
         endTime: new Date("2025-09-22T21:00:00Z"),
-        street: "ul. Tortuga 23",
-        price: 45,
-        currency: "PLN",
-        city: { name: "Port Royal" },
-        country: { timeZone: "Europe/Warsaw" },
       }}
       moderator={{
         name: "Jack Sparrow",
