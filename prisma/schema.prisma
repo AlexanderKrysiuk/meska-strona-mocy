@@ -190,6 +190,14 @@ model Circle {
   price Int? @default(150)
   newUserPrice Int? @default(150)
 
+  plannedWeekday WeekDay?
+  startHour String @default("18:00")
+  endHour String @default("21:00")
+  frequencyWeeks Int?
+
+  timeZoneId String
+  timeZone   TimeZone @relation(fields: [timeZoneId], references: [id])
+
   public Boolean @default(false)
 
   currency Currency @default(PLN)
@@ -202,10 +210,21 @@ model Circle {
   @@unique([slug, moderatorId])
 }
 
+enum WeekDay {
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
+
 model Meeting {
   id        String    @id @default(uuid())
-  startTime DateTime
-  endTime   DateTime
+  date  DateTime
+//  startTime DateTime
+//  endTime   DateTime
 
 //  street String
   status MeetingStatus
@@ -316,10 +335,22 @@ model Country {
   id String @id @default(uuid())
   name String @unique
   code String?
-  timeZone String
+
+  timeZones TimeZone[]  // każdy kraj może mieć wiele stref
   locale String
 
   regions Region[]
+}
+
+model TimeZone {
+  id   String @id @default(uuid())
+  name String @unique  // np. "Europe/Warsaw"
+
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id])
+
+  circles  Circle[] // <-- odwrotna strona relacji do Circle
+  @@unique([countryId, name])
 }
 
 model Region {

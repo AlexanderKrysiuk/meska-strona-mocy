@@ -1,46 +1,62 @@
-import { Currency } from '@prisma/client'
+import { Currency, WeekDay } from '@prisma/client'
 import * as z from 'zod'
 
-//const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const circleId = z.string().uuid()
+
 const name = z.string({
   required_error: "Pole nie może być puste",
-  invalid_type_error: "Pole nie moze być puste"
-  }).min(1, "Krąg musi posiadać nazwę")
+}).min(1, "Krąg musi posiadać nazwę")
+
+const slug = z.string({
+  required_error: "Pole nie może być puste",
+}).min(1, "Unikalny odnośnik nie może być pusty")
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Unikalny odnośnik może zawierać tylko małe litery, cyfry i myślniki")
 
 const members = z.object({
-  min: z.number()
-    .int()
-    .min(1, "Minimalna liczba uczestników musi być większa od zera"),
-
-  max: z.number()
-    .int()
-    .min(1, "Maksymalna liczba uczestników musi być większa od zera")
+  min: z.number({
+    required_error: "Pole nie może być puste",
+    invalid_type_error: "Pole nie może być puste",
+  }).int().min(1, "Minimalna liczba uczestników musi być większa od zera"),
+  max: z.number({
+    required_error: "Pole nie może być puste",
+    invalid_type_error: "Pole nie może być puste",
+  }).int().min(1, "Maksymalna liczba uczestników musi być większa od zera")
 }).refine((members) => members.max >= members.min,{
   message: "Maksymalna liczba uczestników musi być większa lub równa minimalnej",
   path: ["max"]
 }) 
 
-const slug = z.string({
-  required_error: "Pole nie może być puste",
-  invalid_type_error: "Pole nie moze być puste"
-  })
-  .min(1, "Unikalny odnośnik nie może być pusty")
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Unikalny odnośnik może zawierać tylko małe litery, cyfry i myślniki")
-  // .refine((val) => !uuidRegex.test(val), {
-  //   message: "Slug nie może wyglądać jak identyfikator systemowy (UUID)"
-  // })
-const street = z
-  .string()
+const plannedWeekday = z.nativeEnum(WeekDay).nullable();
+
+const frequencyWeeks = z.number()
+  .int()
+  .min(1, "Cykliczność musi wynosić minimum 1 tydzień")
+  .max(4, "Maksymalna cykliczność to 4 tygodnie") // możesz zmienić
+  .nullable();
+
+const hourString = z.string()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Niepoprawny format godziny (HH:mm)")
+
+const hours = z.object({
+  start: hourString,
+  end: hourString,
+}).refine(data => {
+  const [sh, sm] = data.start.split(":").map(Number);
+  const [eh, em] = data.end.split(":").map(Number);
+  return eh * 60 + em > sh * 60 + sm;
+}, {
+  message: "Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia",
+  path: ["end"]
+});
+  
+
+const street = z.string()
   .min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki")
-  .trim()
   .max(255, "Adres jest zbyt długi")
+  .trim()
   .nullable()
 
-const cityId = z
-  .string()
-  .uuid()
-  .nullable()
+const cityId = z.string().uuid().nullable().optional()
 
 const price = z.preprocess(
   (val) => {
@@ -54,10 +70,14 @@ const price = z.preprocess(
     .nullable()
 );
 
-const currency = z
-  .nativeEnum(Currency)
+const currency = z.nativeEnum(Currency)
 
 const isPublic = z.boolean()
+
+const timeZoneId = z.string({
+  required_error: "Musisz wybrać strefę czasową"
+}).uuid()
+
 // const price = z.number().nullable()
 //   .refine((val) => val === null || val === 0 || val >= 10, {
 //     message: "Cena musi wynosić 0 (darmowe spotkanie) lub minimum 10 zł"
@@ -65,17 +85,41 @@ const isPublic = z.boolean()
 
 export const CreateCircleSchema = z.object({
   name,
+  slug,
+  street,
+  cityId,
+
+  members,
+  price,
+  newUserPrice: price,
+
+  currency,
+  isPublic,
+
+  plannedWeekday,
+  frequencyWeeks,
+
+  hours,
+  timeZoneId
 })
 
 export const EditCircleSchema = z.object({
   circleId,
   name,
   slug,
-  members,
   street,
   cityId,
-  isPublic,
+
+  members,
   price,
   newUserPrice: price,
+
   currency,
-})
+  isPublic,
+
+  plannedWeekday,
+  frequencyWeeks,
+
+  hours,          //  << zamiast startHour / endHour
+  timeZoneId,
+});
