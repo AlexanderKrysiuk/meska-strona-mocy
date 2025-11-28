@@ -16,7 +16,8 @@ export enum GeneralQueries {
     Cities = "Cities",
     Regions = "Regions",
     Countries = "Countries",
-    Currencies = "Currencies"
+    Currencies = "Currencies",
+    TimeZones = "TimeZones",
 }
 
 export enum PaymentQueries {

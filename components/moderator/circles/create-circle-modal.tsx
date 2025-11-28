@@ -4,18 +4,20 @@ import { CreateCircle } from "@/actions/circle";
 import { GetCities } from "@/actions/city";
 import { GetCountries } from "@/actions/country";
 import { GetRegions } from "@/actions/region";
+import { GetTimeZones } from "@/actions/timezone";
 import Loader from "@/components/loader";
 import { clientAuth } from "@/hooks/auth";
 import { CreateCircleSchema } from "@/schema/circle";
 import { GeneralQueries, ModeratorQueries } from "@/utils/query";
 import { liveSlugify } from "@/utils/slug";
+import { formatTimeZone } from "@/utils/timeZone";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Radio, RadioGroup, Select, SelectItem, addToast, useDisclosure } from "@heroui/react";
+import { Button, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Radio, RadioGroup, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Country, Region, WeekDay } from "@prisma/client";
+import { Country, Currency, Region, TimeZone, WeekDay } from "@prisma/client";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -38,10 +40,14 @@ const CreateCircleModal = () => {
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
             },
+            {
+                queryKey: [GeneralQueries.TimeZones],
+                queryFn: () => GetTimeZones()
+            }
         ]
     })
 
-    const [countries, regions, cities] = queries
+    const [countries, regions, cities, timeZones] = queries
 
     type FormFields = z.infer<typeof CreateCircleSchema>
 
@@ -49,10 +55,29 @@ const CreateCircleModal = () => {
     const [country, setCountry] = useState<Country | null>();
     const [isOnline, setIsOnline] = useState(true);
 
-    const { handleSubmit, watch, trigger, setValue, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
-        resolver: zodResolver(CreateCircleSchema)
-    })
+    const [startTime, setStartTime] = useState<TimeInputValue | null>()
+    const [endTime, setEndTime] = useState<TimeInputValue | null>()
 
+
+    // country: Country | null
+    // timeZones.data: TimeZone[]
+
+    const countryTimeZones = useMemo(() => {
+        return country ? timeZones.data?.filter(tz => tz.countryId === country.id) ?? [] : []
+    }, [country, timeZones.data])  
+    
+    const { handleSubmit, watch, trigger, setValue, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
+        resolver: zodResolver(CreateCircleSchema),
+        mode: "all"
+    })
+    
+    // jeśli countryTimeZones ma 1 element, ustawiamy automatycznie
+    useEffect(() => {
+        if (countryTimeZones.length === 1) {
+            setValue("timeZoneId", countryTimeZones[0].id, { shouldValidate: true })
+        }
+    }, [countryTimeZones, setValue])
+        
     const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
@@ -85,16 +110,19 @@ const CreateCircleModal = () => {
                 isOpen={isOpen}
                 onClose={onClose}
                 placement="center"
+                scrollBehavior="outside"
+                size="xl"
             >
                 <ModalContent>
                     <ModalHeader>Nowy krąg</ModalHeader>
-                    {/* <pre>
+                    <pre>
 
                     {JSON.stringify(watch(),null,2)}<br/>
                     CountryID: {JSON.stringify(country,null,2)}<br/>
-                    Region: {JSON.stringify(region,null,2)}
+                    Region: {JSON.stringify(region,null,2)}<br/>
+                    Valid: {JSON.stringify(isValid,null,2)}
 
-                    </pre> */}
+                    </pre>
                     <Form onSubmit={handleSubmit(submit)}>
                         <ModalBody className="w-full">
                             Ustawienia ogólne:
@@ -166,28 +194,69 @@ const CreateCircleModal = () => {
                                 isInvalid={!!errors.members?.min || !!errors.members}
                                 errorMessage={errors.members?.min?.message || !!errors.members?.message}
                             />
+                            <RadioGroup
+                                label="Widoczność kręgu"
+                                orientation="horizontal"
+                                value={watch("isPublic") ? "public" : "private"}
+                                onValueChange={(val) => setValue("isPublic", val === "public", { shouldValidate: true, shouldDirty: true,})}
+                                isDisabled={isSubmitting}
+                            >
+                                <Radio 
+                                    value={"public"}
+                                    description="Każdy może się zapisać"
+                                >
+                                    Publiczny
+                                </Radio>
+                                <Radio 
+                                    value={"private"}
+                                    color="danger" 
+                                    description="Zapisać się mogą tylko osoby z linkiem"
+                                >
+                                    Prywatny
+                                </Radio>
+                            </RadioGroup>
                             Dane Adresowe:
                             <Divider/>
                             <RadioGroup
                                 label="Rodzaj kręgu"
                                 orientation="horizontal"
+                                isRequired
                                 value={isOnline ? "online" : "offline"}
                                 onValueChange={(value) => {
                                     const online = value === "online"
                                     setIsOnline(online)
-                                
+                                    setValue("timeZoneId", null!, {shouldValidate: true})
                                     if (online) {  // jeśli teraz wybieramy online, czyścimy pola
                                         setCountry(null)
                                         setRegion(null)
-                                        setValue("cityId", null)
-                                        setValue("street", null)
+                                        setValue("cityId", null, {shouldValidate: true})
+                                        setValue("street", null, {shouldValidate: true})
                                     }
                                 }}
                             >
                                 <Radio value="online">Online</Radio>
                                 <Radio value="offline">Stacjonarnie</Radio>
                             </RadioGroup>
-                            {!isOnline && <>
+                            {isOnline ? <>
+                                <Select
+                                        label="Strefa czasowa"
+                                        labelPlacement="outside"
+                                        placeholder="Tortuga GMT+21:37"
+                                        variant="bordered"
+                                        selectedKeys={watch("timeZoneId") ? [watch("timeZoneId") as string] : []}
+                                        hideEmptyContent
+                                        disallowEmptySelection
+                                        onSelectionChange={(keys) => {
+                                            const key = Array.from(keys)[0]
+                                            setValue("timeZoneId", key.toString(), {shouldValidate: true})
+                                        }}
+                                        isRequired
+                                        isDisabled={isSubmitting}
+                                        items={timeZones.data}
+                                    >
+                                        {(timeZone) => <SelectItem key={timeZone.id}>{formatTimeZone(timeZone.name)}</SelectItem>}
+                                    </Select>  
+                            </> : <>
                                 <Select
                                     label="Kraj"
                                     labelPlacement="outside"
@@ -198,16 +267,37 @@ const CreateCircleModal = () => {
                                     disallowEmptySelection
                                     onSelectionChange={(keys) => {
                                         const ID = Array.from(keys)[0].toString()
-                                        const country = countries.data?.find(c => c.id === ID)
+                                        const country = countries.data?.find(c => c.id === ID)    
                                         setCountry(country)
                                         setRegion(null)
                                         setValue("cityId", null, {shouldValidate: true})
                                     }}  
+                                    isRequired
                                     isDisabled={isSubmitting || isOnline}
                                     items={countries.data}
                                 >
                                     {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
                                 </Select>
+                                {countryTimeZones.length > 1 && <>
+                                    <Select
+                                        label="Strefa czasowa"
+                                        labelPlacement="outside"
+                                        placeholder="Tortuga GMT+21:37"
+                                        variant="bordered"
+                                        selectedKeys={watch("timeZoneId") ? [watch("timeZoneId") as string] : []}
+                                        hideEmptyContent
+                                        disallowEmptySelection
+                                        onSelectionChange={(keys) => {
+                                            const key = Array.from(keys)[0]
+                                            setValue("timeZoneId", key.toString(), {shouldValidate: true})
+                                        }}
+                                        isRequired
+                                        isDisabled={isSubmitting || !country || isOnline || !countryTimeZones}
+                                        items={countryTimeZones}
+                                    >
+                                        {(timeZone) => <SelectItem key={timeZone.id}>{formatTimeZone(timeZone.name)}</SelectItem>}
+                                    </Select>                                
+                                </>}
                                 <Select
                                     label="Województwo"
                                     labelPlacement="outside"
@@ -222,6 +312,7 @@ const CreateCircleModal = () => {
                                         setRegion(region)
                                         setValue("cityId", null, {shouldValidate: true})
                                     }}  
+                                    isRequired
                                     isDisabled={isSubmitting || !country || isOnline}
                                     items={regions.data?.filter(region => region.countryId === country?.id)}
                                 >
@@ -238,6 +329,7 @@ const CreateCircleModal = () => {
                                         const cityId = Array.from(keys)[0]
                                         setValue("cityId", cityId ? cityId.toString() : null, {shouldValidate: true, shouldDirty: true})
                                     }}
+                                    isRequired
                                     isDisabled={!region || !country || isSubmitting || isOnline}
                                     isInvalid={!!errors.cityId}
                                     errorMessage={errors.cityId?.message}
@@ -253,6 +345,7 @@ const CreateCircleModal = () => {
                                     type="text"
                                     value={watch("street") ?? ""}
                                     onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
+                                    isRequired
                                     isClearable
                                     isDisabled={isSubmitting || isOnline}
                                     isInvalid={!!errors.street}
@@ -292,6 +385,105 @@ const CreateCircleModal = () => {
                             ]}
                         >
                             {(day) => <SelectItem key={day.key}>{day.label}</SelectItem>}
+                        </Select>
+                        <div className="flex gap-2">
+                            <TimeInput
+                                label="Czas rozpoczęcia"
+                                hourCycle={24}
+                                labelPlacement="outside"
+                                variant="bordered"
+                                value={startTime}
+                                onChange={(time) => {
+                                    if (time) {
+                                        setValue("hours.start", `${time.hour.toString().padStart(2,'0')}:${time.minute.toString().padStart(2,'0')}`, {shouldValidate: true})
+                                        setStartTime(time)
+                                        if (endTime) trigger("hours.end")
+                                    }        
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.hours?.start}
+                                errorMessage={errors.hours?.start?.message}
+                            />
+                            <TimeInput
+                                label="Czas zakończenia"
+                                hourCycle={24}
+                                labelPlacement="outside"
+                                variant="bordered"
+                                value={endTime}
+                                onChange={(time) => {
+                                    if (time) {
+                                        setValue("hours.end", `${time.hour.toString().padStart(2,'0')}:${time.minute.toString().padStart(2,'0')}`, {shouldValidate: true})
+                                        setEndTime(time)
+                                        if (startTime) trigger("hours.start")
+                                    }        
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                isInvalid={!!errors.hours?.end}
+                                errorMessage={errors.hours?.end?.message}
+                            />
+                        </div>
+                        <NumberInput
+                            label="Cykliczność (tygodnie)"
+                            labelPlacement="outside"
+                            variant="bordered"
+                            placeholder="1"
+                            minValue={1}
+                            formatOptions={{ maximumFractionDigits: 0 }}
+                            value={watch("frequencyWeeks") || undefined}
+                            onValueChange={(value) => setValue("frequencyWeeks", value ?? null, { shouldValidate: true, shouldDirty: true })}
+                            isClearable
+                            isDisabled={isSubmitting}
+                            isInvalid={!!errors.frequencyWeeks}
+                            errorMessage={errors.frequencyWeeks?.message}
+                        />
+                        Cena spotkania:
+                        <Divider/>
+                        <NumberInput 
+                            label="Pierwsze"
+                            labelPlacement="outside"
+                            variant="bordered"
+                            placeholder="150"
+                            minValue={0}
+                            value={watch("newUserPrice") || undefined}
+                            onValueChange={(value) => {setValue("newUserPrice", value, {shouldValidate: true})}}
+                            isClearable
+                            isDisabled={isSubmitting}
+                            isInvalid={!!errors.newUserPrice}
+                            errorMessage={errors.newUserPrice?.message}    
+                        />
+                        <NumberInput 
+                            label="Kolejne"
+                            labelPlacement="outside"
+                            variant="bordered"
+                            placeholder="150"
+                            minValue={0}
+                            value={watch("price") || undefined}
+                            onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
+                            isClearable
+                            isDisabled={isSubmitting}
+                            isInvalid={!!errors.price}
+                            errorMessage={errors.price?.message}    
+                        />
+                        <Select
+                            label="Waluta"
+                            labelPlacement="outside"
+                            variant="bordered"
+                            placeholder="PLN"
+                            selectedKeys={watch("currency") ? [watch("currency")] : []}
+                            hideEmptyContent
+                            onSelectionChange={(keys) => {
+                                const key = Array.from(keys)[0];
+                                if (key) setValue("currency", key as Currency, { shouldValidate: true, shouldDirty: true });
+                            }}
+                            isRequired
+                            isDisabled={isSubmitting}
+                            isInvalid={!!errors.currency}
+                            errorMessage={errors.currency?.message}
+                            items={Object.values(Currency).map(c => ({ key: c, label: c }))}
+                        >
+                            {(item) => <SelectItem key={item.key}>{item.label}</SelectItem>}
                         </Select>
                         </ModalBody>
                         <ModalFooter>

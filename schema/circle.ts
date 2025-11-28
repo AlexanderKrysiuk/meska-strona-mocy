@@ -37,16 +37,39 @@ const frequencyWeeks = z.number()
 const hourString = z.string()
   .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Niepoprawny format godziny (HH:mm)")
 
-const hours = z.object({
+// const hours = z.object({
+//   start: hourString,
+//   end: hourString,
+// }).refine(data => {
+//   const [sh, sm] = data.start.split(":").map(Number);
+//   const [eh, em] = data.end.split(":").map(Number);
+//   return eh * 60 + em > sh * 60 + sm;
+// }, {
+//   message: "Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia",
+//   path: ["end"]
+// });
+
+export const hours = z.object({
   start: hourString,
   end: hourString,
-}).refine(data => {
+}).superRefine((data, ctx) => {
   const [sh, sm] = data.start.split(":").map(Number);
   const [eh, em] = data.end.split(":").map(Number);
-  return eh * 60 + em > sh * 60 + sm;
-}, {
-  message: "Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia",
-  path: ["end"]
+
+  if (eh * 60 + em <= sh * 60 + sm) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia",
+      path: ["end"],
+    });
+  }
+  if (sh * 60 + sm >= eh * 60 + em) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Godzina rozpoczęcia musi być wcześniejsza niż godzina zakończenia",
+      path: ["start"],
+    });
+  }
 });
   
 
@@ -56,19 +79,30 @@ const street = z.string()
   .trim()
   .nullable()
 
-const cityId = z.string().uuid().nullable().optional()
+const cityId = z.string().uuid().nullable()
 
-const price = z.preprocess(
-  (val) => {
-    if (val === "" || val === undefined || val === null) return null; // brak ceny = null
-    const num = Number(val);
-    return isNaN(num) ? null : num;
-  },
-  z.number()
-    .int("Cena musi być liczbą całkowitą")
-    .min(10, "Cena musi wynosić minimum 10 zł")
-    .nullable()
-);
+// const price = z.preprocess(
+//   (val) => {
+//     if (val === "" || val === undefined || val === null) return null; // brak ceny = null
+//     const num = Number(val);
+//     return isNaN(num) ? null : num;
+//   },
+//   z.number(
+//     {invalid_type_error: "Pole nie może być puste"}
+//   )
+//     .int("Cena musi być liczbą całkowitą")
+//     .min(10, "Cena musi wynosić minimum 10 zł")
+// );
+
+const price = z.number({ invalid_type_error: "Pole nie może być puste" })
+  .int("Cena musi być liczbą całkowitą")
+  .min(10, "Cena musi wynosić minimum 10 zł")
+
+const newUserPrice = z.number({ invalid_type_error: "Pole nie może być puste" })
+  .int("Cena musi być liczbą całkowitą")
+  .refine(val => val === 0 || val >= 10, {
+    message: "Cena pierwszego spotkania musi wynosić 0 lub minimum 10 zł"
+  })
 
 const currency = z.nativeEnum(Currency)
 
@@ -91,7 +125,7 @@ export const CreateCircleSchema = z.object({
 
   members,
   price,
-  newUserPrice: price,
+  newUserPrice,
 
   currency,
   isPublic,
@@ -103,23 +137,7 @@ export const CreateCircleSchema = z.object({
   timeZoneId
 })
 
-export const EditCircleSchema = z.object({
+// EDIT
+export const EditCircleSchema = CreateCircleSchema.extend({
   circleId,
-  name,
-  slug,
-  street,
-  cityId,
-
-  members,
-  price,
-  newUserPrice: price,
-
-  currency,
-  isPublic,
-
-  plannedWeekday,
-  frequencyWeeks,
-
-  hours,          //  << zamiast startHour / endHour
-  timeZoneId,
 });
