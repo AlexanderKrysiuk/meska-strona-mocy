@@ -1,20 +1,22 @@
 "use server"
 
-import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
+import { CompleteMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
 import { ServerAuth } from "./auth"
-import { MeetingStatus, MembershipStatus, ParticipationStatus, Role } from "@prisma/client"
+import { MeetingStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { GetCircleByID } from "./circle"
-import { sendEmail } from "@/lib/resend"
+//import { GetCircleByID } from "./circle"
+//import { sendEmail } from "@/lib/resend"
 //import { MeetingInvite } from "@/components/emails/Meeting-Invite"
-import { GetMembersByCircleIdAndStatus } from "./membership"
-import { MeetingUpdatedEmail } from "@/components/emails/Meeting-Update"
-import { MeetingAction, moderatorMeetingActions } from "@/utils/meeting"
+//import { GetMembersByCircleIdAndStatus } from "./membership"
+//import { MeetingUpdatedEmail } from "@/components/emails/Meeting-Update"
+//import { MeetingAction, moderatorMeetingActions } from "@/utils/meeting"
 
 // const MODERATOR_SHARE = parseFloat(process.env.MODERATOR_SHARE!);
 
-export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetingSchema>>) => {
+export const CreateMeeting = async (
+    //data: z.infer<ReturnType<typeof CreateMeetingSchema>>
+) => {
     // try {
     //     const auth = await ServerAuth()
       
@@ -115,7 +117,9 @@ export const CreateMeeting = async (data: z.infer<ReturnType<typeof CreateMeetin
     // }
 }  
 
-export const EditMeeting = async (data: z.infer<ReturnType<typeof EditMeetingSchema>>) => {
+export const EditMeeting = async (
+    //data: z.infer<ReturnType<typeof EditMeetingSchema>>
+) => {
     // try {
     //     const auth = await ServerAuth();
   
