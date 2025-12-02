@@ -9,19 +9,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
 import { PermissionGate } from "@/utils/gate";
-import { useQuery } from "@tanstack/react-query";
-import { UserQueries } from "@/utils/query";
-import { GetUserByID } from "@/actions/user";
+
 
 const Header = () => {
     const auth = clientAuth()
     const pathname = usePathname()
-
-    const { data: user } = useQuery({
-        queryKey: [UserQueries.User, auth?.id],
-        queryFn: () => GetUserByID(auth!.id),
-        enabled: !!auth?.id
-    })
 
     return ( 
         <Navbar
@@ -66,7 +58,7 @@ const Header = () => {
                             <DropdownTrigger>
                                 <Avatar
                                     showFallback
-                                    src={user?.image || undefined}
+                                    src={auth.image ?? undefined}
                                     className="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-400"
                                 />
                             </DropdownTrigger>
@@ -153,11 +145,11 @@ const Header = () => {
                 {auth && (
                     <NavbarMenuItem>
                         <div className="flex justify-between items-center mb-1">
-                            Witaj {user?.name}
+                            Witaj {auth?.name}
                             <Avatar
                                 size="sm"
                                 showFallback
-                                src={user?.image || undefined}
+                                src={auth.image ?? undefined}
                             />
                         </div>
                         <Divider/>
