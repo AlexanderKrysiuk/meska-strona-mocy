@@ -1,8 +1,17 @@
-import { auth } from "./auth"
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export default auth((req) => {
-    return
-})
+export function middleware(req: NextRequest) {
+  // Możesz tu dodać np. blokadę dla całego /api/trpc jeśli chcesz
+  // ale logowanie i role sprawdzamy już na stronie
+  return NextResponse.next();
+}
+
+// import { auth } from "./auth"
+
+// export default auth((req) => {
+//     return
+// })
 
 // //export { auth as middleware } from "@/auth"
 
