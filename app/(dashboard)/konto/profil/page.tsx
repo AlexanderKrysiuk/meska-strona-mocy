@@ -3,7 +3,7 @@
 import { GetUserByID } from "@/actions/user";
 import Loader from "@/components/loader";
 import EditAvatarModal from "@/components/user/edit-avatar-modal";
-import EditUserForm from "@/components/user/profile/edit-user-form";
+//import EditUserForm from "@/components/user/profile/edit-user-form";
 import { clientAuth } from "@/hooks/auth";
 import { UserQueries } from "@/utils/query";
 import { useQuery } from "@tanstack/react-query";
@@ -23,7 +23,7 @@ const ProfilePage = () => {
         <EditAvatarModal
             user={user}
         />
-        <EditUserForm user={user}/>
+        {/* <EditUserForm user={user}/> */}
     </main>
 }
  

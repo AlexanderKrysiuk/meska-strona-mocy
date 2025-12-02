@@ -42,9 +42,22 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
     try {
         await prisma.circle.create({
             data: {
+                moderatorId: auth.id,
                 name: data.name,
                 slug: slug,
-                moderatorId: auth.id
+                street: data.street,
+                cityId: data.cityId,
+                price: data.price,
+                newUserPrice: data.newUserPrice,
+                currency: data.currency,
+                public: data.isPublic,
+                timeZone: data.timeZone,
+                plannedWeekday: data.plannedWeekday,
+                startHour: data.hours.start,
+                endHour: data.hours.end,
+                frequencyWeeks: data.frequencyWeeks,
+                minMembers: data.members.min,
+                maxMembers: data.members.max,
             }
         })
     } catch (error) {
@@ -56,7 +69,7 @@ export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => 
 
     return {
         success: true,
-        message: "Pomyślnie dodano nową grupę"
+        message: "Pomyślnie dodano nowy krąg"
     }
 }
 
@@ -223,7 +236,6 @@ export const GetModeratorCircles = async (moderatorID:string) => {
                             country: {
                                 select: {
                                     name: true,
-                                    timeZone: true
                                 }
                             }
                         }
@@ -243,11 +255,22 @@ export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
         select: {
             id: true,
             name: true,
+            slug: true,
+
             maxMembers: true,
             street: true,
+            
             price: true,
             newUserPrice: true,
             currency: true,
+
+            plannedWeekday: true,
+            startHour: true,
+            endHour: true,
+            frequencyWeeks: true,
+
+            timeZone: true,
+
             _count: { select: { members: { where: { status: {in: ["Active", "Pending"]} }}}},
             moderator: { select: {
                 name: true,
@@ -257,22 +280,13 @@ export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
                 name: true,
                 region: { select: {
                     country: { select: {
-                        timeZone: true,
                         locale: true
                     }}
                 }}
             }},
             meetings: { 
-                where: {
-                    startTime: { gte: new Date() }
-                },
                 select: {
                     id: true,
-                    startTime: true,
-                    endTime: true,
-                },
-                orderBy: {
-                    startTime: "asc"
                 },
                 take: 3
             }
@@ -283,9 +297,9 @@ export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
 
     return circles
         .filter((circle) => circle._count.members < circle.maxMembers)
-        .sort((a,b) => {
-            const aDate = a.meetings[0]?.startTime?.getTime() ?? Infinity
-            const bDate = b.meetings[0]?.startTime?.getTime() ?? Infinity
-            return aDate - bDate
-        })
+        // .sort((a,b) => {
+        //     const aDate = a.meetings[0]?.startTime?.getTime() ?? Infinity
+        //     const bDate = b.meetings[0]?.startTime?.getTime() ?? Infinity
+        //     return aDate - bDate
+        // })
 }

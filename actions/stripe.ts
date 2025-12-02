@@ -10,61 +10,61 @@ import { StripeWebhook } from "@/utils/stripe-webhook"
 import { GetMembershipByUserIdAndCircleId } from "./membership"
 
 export const CreateOrUpdateExpressAccount = async () => {
-    const auth = await ServerAuth()
+    // const auth = await ServerAuth()
 
-    const user = await GetUserByID(auth.id)
-    if (!user) throw new Error("Brak autoryzacji")
+    // const user = await GetUserByID(auth.id)
+    // if (!user) throw new Error("Brak autoryzacji")
 
-    let stripeAccountId = user.stripeAccountId
-    let account = null
+    // let stripeAccountId = user.stripeAccountId
+    // let account = null
 
 
-    if (!stripeAccountId) {
-        account = await stripe.accounts.create({
-            type: "express",
-            email: auth.email,
-        })
+    // if (!stripeAccountId) {
+    //     account = await stripe.accounts.create({
+    //         type: "express",
+    //         email: auth.email,
+    //     })
 
-        await prisma.user.update({
-            where: { id: auth.id},
-            data: { stripeAccountId: account.id }
-        })
+    //     await prisma.user.update({
+    //         where: { id: auth.id},
+    //         data: { stripeAccountId: account.id }
+    //     })
 
-        stripeAccountId = account.id
-    } else {
-        account = await stripe.accounts.retrieve(stripeAccountId)
-    }
+    //     stripeAccountId = account.id
+    // } else {
+    //     account = await stripe.accounts.retrieve(stripeAccountId)
+    // }
 
-    // 3️⃣ Pobieramy dane konta i sprawdzamy, czy wymaga uzupełnienia
-    //const account = await stripe.accounts.retrieve(stripeAccountId);
+    // // 3️⃣ Pobieramy dane konta i sprawdzamy, czy wymaga uzupełnienia
+    // //const account = await stripe.accounts.retrieve(stripeAccountId);
 
-    const currentlyDue = account.requirements?.currently_due ?? [];
-    const pastDue = account.requirements?.past_due ?? [];
-    const detailsSubmitted = account.details_submitted ?? false;
+    // const currentlyDue = account.requirements?.currently_due ?? [];
+    // const pastDue = account.requirements?.past_due ?? [];
+    // const detailsSubmitted = account.details_submitted ?? false;
 
-    const needsOnboarding =
-        currentlyDue.length > 0 || pastDue.length > 0 || !detailsSubmitted;
+    // const needsOnboarding =
+    //     currentlyDue.length > 0 || pastDue.length > 0 || !detailsSubmitted;
 
-    // 4️⃣ Tworzymy embedded onboarding session
-    const onboardingSession = await stripe.accountSessions.create({
-        account: stripeAccountId,
-        components: {
-            account_onboarding: { 
-                enabled: needsOnboarding,
-            },
-            account_management: {enabled: !needsOnboarding},
-            notification_banner: {enabled: true},
-        },
+    // // 4️⃣ Tworzymy embedded onboarding session
+    // const onboardingSession = await stripe.accountSessions.create({
+    //     account: stripeAccountId,
+    //     components: {
+    //         account_onboarding: { 
+    //             enabled: needsOnboarding,
+    //         },
+    //         account_management: {enabled: !needsOnboarding},
+    //         notification_banner: {enabled: true},
+    //     },
         
 
-    });
+    // });
 
-    // 5️⃣ Zwracamy client secret dla frontendu
-    return {
-        clientSecret: onboardingSession.client_secret,
-        stripeAccountId,
-        needsOnboarding,
-    };
+    // // 5️⃣ Zwracamy client secret dla frontendu
+    // return {
+    //     clientSecret: onboardingSession.client_secret,
+    //     stripeAccountId,
+    //     needsOnboarding,
+    // };
 }
 
 export const GetAccountPayments = async (accountID: string) => {
@@ -79,57 +79,57 @@ export const GetAccountPayments = async (accountID: string) => {
 }
 
 export const CreatePaymentForParticipationById = async (participationID: string) => {
-    const participation = await GetParticipationById(participationID);
-    if (!participation) throw new Error("Brak danych o uczestnictwie");
-    if (participation.status !== ParticipationStatus.Active) throw new Error("Użytkownik nie będzie na tym spotkaniu");
-    if (!participation.meeting.moderator.stripeAccountId) throw new Error("Moderator nie przyjmuje płatności online")
+    // const participation = await GetParticipationById(participationID);
+    // if (!participation) throw new Error("Brak danych o uczestnictwie");
+    // if (participation.status !== ParticipationStatus.Active) throw new Error("Użytkownik nie będzie na tym spotkaniu");
+    // if (!participation.meeting.moderator.stripeAccountId) throw new Error("Moderator nie przyjmuje płatności online")
 
-    //if (!participation.meeting.moderator.stripeAccountId) throw new Error("Nie można wygenerować płatności");
-    //const account = await stripe.accounts.retrieve(participation.meeting.moderator.stripeAccountId);
-    //console.log("TYP KONTA:",account.type)
-    //console.log(account.charges_enabled); // true / false
-    //console.log(account.payouts_enabled); 
+    // //if (!participation.meeting.moderator.stripeAccountId) throw new Error("Nie można wygenerować płatności");
+    // //const account = await stripe.accounts.retrieve(participation.meeting.moderator.stripeAccountId);
+    // //console.log("TYP KONTA:",account.type)
+    // //console.log(account.charges_enabled); // true / false
+    // //console.log(account.payouts_enabled); 
 
-    const totalPaid = participation.payments
-        .filter((p) => p.currency === participation.meeting.currency)
-        .reduce((sum, p) => sum + p.amount, 0)
+    // const totalPaid = participation.payments
+    //     .filter((p) => p.currency === participation.meeting.currency)
+    //     .reduce((sum, p) => sum + p.amount, 0)
 
-    const amount = (participation.meeting.price - totalPaid) * 100;
-    if (amount <= 0) throw new Error("Spotkanie opłacone")
+    // const amount = (participation.meeting.price - totalPaid) * 100;
+    // if (amount <= 0) throw new Error("Spotkanie opłacone")
   
-    try {
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount,
-            currency: participation.meeting.currency.toLowerCase(),
-            automatic_payment_methods: { enabled: true },
-            application_fee_amount: Math.round(amount * 0.03),
-            // transfer_data: {
-            //     destination: participation.meeting.moderator.stripeAccountId,
-            //   },
-            metadata: { 
-                type: StripeWebhook.Participations,
-                participationIds: JSON.stringify([participation.id]),
-                membershipID: participation.membership.id
-            },
-        },
-        {
-            stripeAccount: participation.meeting.moderator.stripeAccountId
-        });
+    // try {
+    //     const paymentIntent = await stripe.paymentIntents.create({
+    //         amount,
+    //         currency: participation.meeting.currency.toLowerCase(),
+    //         automatic_payment_methods: { enabled: true },
+    //         application_fee_amount: Math.round(amount * 0.03),
+    //         // transfer_data: {
+    //         //     destination: participation.meeting.moderator.stripeAccountId,
+    //         //   },
+    //         metadata: { 
+    //             type: StripeWebhook.Participations,
+    //             participationIds: JSON.stringify([participation.id]),
+    //             membershipID: participation.membership.id
+    //         },
+    //     },
+    //     {
+    //         stripeAccount: participation.meeting.moderator.stripeAccountId
+    //     });
 
-        // console.log("CLIENT SECRET:", paymentIntent.client_secret)
+    //     // console.log("CLIENT SECRET:", paymentIntent.client_secret)
         
-        return {
-            id: paymentIntent.id,
-            client_secret: paymentIntent.client_secret!,
-            amount: paymentIntent.amount,
-            currency: paymentIntent.currency,
-            status: paymentIntent.status,
-            stripeAccountId: participation.meeting.moderator.stripeAccountId
-        };
-    } catch (error) {
-        console.error(error);
-        throw new Error("Błąd tworzenia płatności");
-    }
+    //     return {
+    //         id: paymentIntent.id,
+    //         client_secret: paymentIntent.client_secret!,
+    //         amount: paymentIntent.amount,
+    //         currency: paymentIntent.currency,
+    //         status: paymentIntent.status,
+    //         stripeAccountId: participation.meeting.moderator.stripeAccountId
+    //     };
+    // } catch (error) {
+    //     console.error(error);
+    //     throw new Error("Błąd tworzenia płatności");
+    // }
 };  
 
 export const ConnectStripeAccount = async () => {
@@ -147,22 +147,22 @@ export const ConnectStripeAccount = async () => {
 }
 
 export const CreateModeratorSubscriptionCheckout = async (type: SubscriptionPeriod) => {
-    const auth = await ServerAuth()
+    // const auth = await ServerAuth()
 
-    const user = await GetUserByID(auth.id)
-    if (!user) throw new Error("Brak danych o użytkowniku")
+    // const user = await GetUserByID(auth.id)
+    // if (!user) throw new Error("Brak danych o użytkowniku")
     
-    const customerId = user.stripeCustomerId ?? (await CreateStripeCustomer(user.id, user.email))
+    // const customerId = user.stripeCustomerId ?? (await CreateStripeCustomer(user.id, user.email))
 
-    let priceID
-    switch (type) {
-        case SubscriptionPeriod.Monthly:
-            priceID = process.env.STRIPE_SUBSCRIPTION_MODERATOR_MONTHLY
-            break
-        case SubscriptionPeriod.Yearly:
-            priceID = process.env.STRIPE_SUBSCRIPTION_MODERATOR_YEARLY
-            break
-    }
+    // let priceID
+    // switch (type) {
+    //     case SubscriptionPeriod.Monthly:
+    //         priceID = process.env.STRIPE_SUBSCRIPTION_MODERATOR_MONTHLY
+    //         break
+    //     case SubscriptionPeriod.Yearly:
+    //         priceID = process.env.STRIPE_SUBSCRIPTION_MODERATOR_YEARLY
+    //         break
+    // }
 
     // const session = await stripe.checkout.sessions.create({
     //     mode: "subscription",

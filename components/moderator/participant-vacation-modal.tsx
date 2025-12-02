@@ -1,14 +1,14 @@
 "use client"
 
-import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react"
-import { Circle, Meeting, Participation, ParticipationStatus, User } from "@prisma/client"
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, useDisclosure } from "@heroui/react"
+import { Circle, Participation, ParticipationStatus, User } from "@prisma/client"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faArrowsRotate, faCheck, faUmbrellaBeach, faXmark } from "@fortawesome/free-solid-svg-icons"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { ModeratorQueries } from "@/utils/query"
 import { GetMembershipByUserIdAndCircleId } from "@/actions/membership"
 import Loader from "../loader"
-import { ToggleVacationStatus } from "@/actions/participation"
+//import { ToggleVacationStatus } from "@/actions/participation"
 import { SubmitHandler, useForm } from "react-hook-form"
 
 const vacationText = (days: number) => {
@@ -19,12 +19,12 @@ const vacationText = (days: number) => {
 export const ParticipantVacationModal = ({
     user,
     circle,
-    meeting,
+    //meeting,
     participation
 } : {
     user: Pick<User, "id" | "name">
     circle: Pick<Circle, "id" | "name">
-    meeting: Pick<Meeting, "id">
+    //meeting: Pick<Meeting, "id">
     participation: Pick<Participation, "id" | "status">
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
@@ -37,23 +37,23 @@ export const ParticipantVacationModal = ({
         enabled: !!isOpen
     })
 
-    const queryClient = useQueryClient()
+    //const queryClient = useQueryClient()
     
     type FormFields = { participationID: string }
 
     const submit: SubmitHandler<FormFields> = async() => {
-        const result = await ToggleVacationStatus(participation.id)
+        //const result = await ToggleVacationStatus(participation.id)
 
-        addToast({
-            title: result.message,
-            color: result.success ? "success" : "danger"
-        })
+        // addToast({
+        //     title: result.message,
+        //     color: result.success ? "success" : "danger"
+        // })
 
-        if (result.success) {
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.Membership, user.id, circle.id]})
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.MeetingParticipants, meeting.id]})
-            onClose()
-        }
+        // if (result.success) {
+        //     queryClient.invalidateQueries({queryKey: [ModeratorQueries.Membership, user.id, circle.id]})
+        //     queryClient.invalidateQueries({queryKey: [ModeratorQueries.MeetingParticipants, meeting.id]})
+        //     onClose()
+        // }
     }
 
     return <main>

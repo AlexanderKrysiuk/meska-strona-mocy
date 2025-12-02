@@ -72,7 +72,7 @@ export const GetMembershipByID = async (membershipID: string) => {
             participations: { 
                 where: {
                     meeting: {
-                        startTime: { gte: new Date() }
+                        //startTime: { gte: new Date() }
                     }
                 },
                 select: {
@@ -97,10 +97,10 @@ export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershi
         let user = await GetUserByEmail(data.email)
 
         // Jeśli nie istnieje, od razu zarejestruj
-        if (!user) {
-            await RegisterNewUser({ email: data.email, name: data.name}) 
-            user = await GetUserByEmail(data.email) // odświeżamy userId
-        }
+        // if (!user) {
+        //     await RegisterNewUser({ email: data.email, name: data.name}) 
+        //     user = await GetUserByEmail(data.email) // odświeżamy userId
+        // }
 
         if (!user) return { success: false, message: "Brak danych o użytkowniku"}
 
@@ -309,55 +309,55 @@ export const GetMyMemberships = async () => {
 }
 
 export const RespondToMembershipInvitation = async (membershipId: string, accept: boolean) => {
-    const auth = await ServerAuth()
-    const membership = await GetMembershipByID(membershipId)
-    if (membership?.user.id !== auth.id) throw new Error("Brak uprawnień")
-    if (membership.status !== MembershipStatus.Pending) throw new Error("Decyzja została już podjęta")
+    // const auth = await ServerAuth()
+    // const membership = await GetMembershipByID(membershipId)
+    // if (membership?.user.id !== auth.id) throw new Error("Brak uprawnień")
+    // if (membership.status !== MembershipStatus.Pending) throw new Error("Decyzja została już podjęta")
 
-    let meetings: (Pick<Meeting, "id" | "startTime" | "endTime" | "street" | "price" | "currency"> & {
-        city: Pick<City, "name"> & { region: { country: Pick<Country, "timeZone"> } }
-        })[] = []; // <-- pusty array jako default    
-    try {
-        await prisma.$transaction(async (tx) => {
-            await tx.membership.update({
-                where: { id: membership.id },
-                data: { status: (accept ? MembershipStatus.Active : MembershipStatus.Left) }
-            })
+    // let meetings: (Pick<Meeting, "id" | "startTime" | "endTime" | "street" | "price" | "currency"> & {
+    //     city: Pick<City, "name"> & { region: { country: Pick<Country, "timeZone"> } }
+    //     })[] = []; // <-- pusty array jako default    
+    // try {
+    //     await prisma.$transaction(async (tx) => {
+    //         await tx.membership.update({
+    //             where: { id: membership.id },
+    //             data: { status: (accept ? MembershipStatus.Active : MembershipStatus.Left) }
+    //         })
 
-            if (accept) {
-                const meetings = await GetFutureMeetingsByCricleId(membership.circle.id, membership.updatedAt)
-                if (meetings.length > 0) {
-                    await tx.participation.createMany({
-                        data: meetings.map((m) => ({
-                            membershipId: membership.id,
-                            meetingId: m.id
-                        })),
-                        skipDuplicates: true
-                    })
-                }
-            }
-        }) 
-    } catch (error) {
-        console.error(error)
-        throw new Error("Błąd połączenia z bazą danych")
-    }
+    //         if (accept) {
+    //             const meetings = await GetFutureMeetingsByCricleId(membership.circle.id, membership.updatedAt)
+    //             if (meetings.length > 0) {
+    //                 await tx.participation.createMany({
+    //                     data: meetings.map((m) => ({
+    //                         membershipId: membership.id,
+    //                         meetingId: m.id
+    //                     })),
+    //                     skipDuplicates: true
+    //                 })
+    //             }
+    //         }
+    //     }) 
+    // } catch (error) {
+    //     console.error(error)
+    //     throw new Error("Błąd połączenia z bazą danych")
+    // }
 
-    try {
-        await sendEmail({
-            to: membership.user.email,
-            subject: accept ? `Witamy w kręgu ${membership.circle.name}!` : `Szkoda, że tym razem nie dołączasz`,
-            react: accept ? MembershipAcceptanceEmail({
-                member: membership.user,
-                circle: membership.circle,
-                moderator: membership.circle.moderator,
-                meetings: meetings
-            }) : MembershipRejectionEmail({
-                member: membership.user,
-                circle: membership.circle,
-                moderator: membership.circle.moderator,
-            })
-        })
-    } catch (error) {
-        console.error(error)
-    }
+    // try {
+    //     await sendEmail({
+    //         to: membership.user.email,
+    //         subject: accept ? `Witamy w kręgu ${membership.circle.name}!` : `Szkoda, że tym razem nie dołączasz`,
+    //         react: accept ? MembershipAcceptanceEmail({
+    //             member: membership.user,
+    //             circle: membership.circle,
+    //             moderator: membership.circle.moderator,
+    //             meetings: meetings
+    //         }) : MembershipRejectionEmail({
+    //             member: membership.user,
+    //             circle: membership.circle,
+    //             moderator: membership.circle.moderator,
+    //         })
+    //     })
+    // } catch (error) {
+    //     console.error(error)
+    // }
 }

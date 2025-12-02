@@ -8,9 +8,9 @@ import { clientAuth } from "@/hooks/auth"
 import { EditCircleSchema } from "@/schema/circle"
 import { GeneralQueries, ModeratorQueries } from "@/utils/query"
 import { liveSlugify } from "@/utils/slug"
-import { Button, Form, Input, NumberInput, Radio, RadioGroup, Select, SelectItem, Selection, addToast } from "@heroui/react"
+import { Button, Form, Input, NumberInput, Radio, RadioGroup, Select, SelectItem, addToast } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Circle, Country, Currency, Region } from "@prisma/client"
+import { Country, Currency, Region } from "@prisma/client"
 import { useQueries, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -79,7 +79,7 @@ const EditCircleForm = () => {
         setRegion(region)
         setCountry(country)
 
-    }, [watch("circleId"), reset, cities.data, regions.data, countries.data]);
+    }, [watch(), reset, cities.data, regions.data, countries.data]);
 
     // useEffect(()=>{
     //     if (!cities.data || !regions.data || !countries.data) return

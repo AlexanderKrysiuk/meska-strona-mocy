@@ -24,7 +24,7 @@ const EditUserForm = ({
         resolver: zodResolver(EditUserSchema),
         mode: "all",
         defaultValues: {
-            name: user.name,
+            //name: user.name,
             description: user.description,
             slug: user.slug,
         }
@@ -63,7 +63,7 @@ const EditUserForm = ({
             isClearable
             variant="bordered"
             value={watch("name") ?? ""}
-            onValueChange={(value) => setValue("name", value || null, { shouldDirty:true, shouldValidate: true})}
+            //onValueChange={(value) => setValue("name", value || null, { shouldDirty:true, shouldValidate: true})}
             isDisabled={isSubmitting}
             isInvalid={!!errors.name}
             errorMessage={errors.name?.message}

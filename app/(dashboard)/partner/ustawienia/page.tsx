@@ -1,62 +1,62 @@
 // app/(dashboard)/partner/ustawienia/page.tsx
 "use client"
 
-import { CreateOrUpdateExpressAccount } from "@/actions/stripe";
-import Loader from "@/components/loader";
-import { addToast } from "@heroui/react";
-import { loadConnectAndInitialize, type StripeConnectInstance } from "@stripe/connect-js/pure";
-import { ConnectAccountManagement, ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { setTimeout } from "timers";
+// import { CreateOrUpdateExpressAccount } from "@/actions/stripe";
+// import Loader from "@/components/loader";
+// import { addToast } from "@heroui/react";
+// import { loadConnectAndInitialize, type StripeConnectInstance } from "@stripe/connect-js/pure";
+// import { ConnectAccountManagement, ConnectAccountOnboarding, ConnectComponentsProvider } from "@stripe/react-connect-js";
+// import { useQuery } from "@tanstack/react-query";
+// import { useEffect, useState } from "react";
+// import { setTimeout } from "timers";
 
 const OnBoardingPage = () => {
 
-    const { data, isLoading, refetch } = useQuery({
-        queryKey: ["stripeOnboarding"],
-        queryFn: CreateOrUpdateExpressAccount,
-      });
+    // const { data, isLoading, refetch } = useQuery({
+    //     queryKey: ["stripeOnboarding"],
+    //     queryFn: CreateOrUpdateExpressAccount,
+    //   });
     
-      const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
+    //   const [stripeConnectInstance, setStripeConnectInstance] = useState<StripeConnectInstance | null>(null);
     
-      useEffect(() => {
-        const init = async () => {
-          if (!data?.clientSecret) return;
+    //   useEffect(() => {
+    //     const init = async () => {
+    //       if (!data?.clientSecret) return;
     
-          // inicjalizacja Connect dopiero po stronie klienta
-          const instance = await loadConnectAndInitialize({
-            publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!,
-            fetchClientSecret: async () => data.clientSecret,
-            appearance: {
-                overlays: "dialog"
-            }
-          });
+    //       // inicjalizacja Connect dopiero po stronie klienta
+    //       const instance = await loadConnectAndInitialize({
+    //         publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!,
+    //         fetchClientSecret: async () => data.clientSecret,
+    //         appearance: {
+    //             overlays: "dialog"
+    //         }
+    //       });
     
-          setStripeConnectInstance(instance);
-        };
+    //       setStripeConnectInstance(instance);
+    //     };
     
-        init();
-      }, [data]);
+    //     init();
+    //   }, [data]);
 
-      if (isLoading || !stripeConnectInstance) return <Loader />;
+    //   if (isLoading || !stripeConnectInstance) return <Loader />;
     
-      return (
-        <main className="p-4 flex flex-grow">
-            <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-              {data?.needsOnboarding ? 
-                  <ConnectAccountOnboarding onExit={() => {
-                    addToast({
-                      title: "Konfiguracja ukończona",
-                      color: "success",
-                    })
-                    setTimeout(()=>{},3000)
-                    refetch()
-                  }} />
-                : 
-                  <ConnectAccountManagement/>}
-            </ConnectComponentsProvider>    
-        </main>
-      );
+    //   return (
+    //     <main className="p-4 flex flex-grow">
+    //         <ConnectComponentsProvider connectInstance={stripeConnectInstance}>
+    //           {data?.needsOnboarding ? 
+    //               <ConnectAccountOnboarding onExit={() => {
+    //                 addToast({
+    //                   title: "Konfiguracja ukończona",
+    //                   color: "success",
+    //                 })
+    //                 setTimeout(()=>{},3000)
+    //                 refetch()
+    //               }} />
+    //             : 
+    //               <ConnectAccountManagement/>}
+    //         </ConnectComponentsProvider>    
+    //     </main>
+    //   );
 
     // const { data, isLoading } = useQuery({
     //     queryKey: ["stripeOnboarding"],

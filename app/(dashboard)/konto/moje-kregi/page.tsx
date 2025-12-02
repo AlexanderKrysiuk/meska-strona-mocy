@@ -3,17 +3,17 @@
 import { GetMyMemberships } from "@/actions/membership";
 import Loader from "@/components/loader";
 import MembershipCardInside from "@/components/user/my-circles/membership-card-inside";
-import UnpaidMeetingsTable from "@/components/user/my-circles/unpaid-participations-table";
+//import UnpaidMeetingsTable from "@/components/user/my-circles/unpaid-participations-table";
 import { clientAuth } from "@/hooks/auth";
 import { CircleQueries } from "@/utils/query";
 import { Card, Divider, Select, SelectItem } from "@heroui/react";
-import { Membership } from "@prisma/client";
+//import { Membership } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+//import { useState } from "react";
 
 const MyCirclesPage = () => {
     const auth = clientAuth()
-    const [selectedMembership, setSelectedMembership] = useState<Pick<Membership, "id"> | undefined>()
+    //const [setSelectedMembership] = useState<Pick<Membership, "id"> | undefined>()
 
     const { data: memberships, isLoading } = useQuery({
         queryKey: [CircleQueries.MyCircles, auth?.id],
@@ -50,11 +50,11 @@ const MyCirclesPage = () => {
             items={selectItems}
             placeholder="Wybierz krąg"
             variant="bordered"
-            onSelectionChange={(keys) => {
-                const id = Array.from(keys)[0];
-                const membership = memberships?.find(m => m.id === id)
-                setSelectedMembership(membership)
-            }}
+            // onSelectionChange={(keys) => {
+            //     //const id = Array.from(keys)[0];
+            //     //const membership = memberships?.find(m => m.id === id)
+            //     //setSelectedMembership(membership)
+            // }}
             isDisabled={!memberships}
             hideEmptyContent
             disallowEmptySelection
@@ -62,7 +62,7 @@ const MyCirclesPage = () => {
         >                  
             {(membership) => <SelectItem key={membership.id}>{membership.circle.name}</SelectItem>}
         </Select>}
-        <UnpaidMeetingsTable membership={selectedMembership}/>
+        {/* <UnpaidMeetingsTable membership={selectedMembership}/> */}
         <Divider/>
         {/* <pre>
             WYBRANY MEMBERSHIP {JSON.stringify(selectedMembership,null,2)} <br/>

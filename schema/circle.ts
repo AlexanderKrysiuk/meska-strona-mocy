@@ -108,9 +108,7 @@ const currency = z.nativeEnum(Currency)
 
 const isPublic = z.boolean()
 
-const timeZoneId = z.string({
-  required_error: "Musisz wybrać strefę czasową"
-}).uuid()
+const timeZone = z.string().nullable()
 
 // const price = z.number().nullable()
 //   .refine((val) => val === null || val === 0 || val >= 10, {
@@ -134,7 +132,7 @@ export const CreateCircleSchema = z.object({
   frequencyWeeks,
 
   hours,
-  timeZoneId
+  timeZone
 })
 
 // EDIT

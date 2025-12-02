@@ -1,16 +1,16 @@
 "use client"
 
 import { CompleteMeeting } from "@/actions/meeting"
-import { clientAuth } from "@/hooks/auth"
+//import { clientAuth } from "@/hooks/auth"
 import { CompleteMeetingSchema } from "@/schema/meeting"
-import { formatedDate } from "@/utils/date"
-import { ModeratorQueries } from "@/utils/query"
+//import { formatedDate } from "@/utils/date"
+//import { ModeratorQueries } from "@/utils/query"
 import { faCalendarCheck, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Button, Form, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, addToast, useDisclosure } from "@heroui/react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Circle, Meeting } from "@prisma/client"
-import { useQueryClient } from "@tanstack/react-query"
+//import { useQueryClient } from "@tanstack/react-query"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -22,7 +22,7 @@ export const CompleteMeetingModal = ({
     circle: Circle
 }) => {
     const {isOpen, onOpen, onClose} = useDisclosure()
-    const auth = clientAuth()
+    //const auth = clientAuth()
 
     type FormFields = z.infer<typeof CompleteMeetingSchema>
 
@@ -33,7 +33,7 @@ export const CompleteMeetingModal = ({
         }
     })
     
-    const queryClient = useQueryClient()
+    //const queryClient = useQueryClient()
 
     const submit: SubmitHandler<FormFields> = async(data) => {
         const result = await CompleteMeeting(data)
@@ -44,8 +44,8 @@ export const CompleteMeetingModal = ({
         })
     
         if (result.success) {
-            const year = meeting.startTime.getFullYear()
-            queryClient.invalidateQueries({queryKey: [ModeratorQueries.Meetings, auth?.id, year]})
+            //const year = meeting.startTime.getFullYear()
+            //queryClient.invalidateQueries({queryKey: [ModeratorQueries.Meetings, auth?.id, year]})
             onClose()
         }
     }
@@ -63,7 +63,7 @@ export const CompleteMeetingModal = ({
                 radius="full"
                 variant="light"
                 onPress={onOpen}
-                isDisabled={meeting.endTime > new Date()}
+                //isDisabled={meeting.endTime > new Date()}
             >
                 <FontAwesomeIcon icon={faCalendarCheck} size="xl"/>
             </Button>
@@ -81,7 +81,7 @@ export const CompleteMeetingModal = ({
                         Czy na pewno chcesz zakończyć spotkanie kręgu:{" "} <strong>{circle.name}</strong>
                     </div>
                     <div>
-                        Data: <strong>{formatedDate(meeting.startTime, meeting.endTime)}</strong>
+                    {/* Data: <strong>{formatedDate(meeting.startTime, meeting.endTime)}</strong> */}
                     </div>
                     <div className="text-danger font-semibold">
                         Zakończonego spotkania nie będzie można edytować. Kończ tylko spotkania, które już się faktycznie odbyły.

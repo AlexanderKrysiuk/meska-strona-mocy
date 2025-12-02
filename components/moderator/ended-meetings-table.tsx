@@ -2,7 +2,7 @@
 
 import { GetModeratorMeetings } from "@/actions/meeting"
 import { clientAuth } from "@/hooks/auth"
-import { formatedDate } from "@/utils/date"
+//import { formatedDate } from "@/utils/date"
 import { ModeratorQueries } from "@/utils/query"
 import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Circle, MeetingStatus } from "@prisma/client"
@@ -43,10 +43,10 @@ export const EndedMeetingsTable = ({
             >
                 {(item) => (
                     <TableRow key={item.id}>
-                        <TableCell>{formatedDate(item.startTime, item.endTime)}</TableCell>
-                        <TableCell>{item.circle.name}</TableCell>
-                        <TableCell>{item.street}</TableCell>
-                        <TableCell>{item.city.name}</TableCell>
+                        {/* <TableCell>{formatedDate(item.startTime, item.endTime)}</TableCell> */}
+                        {/* <TableCell>{item.circle.name}</TableCell> */}
+                        {/* <TableCell>{item.street}</TableCell> */}
+                        {/* <TableCell>{item.city.name}</TableCell> */}
                         <TableCell className="flex justify-center">
                             Brak
                         </TableCell>

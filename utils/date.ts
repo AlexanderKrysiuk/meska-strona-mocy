@@ -4,6 +4,35 @@ import { City, Country, Region } from "@prisma/client";
 
 import { DateTime } from "luxon"
 
+import { format } from "date-fns"
+import { toZonedTime } from "date-fns-tz"
+
+export const formatTimeOnly = (
+  startHour: string,
+  endHour: string,
+  timeZone: string | null
+) => {
+  if (timeZone) {
+    const [sh, sm] = startHour.split(":").map(Number)
+    const [eh, em] = endHour.split(":").map(Number)
+    const now = new Date()
+
+    const startDateUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm))
+    const endDateUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), eh, em))
+
+    const localStart = toZonedTime(startDateUTC, Intl.DateTimeFormat().resolvedOptions().timeZone)
+    const localEnd = toZonedTime(endDateUTC, Intl.DateTimeFormat().resolvedOptions().timeZone)
+
+    return `${format(localStart, "HH:mm")} - ${format(localEnd, "HH:mm")}`
+  } else {
+    // brak strefy czasowej — wyświetlamy „na sztywno”
+    return `${startHour} - ${endHour}`
+  }
+}
+
+
+
+
 export function combineDateAndTime(
   date: DateValue | Date,
   time?: TimeInputValue | Date | null,

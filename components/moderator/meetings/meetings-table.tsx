@@ -2,16 +2,16 @@
 
 import { GetModeratorMeetings, GetModeratorMeetingsYears } from "@/actions/meeting"
 import { clientAuth } from "@/hooks/auth"
-import { formatedDate } from "@/utils/date"
+//import { formatedDate } from "@/utils/date"
 import { ModeratorQueries } from "@/utils/query"
-import { Chip, Pagination, PaginationItemRenderProps, PaginationItemType, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
+import { Chip, Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react"
 import { Circle, MeetingStatus } from "@prisma/client"
 import { useQuery } from "@tanstack/react-query"
-import { EditMeetingModal } from "./edit-meeting-modal"
+//import { EditMeetingModal } from "./edit-meeting-modal"
 //import { CompleteMeetingModal } from "../complete-meeting-modal"
-import { CreateMeetingModal } from "./create-meeting-modal"
+// import { CreateMeetingModal } from "./create-meeting-modal"
 import { useState } from "react"
-import MeetingParticipantsModal from "./meeting-participants-modal"
+//import MeetingParticipantsModal from "./meeting-participants-modal"
 
 const StatusChip = ({ status }: { status: MeetingStatus }) => {
   let color: "primary" | "success" | "danger" | "warning" | "default" = "default";
@@ -38,7 +38,7 @@ export const MeetingsTable = ({
 }) => {
     const moderator = clientAuth()
 
-    const [selectedYearIndex, setSelectedYearIndex] = useState(0); // 0 = najnowszy rok
+    const [selectedYearIndex] = useState(0); // 0 = najnowszy rok
 
     const { data: years } = useQuery({
         queryKey: [ModeratorQueries.MeetingsYears, moderator?.id],
@@ -52,35 +52,35 @@ export const MeetingsTable = ({
         enabled: !!moderator && !!years?.[selectedYearIndex]
     })
 
-    const renderItem = (props: PaginationItemRenderProps) => {
-        const { value, ref, key, isActive, setPage, onNext, onPrevious, className } = props;
+    // const renderItem = (props: PaginationItemRenderProps) => {
+    //     const { value, ref, key, isActive, setPage, onNext, onPrevious, className } = props;
       
-        if (value === PaginationItemType.NEXT) {
-          return <button ref={ref} key={key} className={className} onClick={onNext}>&gt;</button>;
-        }
-        if (value === PaginationItemType.PREV) {
-          return <button ref={ref} key={key} className={className} onClick={onPrevious}>&lt;</button>;
-        }
-        if (value === PaginationItemType.DOTS) {
-          return <button ref={ref} key={key} className={className}>...</button>;
-        }
+    //     if (value === PaginationItemType.NEXT) {
+    //       return <button ref={ref} key={key} className={className} onClick={onNext}>&gt;</button>;
+    //     }
+    //     if (value === PaginationItemType.PREV) {
+    //       return <button ref={ref} key={key} className={className} onClick={onPrevious}>&lt;</button>;
+    //     }
+    //     if (value === PaginationItemType.DOTS) {
+    //       return <button ref={ref} key={key} className={className}>...</button>;
+    //     }
       
-        const label = typeof value === "number" && years ? String(years[value - 1]) : value;
-        const activeClasses = isActive ? "bg-primary text-primary-foreground" : "";
+    //     const label = typeof value === "number" && years ? String(years[value - 1]) : value;
+    //     const activeClasses = isActive ? "bg-primary text-primary-foreground" : "";
      
-        return (
-          <button
-            ref={ref}
-            key={key}
-            //className={className}
-            className={`${className} ${activeClasses}`}
+    //     return (
+    //       <button
+    //         ref={ref}
+    //         key={key}
+    //         //className={className}
+    //         className={`${className} ${activeClasses}`}
 
-            onClick={() => setPage(value)}
-          >
-            {label}
-          </button>
-        );
-      };
+    //         onClick={() => setPage(value)}
+    //       >
+    //         {label}
+    //       </button>
+    //     );
+    //   };
 
     const filteredMeetings = (meetings ?? []).filter(
       m => !circle || m.circle.id === circle.id
@@ -89,7 +89,7 @@ export const MeetingsTable = ({
     return <main>
         <div className="flex space-x-4 items-center">
             <h6 className="w-full">Spotkania</h6>
-            <CreateMeetingModal/>
+            {/* <CreateMeetingModal/> */}
         </div>
         {/* <pre>
             {JSON.stringify(years,null,2)} <br/>
@@ -100,7 +100,7 @@ export const MeetingsTable = ({
           shadow="sm"
           bottomContent={
             <div className="flex w-full justify-center">
-              <Pagination
+              {/* <Pagination
                 isCompact
                 showControls
                 total={years?.length ?? 0}
@@ -108,7 +108,7 @@ export const MeetingsTable = ({
                 onChange={(page) => setSelectedYearIndex(page - 1)}
                 disableCursorAnimation 
                 renderItem={renderItem}
-              />
+              /> */}
             </div>
           }    
         >
@@ -128,17 +128,18 @@ export const MeetingsTable = ({
             >
                 {(item) => (
                     <TableRow key={item.id}>
-                        <TableCell>{formatedDate(item.startTime, item.endTime)}</TableCell>
+                        {/* <TableCell>{formatedDate(item.startTime, item.endTime)}</TableCell> */}
                         <TableCell>{item.circle.name}</TableCell>
                         {/* <TableCell>{item.street}</TableCell> */}
                         {/* <TableCell>{item.city.name}</TableCell> */}
                         <TableCell align="center"><StatusChip status={item.status}/></TableCell>
                         <TableCell className="flex justify-center">
-                          <EditMeetingModal
+                          123
+                          {/* <EditMeetingModal
                             meeting={item}
                             circle={item.circle}
                             country={item.circle.city?.region.country}
-                          />
+                          /> */}
                           {/* {item.status === MeetingStatus.Scheduled && <>
                             <CompleteMeetingModal
                               meeting={item}

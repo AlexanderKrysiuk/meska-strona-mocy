@@ -1,24 +1,22 @@
 "use client"
 
 import { GetCirclesForLandingPage } from "@/actions/circle";
-import { GetUserByID } from "@/actions/user";
-import { auth } from "@/auth";
-import JoinCircleModal from "@/components/landing-pages/join-circle-modal";
+//import JoinCircleModal from "@/components/landing-pages/join-circle-modal";
 import Loader from "@/components/loader";
-import { clientAuth } from "@/hooks/auth";
-import { formatedDate } from "@/utils/date";
-import { CircleQueries, UserQueries } from "@/utils/query";
-import { faArrowRight, faCalendarDay, faChair, faCity, faGlobe, faRoad, faTicket, faTriangleExclamation, faUserTie } from "@fortawesome/free-solid-svg-icons";
+import { formatTimeOnly } from "@/utils/date";
+import { CircleQueries } from "@/utils/query";
+import { WeekDayPL } from "@/utils/weekdays";
+import { faArrowRight, faArrowsSpin, faChair, faCity, faGlobe, faRoad, faTicket, faTriangleExclamation, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Button, Card, CardBody, CardFooter, CardHeader } from "@heroui/react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 // import { prisma } from "@/lib/prisma";
 // import MensCircleWrapper from "./wrapper";
-// import { CircleMembershipStatus } from "@prisma/client";
+// import { CircleMembershipStatus } from "@prisma/client"
+
 
 const MensCirclePage = () => {
-    const auth = clientAuth()
     const PAGE_SIZE = 9
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -28,8 +26,6 @@ const MensCirclePage = () => {
             lastPage.length === PAGE_SIZE ? allPages.length : undefined,
         initialPageParam: 0,
     })
-
-    
 
     const circles = data?.pages.flat() ?? []
 
@@ -68,6 +64,12 @@ const MensCirclePage = () => {
                             Krąg Online
                         </div>}
                         <div>
+                            <FontAwesomeIcon icon={faArrowsSpin} className="mr-2"/>Spotkania planowo: <br/>
+                            {circle.plannedWeekday && `${WeekDayPL[circle.plannedWeekday]},`} 
+                            {formatTimeOnly(circle.startHour, circle.endHour, circle.timeZone)}
+                            {circle.frequencyWeeks && circle.frequencyWeeks === 1 ? ", co tydzień" : `, co ${circle.frequencyWeeks} tygodnie`}
+                        </div>
+                        <div>
                             <FontAwesomeIcon icon={faTicket} className="mr-2"/>
                                 Wkład energetyczny: {circle.price === circle.newUserPrice ? (
                                     circle.price
@@ -86,7 +88,7 @@ const MensCirclePage = () => {
                                             <FontAwesomeIcon icon={faArrowRight} className="ml-2"/>Kolejne spotkania: 
                                                 {circle.price
                                                     ? <span> {circle.price} {circle.currency} </span>
-                                                    : <span> bezpłątne </span>
+                                                    : <span> bezpłatne </span>
                                                 } 
                                         </li>
                                     </ul>
@@ -107,14 +109,14 @@ const MensCirclePage = () => {
                                 <FontAwesomeIcon icon={faTriangleExclamation} className="mr-2"/>
                                 Krąg w trakcie formowania, spotkania nie są jeszcze ustalone
                             </div> : <div>
-                                Najbliższe spotkania kręgu:
+                                {/* Najbliższe spotkania kręgu:
                                 <ul>
                                     {circle.meetings.map((meeting) => (
                                         <li key={meeting.id}>
                                             <FontAwesomeIcon icon={faCalendarDay} className="ml-2"/> {formatedDate(meeting.startTime, meeting.endTime, circle.city?.region.country.timeZone, "default", circle.city?.region.country.locale)}
                                         </li>
                                     ))}
-                                </ul>
+                                </ul> */}
                             </div>}
                         </div>
                         {/* <p>
@@ -122,11 +124,11 @@ const MensCirclePage = () => {
                         </p> */}
                     </CardBody>
                     <CardFooter>
-                        <JoinCircleModal
+                        {/* <JoinCircleModal
                             circle={circle}
                         >
 
-                        </JoinCircleModal>
+                        </JoinCircleModal> */}
                         {/* {JSON.stringify(circle,null,2)} */}
                     </CardFooter>
                 </Card>

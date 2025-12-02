@@ -1,46 +1,48 @@
 "use client"
 
 //import { clientAuth } from "@/hooks/auth";
-import { formatedDate } from "@/utils/date";
-import { UserQueries } from "@/utils/query";
-import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
-import { useQuery } from "@tanstack/react-query";
+//import { formatedDate } from "@/utils/date";
+//import { UserQueries } from "@/utils/query";
+//import { Spinner, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
+//import { useQuery } from "@tanstack/react-query";
 //import { PayForMeetingButton } from "../pay-for-meeting-modal";
-import { GetParticipationsByUserId } from "@/actions/participation";
-import { clientAuth } from "@/hooks/auth";
-import { Membership } from "@prisma/client";
-import { PayForParticipationModal } from "./pay-for-participation-modal";
+//import { GetParticipationsByUserId } from "@/actions/participation";
+//import { clientAuth } from "@/hooks/auth";
+//import { Membership } from "@prisma/client";
+//import { PayForParticipationModal } from "./pay-for-participation-modal";
 
-const UnpaidMeetingsTable = ({
-    membership
-} : {
-    membership?: Pick<Membership, "id">
-}) => {
-    const auth = clientAuth()
+const UnpaidMeetingsTable = (
+//     {
+//     membership
+// } : {
+//     membership?: Pick<Membership, "id">
+// }
+) => {
+    //const auth = clientAuth()
     
-    const { data: participations, isLoading } = useQuery({
-        queryKey: [UserQueries.Participations],
-        queryFn: () => GetParticipationsByUserId(auth!.id),
-        enabled: !!auth!.id
-    })
+    // const { data: participations, isLoading } = useQuery({
+    //     queryKey: [UserQueries.Participations],
+    //     queryFn: () => GetParticipationsByUserId(auth!.id),
+    //     enabled: !!auth!.id
+    // })
 
-    const filteredParticipations = membership
-    ? participations?.filter(p => p.membership.id === membership.id)
-    : participations
+    // const filteredParticipations = membership
+    // ? participations?.filter(p => p.membership.id === membership.id)
+    // : participations
 
-    const unpaidParticipations = filteredParticipations?.map(p => {
-        const amountPaid = p.payments
-            .filter(pay => pay.currency === p.meeting.currency)
-            .reduce((sum, pay) => sum + pay.amount, 0);
+    // const unpaidParticipations = filteredParticipations?.map(p => {
+    //     const amountPaid = p.payments
+    //         .filter(pay => pay.currency === p.meeting.currency)
+    //         .reduce((sum, pay) => sum + pay.amount, 0);
 
-        return { ...p, amountPaid };
-    }).filter(p => p.amountPaid < p.meeting.price); // tylko nieopłacone / częściowo opłacone
+    //     return { ...p, amountPaid };
+    // }).filter(p => p.amountPaid < p.meeting.price); // tylko nieopłacone / częściowo opłacone
     
     return (
         <div className="space-y-4">
             <h6>Nieopłacone spotkania</h6>
 
-                <Table 
+                {/* <Table 
                     shadow="sm"
                     isCompact
                 >
@@ -74,7 +76,7 @@ const UnpaidMeetingsTable = ({
                             </TableCell>
                         </TableRow>}
                     </TableBody>
-                </Table>
+                </Table> */}
         {/* <pre>
             {JSON.stringify(participations,null,2)}
         </pre> */}

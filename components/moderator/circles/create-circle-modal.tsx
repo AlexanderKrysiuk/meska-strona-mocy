@@ -4,20 +4,19 @@ import { CreateCircle } from "@/actions/circle";
 import { GetCities } from "@/actions/city";
 import { GetCountries } from "@/actions/country";
 import { GetRegions } from "@/actions/region";
-import { GetTimeZones } from "@/actions/timezone";
 import Loader from "@/components/loader";
 import { clientAuth } from "@/hooks/auth";
 import { CreateCircleSchema } from "@/schema/circle";
 import { GeneralQueries, ModeratorQueries } from "@/utils/query";
 import { liveSlugify } from "@/utils/slug";
-import { formatTimeZone } from "@/utils/timeZone";
+import { formatTimeZone, getIanaTimeZones } from "@/utils/timeZone";
 import { faCirclePlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, NumberInput, Radio, RadioGroup, Select, SelectItem, TimeInput, TimeInputValue, addToast, useDisclosure } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Country, Currency, Region, TimeZone, WeekDay } from "@prisma/client";
+import { Country, Currency, Region, WeekDay } from "@prisma/client";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -40,43 +39,33 @@ const CreateCircleModal = () => {
                 queryKey: [GeneralQueries.Cities],
                 queryFn: () => GetCities()
             },
-            {
-                queryKey: [GeneralQueries.TimeZones],
-                queryFn: () => GetTimeZones()
-            }
         ]
     })
 
-    const [countries, regions, cities, timeZones] = queries
+    const [countries, regions, cities] = queries
 
     type FormFields = z.infer<typeof CreateCircleSchema>
 
     const [region, setRegion] = useState<Region | null>();
     const [country, setCountry] = useState<Country | null>();
-    const [isOnline, setIsOnline] = useState(true);
+    const [isOnline, setIsOnline] = useState<"online" | "offline" | undefined>(undefined);
 
     const [startTime, setStartTime] = useState<TimeInputValue | null>()
     const [endTime, setEndTime] = useState<TimeInputValue | null>()
-
-
-    // country: Country | null
-    // timeZones.data: TimeZone[]
-
-    const countryTimeZones = useMemo(() => {
-        return country ? timeZones.data?.filter(tz => tz.countryId === country.id) ?? [] : []
-    }, [country, timeZones.data])  
+    const ianaTimeZones = getIanaTimeZones();
     
     const { handleSubmit, watch, trigger, setValue, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateCircleSchema),
         mode: "all"
     })
-    
-    // jeśli countryTimeZones ma 1 element, ustawiamy automatycznie
+
     useEffect(() => {
-        if (countryTimeZones.length === 1) {
-            setValue("timeZoneId", countryTimeZones[0].id, { shouldValidate: true })
+        if (isOnline && !watch("timeZone")) {
+            const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            setValue("timeZone", browserTimeZone, { shouldValidate: true });
         }
-    }, [countryTimeZones, setValue])
+    }, [isOnline, setValue, watch]);
+    
         
     const queryClient = useQueryClient()
 
@@ -197,8 +186,13 @@ const CreateCircleModal = () => {
                             <RadioGroup
                                 label="Widoczność kręgu"
                                 orientation="horizontal"
-                                value={watch("isPublic") ? "public" : "private"}
-                                onValueChange={(val) => setValue("isPublic", val === "public", { shouldValidate: true, shouldDirty: true,})}
+                                defaultValue={undefined}
+                                //value={isOnline ?? undefined} // undefined = brak zaznaczenia
+                                //value={watch("isPublic")}
+                                //onValueChange={(val) => setValue("isPublic", val === "public", { shouldValidate: true, shouldDirty: true,})}
+                                value={watch("isPublic") === undefined ? undefined : watch("isPublic") ? "public" : "private"}
+                                onValueChange={(val) => setValue("isPublic", val === "public" ? true : false, {shouldValidate: true})}
+                                isRequired
                                 isDisabled={isSubmitting}
                             >
                                 <Radio 
@@ -221,42 +215,42 @@ const CreateCircleModal = () => {
                                 label="Rodzaj kręgu"
                                 orientation="horizontal"
                                 isRequired
-                                value={isOnline ? "online" : "offline"}
+                                defaultValue={undefined}
+                                value={isOnline} // teraz typ pasuje: string | undefined
                                 onValueChange={(value) => {
-                                    const online = value === "online"
-                                    setIsOnline(online)
-                                    setValue("timeZoneId", null!, {shouldValidate: true})
-                                    if (online) {  // jeśli teraz wybieramy online, czyścimy pola
+                                    setIsOnline(value as "online" | "offline"); // rzutowanie na string literal
+                                    //setValue("timeZone", null, {shouldValidate: true})
+                                    if (value === "online") {  // jeśli teraz wybieramy online, czyścimy pola
                                         setCountry(null)
                                         setRegion(null)
                                         setValue("cityId", null, {shouldValidate: true})
                                         setValue("street", null, {shouldValidate: true})
+                                    } else {
+                                        setValue("timeZone", null, {shouldValidate: true})
                                     }
                                 }}
                             >
                                 <Radio value="online">Online</Radio>
                                 <Radio value="offline">Stacjonarnie</Radio>
                             </RadioGroup>
-                            {isOnline ? <>
-                                <Select
-                                        label="Strefa czasowa"
-                                        labelPlacement="outside"
-                                        placeholder="Tortuga GMT+21:37"
-                                        variant="bordered"
-                                        selectedKeys={watch("timeZoneId") ? [watch("timeZoneId") as string] : []}
-                                        hideEmptyContent
-                                        disallowEmptySelection
-                                        onSelectionChange={(keys) => {
-                                            const key = Array.from(keys)[0]
-                                            setValue("timeZoneId", key.toString(), {shouldValidate: true})
-                                        }}
-                                        isRequired
-                                        isDisabled={isSubmitting}
-                                        items={timeZones.data}
-                                    >
-                                        {(timeZone) => <SelectItem key={timeZone.id}>{formatTimeZone(timeZone.name)}</SelectItem>}
-                                    </Select>  
-                            </> : <>
+                            {isOnline ? <Select
+                                label="Strefa czasowa"
+                                labelPlacement="outside"
+                                placeholder="Tortuga GMT+21:37"
+                                variant="bordered"
+                                selectedKeys={watch("timeZone") ? [watch("timeZone") as string] : []}
+                                hideEmptyContent
+                                disallowEmptySelection
+                                onSelectionChange={(keys) => {
+                                    const key = Array.from(keys)[0]
+                                    setValue("timeZone", key.toString(), {shouldValidate: true})
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                                items={ianaTimeZones}
+                            >
+                                {(timeZone) => <SelectItem key={timeZone.name}>{formatTimeZone(timeZone.name)}</SelectItem>}
+                            </Select> : <>
                                 <Select
                                     label="Kraj"
                                     labelPlacement="outside"
@@ -278,26 +272,7 @@ const CreateCircleModal = () => {
                                 >
                                     {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
                                 </Select>
-                                {countryTimeZones.length > 1 && <>
-                                    <Select
-                                        label="Strefa czasowa"
-                                        labelPlacement="outside"
-                                        placeholder="Tortuga GMT+21:37"
-                                        variant="bordered"
-                                        selectedKeys={watch("timeZoneId") ? [watch("timeZoneId") as string] : []}
-                                        hideEmptyContent
-                                        disallowEmptySelection
-                                        onSelectionChange={(keys) => {
-                                            const key = Array.from(keys)[0]
-                                            setValue("timeZoneId", key.toString(), {shouldValidate: true})
-                                        }}
-                                        isRequired
-                                        isDisabled={isSubmitting || !country || isOnline || !countryTimeZones}
-                                        items={countryTimeZones}
-                                    >
-                                        {(timeZone) => <SelectItem key={timeZone.id}>{formatTimeZone(timeZone.name)}</SelectItem>}
-                                    </Select>                                
-                                </>}
+                                
                                 <Select
                                     label="Województwo"
                                     labelPlacement="outside"
@@ -345,7 +320,6 @@ const CreateCircleModal = () => {
                                     type="text"
                                     value={watch("street") ?? ""}
                                     onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
-                                    isRequired
                                     isClearable
                                     isDisabled={isSubmitting || isOnline}
                                     isInvalid={!!errors.street}
@@ -448,6 +422,7 @@ const CreateCircleModal = () => {
                             minValue={0}
                             value={watch("newUserPrice") || undefined}
                             onValueChange={(value) => {setValue("newUserPrice", value, {shouldValidate: true})}}
+                            isRequired
                             isClearable
                             isDisabled={isSubmitting}
                             isInvalid={!!errors.newUserPrice}
@@ -461,6 +436,7 @@ const CreateCircleModal = () => {
                             minValue={0}
                             value={watch("price") || undefined}
                             onValueChange={(value) => {setValue("price", value, {shouldValidate: true})}}
+                            isRequired
                             isClearable
                             isDisabled={isSubmitting}
                             isInvalid={!!errors.price}

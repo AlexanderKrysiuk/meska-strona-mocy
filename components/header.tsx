@@ -4,7 +4,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
 import { Role } from "@prisma/client";
-import { AllItems, ModeratorItems, PartnerItems, userItems } from "./user-menu";
+import { AllItems, ModeratorItems } from "./user-menu";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { signOut } from "next-auth/react";
@@ -71,7 +71,7 @@ const Header = () => {
                                 />
                             </DropdownTrigger>
                             <DropdownMenu>
-                                {auth && <DropdownSection
+                                {/* {auth && <DropdownSection
                                     title={"Użytkownik"}
                                     showDivider
                                     items={userItems}
@@ -85,7 +85,7 @@ const Header = () => {
                                         startContent={item.icon}
                                         className={`${pathname.startsWith(item.href) && "text-primary"}`}
                                     />}
-                                </DropdownSection>}
+                                </DropdownSection>} */}
                                 {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) ? (
                                     <DropdownSection
                                         title="Moderator"
@@ -105,7 +105,7 @@ const Header = () => {
                                         )}
                                     </DropdownSection>
                                 ) : null}
-                                {auth.roles?.length > 0 ? 
+                                {/* {auth.roles?.length > 0 ? 
                                     <DropdownSection
                                         title={"Partner"}
                                         showDivider
@@ -123,7 +123,7 @@ const Header = () => {
                                             />
                                         )}
                                     </DropdownSection> : null
-                                }
+                                } */}
                                 <DropdownItem
                                     key="Logout"
                                     color="danger"
@@ -168,7 +168,7 @@ const Header = () => {
                         Użytkownik    
                     </span>
                     <div className="space-y-4">
-                        {userItems.map((item)=><NavbarMenuItem
+                        {/* {userItems.map((item)=><NavbarMenuItem
                             key={item.title}
                         >
                             <Link
@@ -178,7 +178,7 @@ const Header = () => {
                             >
                                 {item.icon} {item.title}
                             </Link>
-                        </NavbarMenuItem>)}
+                        </NavbarMenuItem>)} */}
                     </div>
                 </div>}
                 {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) && (
@@ -210,7 +210,7 @@ const Header = () => {
                             Partner
                         </span>
                         <div className="space-y-4">
-                            {PartnerItems.map((item)=>(
+                            {/* {PartnerItems.map((item)=>(
                                 <NavbarMenuItem
                                     key={item.title}
                                 >
@@ -222,7 +222,7 @@ const Header = () => {
                                         {item.icon} {item.title}
                                     </Link>
                                 </NavbarMenuItem>
-                            ))}
+                            ))} */}
                         </div>
                         <Divider/>
                     </div>

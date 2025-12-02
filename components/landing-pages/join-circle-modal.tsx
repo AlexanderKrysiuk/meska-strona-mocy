@@ -31,7 +31,7 @@ const JoinCircleModal = ({
     const { handleSubmit, watch, setValue, formState: { isSubmitting, errors, isValid } } = useForm<FormFields>({
         resolver: zodResolver(RegisterToCircle),
         defaultValues: {
-            name: user?.name,
+            //name: user?.name,
             email: user?.email
         }
     })
@@ -77,7 +77,7 @@ const JoinCircleModal = ({
                 <ModalHeader>123</ModalHeader>
                 <Form onSubmit={handleSubmit(()=>{})}>
                     <ModalBody className="w-full">
-                        <Input
+                        {/* <Input
                             label="Imię i Nazwisko"
                             labelPlacement="outside"
                             type="text"
@@ -90,7 +90,7 @@ const JoinCircleModal = ({
                             isDisabled={isSubmitting || !!user?.name}
                             isInvalid={!!errors.name}
                             errorMessage={errors.name?.message}
-                        />
+                        /> */}
                         <Input
                             label="Email"
                             labelPlacement="outside"
