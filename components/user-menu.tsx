@@ -1,7 +1,11 @@
 "use client"
 
+import { clientAuth } from "@/hooks/auth"
 import { faGears } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { Listbox, ListboxItem, ListboxSection } from "@heroui/react"
+import { Role } from "@prisma/client"
+import { usePathname } from "next/navigation"
 
 export const AllItems = [
     {
@@ -31,7 +35,7 @@ export const ModeratorItems = [
     //     title: "kręgowcy"
     // },
     {
-        href: "/moderator/ustawienia-kregow",
+        href: "/kokpit/moderator/ustawienia-kregow",
         icon: <FontAwesomeIcon icon={faGears}/>,
         title: "Ustawienia kręgów"
     },
@@ -54,3 +58,33 @@ export const PartnerItems = [
 //     //     title: "Płatności"
 //     // }
 ]
+
+export const KokpitMenu = () => {
+    const user = clientAuth()
+    const pathname = usePathname()
+
+    return (
+        <Listbox
+            className="pr-0"
+        >
+            {user?.roles.includes(Role.Moderator) ? (
+                <ListboxSection
+                    showDivider
+                    title="Moderator"
+                    items={ModeratorItems}
+                >
+                    {(item) => (
+                        <ListboxItem
+                            key={item.title}
+                            title={item.title}
+                            href={item.href}
+                            color={pathname.startsWith(item.href) ? "primary" : "default"}
+                            startContent={item.icon}
+                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
+                        />
+                    )}
+                </ListboxSection>
+            ) : null}
+        </Listbox>
+    )
+}
