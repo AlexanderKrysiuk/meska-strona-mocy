@@ -6,6 +6,8 @@ import { z } from "zod"
 import { GenerateVerificationToken, GetVerificationToken } from "./tokens"
 import { CheckLoginReturnUser, ServerAuth } from "./auth"
 import { SendRegisterNewUserEmail } from "./resend"
+import { sendEmail } from "@/lib/resend"
+import WelcomeEmail from "@/components/emails/Welcome"
 
 export const GetUserByEmail = async (email:string) => {
     return await prisma.user.findUnique({
@@ -45,7 +47,18 @@ export const CreateOrGetUser = async (data: z.infer<typeof RegisterSchema>) => {
     if (!user.emailVerified) {
         const token = await GenerateVerificationToken(user.email)
         if (token) {
-            await SendRegisterNewUserEmail(token, user.name ?? undefined)
+            try {
+                await sendEmail({
+                    to: user.email,
+                    subject: "Witamy - Męska Strona Mocy",
+                    react: WelcomeEmail({
+                        token: token,
+                        name: user.name
+                    })
+                })
+            } catch (error) {
+                console.error(error)
+            }
         }
     }
 
