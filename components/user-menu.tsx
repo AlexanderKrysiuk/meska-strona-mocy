@@ -93,7 +93,7 @@ export const KokpitMenu = () => {
                             href={item.href}
                             color={pathname.startsWith(item.href) ? "primary" : "default"}
                             startContent={item.icon}
-                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-4 border-primary hover:text-white"}`}
+                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"}`}
                         />
                     )}
                 </ListboxSection>
