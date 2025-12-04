@@ -68,6 +68,7 @@ const CreateCircleModal = () => {
             },
             price: 150,
             newUserPrice: 150,
+            currency: Currency.PLN
         }
     })
         

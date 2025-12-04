@@ -73,7 +73,7 @@ const MensCirclePage = () => {
                             <FontAwesomeIcon icon={faTicket} className="mr-2"/>
                                 Wkład energetyczny: {circle.price === circle.newUserPrice ? (
                                     circle.price
-                                        ? <span> {circle.price} {circle.price}</span>
+                                        ? <span> {circle.price} {circle.currency}</span>
                                         : <span> spotkania bezpłatne </span>
                                 ) : (
                                     <ul>

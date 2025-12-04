@@ -1,37 +1,49 @@
 import { CalendarDate, Time } from "@internationalized/date";
 import { DateValue, TimeInputValue } from "@heroui/react";
-import { City, Country, Region } from "@prisma/client";
 
 import { DateTime } from "luxon"
 
+import { toZonedTime, fromZonedTime } from "date-fns-tz"
 import { format } from "date-fns"
-import { toZonedTime } from "date-fns-tz"
+
 
 export const formatTimeOnly = (
   startHour: string,
   endHour: string,
   timeZone: string | null
 ) => {
-  if (timeZone) {
-    const [sh, sm] = startHour.split(":").map(Number)
-    const [eh, em] = endHour.split(":").map(Number)
-    const now = new Date()
-
-    const startDateUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), sh, sm))
-    const endDateUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), eh, em))
-
-    const localStart = toZonedTime(startDateUTC, Intl.DateTimeFormat().resolvedOptions().timeZone)
-    const localEnd = toZonedTime(endDateUTC, Intl.DateTimeFormat().resolvedOptions().timeZone)
-
-    return `${format(localStart, "HH:mm")} - ${format(localEnd, "HH:mm")}`
-  } else {
-    // brak strefy czasowej — wyświetlamy „na sztywno”
+  // offline – brak konwersji
+  if (!timeZone) {
     return `${startHour} - ${endHour}`
   }
+
+  const [sh, sm] = startHour.split(":").map(Number)
+  const [eh, em] = endHour.split(":").map(Number)
+
+  // Data w TZ prowadzącego
+  const now = new Date()
+  const localInHostTZ = (h: number, m: number) =>
+    fromZonedTime(
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        h,
+        m
+      ),
+      timeZone       // tu podajesz Europe/Warsaw
+    )
+
+  const startUTC = localInHostTZ(sh, sm)
+  const endUTC = localInHostTZ(eh, em)
+
+  // konwersja z UTC → czas przeglądarki użytkownika
+  const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const localStart = toZonedTime(startUTC, userTZ)
+  const localEnd = toZonedTime(endUTC, userTZ)
+
+  return `${format(localStart, "HH:mm")} - ${format(localEnd, "HH:mm")}`
 }
-
-
-
 
 export function combineDateAndTime(
   date: DateValue | Date,
