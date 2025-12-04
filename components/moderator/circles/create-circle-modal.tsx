@@ -16,7 +16,7 @@ import { Button, Divider, Form, Input, Modal, ModalBody, ModalContent, ModalFoot
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Country, Currency, Region, WeekDay } from "@prisma/client";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -48,7 +48,6 @@ const CreateCircleModal = () => {
 
     const [region, setRegion] = useState<Region | null>();
     const [country, setCountry] = useState<Country | null>();
-    const [isOnline, setIsOnline] = useState<"online" | "offline" | undefined>(undefined);
 
     const [startTime, setStartTime] = useState<TimeInputValue | null>()
     const [endTime, setEndTime] = useState<TimeInputValue | null>()
@@ -56,16 +55,21 @@ const CreateCircleModal = () => {
     
     const { handleSubmit, watch, trigger, setValue, formState: { errors, isSubmitting, isValid } } = useForm<FormFields>({
         resolver: zodResolver(CreateCircleSchema),
-        mode: "all"
-    })
-
-    useEffect(() => {
-        if (isOnline && !watch("timeZone")) {
-            const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            setValue("timeZone", browserTimeZone, { shouldValidate: true });
+        mode: "all",
+        defaultValues: {
+            isOnline: true,
+            isPublic: false,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            cityId: null,
+            street: null,
+            members: {
+                min: 1,
+                max: 12
+            },
+            price: 150,
+            newUserPrice: 150,
         }
-    }, [isOnline, setValue, watch]);
-    
+    })
         
     const queryClient = useQueryClient()
 
@@ -106,10 +110,10 @@ const CreateCircleModal = () => {
                     <ModalHeader>Nowy krąg</ModalHeader>
                     <pre>
 
-                    {JSON.stringify(watch(),null,2)}<br/>
+                    {/* {JSON.stringify(watch(),null,2)}<br/>
                     CountryID: {JSON.stringify(country,null,2)}<br/>
                     Region: {JSON.stringify(region,null,2)}<br/>
-                    Valid: {JSON.stringify(isValid,null,2)}
+                    Valid: {JSON.stringify(isValid,null,2)} */}
 
                     </pre>
                     <Form onSubmit={handleSubmit(submit)}>
@@ -214,11 +218,43 @@ const CreateCircleModal = () => {
                             <RadioGroup
                                 label="Rodzaj kręgu"
                                 orientation="horizontal"
+                                value={watch("isOnline") ? "online" : "offline"}
+                                onValueChange={(value) => {
+                                    const isOnline = value === "online";
+
+                                    setValue("isOnline", isOnline, { shouldValidate: true });
+
+                                    if (isOnline) {
+                                        // online — czyścimy dane offline
+                                        setCountry(null)
+                                        setRegion(null)
+                                        setValue("cityId", null, { shouldValidate: true });
+                                        setValue("street", null, { shouldValidate: true });
+                                        setValue("timeZone", Intl.DateTimeFormat().resolvedOptions().timeZone, { shouldValidate: true } )
+                                    } else {
+                                        // offline — czyścimy dane online
+                                        setValue("timeZone", null, { shouldValidate: true });
+                                    }
+                                }}
+                                isRequired
+                                isDisabled={isSubmitting}
+                            >
+                                <Radio value="online">Online</Radio>
+                                <Radio value="offline">Stacjonarnie</Radio>
+                            </RadioGroup>
+
+
+
+                            {/* <RadioGroup
+                                label="Rodzaj kręgu"
+                                orientation="horizontal"
                                 isRequired
                                 defaultValue={undefined}
                                 value={isOnline} // teraz typ pasuje: string | undefined
                                 onValueChange={(value) => {
-                                    setIsOnline(value as "online" | "offline"); // rzutowanie na string literal
+                                    const newValue = value as "online" | "offline";
+                                    setIsOnline(newValue);
+                                    //setIsOnline(value as "online" | "offline"); // rzutowanie na string literal
                                     //setValue("timeZone", null, {shouldValidate: true})
                                     if (value === "online") {  // jeśli teraz wybieramy online, czyścimy pola
                                         setCountry(null)
@@ -232,8 +268,8 @@ const CreateCircleModal = () => {
                             >
                                 <Radio value="online">Online</Radio>
                                 <Radio value="offline">Stacjonarnie</Radio>
-                            </RadioGroup>
-                            {isOnline ? <Select
+                            </RadioGroup> */}
+                            {watch("isOnline") ? <Select
                                 label="Strefa czasowa"
                                 labelPlacement="outside"
                                 placeholder="Tortuga GMT+21:37"
@@ -267,7 +303,7 @@ const CreateCircleModal = () => {
                                         setValue("cityId", null, {shouldValidate: true})
                                     }}  
                                     isRequired
-                                    isDisabled={isSubmitting || isOnline}
+                                    isDisabled={isSubmitting || watch("isOnline")}
                                     items={countries.data}
                                 >
                                     {(country) => <SelectItem key={country.id}>{country.name}</SelectItem>}
@@ -288,7 +324,7 @@ const CreateCircleModal = () => {
                                         setValue("cityId", null, {shouldValidate: true})
                                     }}  
                                     isRequired
-                                    isDisabled={isSubmitting || !country || isOnline}
+                                    isDisabled={isSubmitting || !country || watch("isOnline")}
                                     items={regions.data?.filter(region => region.countryId === country?.id)}
                                 >
                                     {(region) => <SelectItem key={region.id}>{region.name}</SelectItem>}
@@ -305,7 +341,7 @@ const CreateCircleModal = () => {
                                         setValue("cityId", cityId ? cityId.toString() : null, {shouldValidate: true, shouldDirty: true})
                                     }}
                                     isRequired
-                                    isDisabled={!region || !country || isSubmitting || isOnline}
+                                    isDisabled={!region || !country || isSubmitting || watch("isOnline")}
                                     isInvalid={!!errors.cityId}
                                     errorMessage={errors.cityId?.message}
                                     items={cities.data?.filter(city => city.regionId === region?.id)}
@@ -321,7 +357,7 @@ const CreateCircleModal = () => {
                                     value={watch("street") ?? ""}
                                     onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
                                     isClearable
-                                    isDisabled={isSubmitting || isOnline}
+                                    isDisabled={isSubmitting || watch("isOnline")}
                                     isInvalid={!!errors.street}
                                     errorMessage={errors.street?.message}
                                 />

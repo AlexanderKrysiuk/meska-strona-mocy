@@ -81,6 +81,9 @@ const street = z.string()
 
 const cityId = z.string().uuid().nullable()
 
+const isOnline = z.boolean()
+
+
 // const price = z.preprocess(
 //   (val) => {
 //     if (val === "" || val === undefined || val === null) return null; // brak ceny = null
@@ -127,6 +130,7 @@ export const CreateCircleSchema = z.object({
 
   currency,
   isPublic,
+  isOnline,
 
   plannedWeekday,
   frequencyWeeks,
