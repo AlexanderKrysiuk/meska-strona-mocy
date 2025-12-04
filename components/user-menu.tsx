@@ -1,7 +1,7 @@
 "use client"
 
 import { clientAuth } from "@/hooks/auth"
-import { faGears } from "@fortawesome/free-solid-svg-icons"
+import { faGears, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Listbox, ListboxItem, ListboxSection } from "@heroui/react"
 import { Role } from "@prisma/client"
@@ -16,11 +16,11 @@ export const AllItems = [
 ]
 
 export const userItems = [
-//     {
-//         href: "/konto/profil",
-//         icon: <FontAwesomeIcon icon={faUser}/>,
-//         title: "Profil"
-//     },
+    {
+        href: "/kokpit/konto/profil",
+        icon: <FontAwesomeIcon icon={faUser}/>,
+        title: "Profil"
+    },
 //     {
 //         href: "/konto/moje-kregi",
 //         icon: <FontAwesomeIcon icon={faPeopleGroup}/>,
@@ -63,15 +63,28 @@ export const KokpitMenu = () => {
     const user = clientAuth()
     const pathname = usePathname()
 
-    return (
-        <Listbox
-            className="pr-0"
-        >
-            {user?.roles.includes(Role.Moderator) ? (
+    return <>
+        {/* {user?.roles.includes(Role.Moderator) && 
+            <Listbox
+                className="pr-0"
+            >
                 <ListboxSection
                     showDivider
                     title="Moderator"
                     items={ModeratorItems}
+                >
+                    {(item)}
+                </ListboxSection>
+            </Listbox>
+        } */}
+        <Listbox
+            className="pr-0"
+        >
+            {user ? (
+                <ListboxSection
+                    showDivider
+                    title="Użytkownik"
+                    items={userItems}
                 >
                     {(item) => (
                         <ListboxItem
@@ -80,11 +93,29 @@ export const KokpitMenu = () => {
                             href={item.href}
                             color={pathname.startsWith(item.href) ? "primary" : "default"}
                             startContent={item.icon}
-                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
+                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-4 border-primary hover:text-white"}`}
+                        />
+                    )}
+                </ListboxSection>
+            ) : null}
+            {user?.roles.includes(Role.Moderator) ? (
+                <ListboxSection
+                showDivider
+                title="Moderator"
+                items={ModeratorItems}
+                >
+                    {(item) => (
+                        <ListboxItem
+                        key={item.title}
+                        title={item.title}
+                        href={item.href}
+                        color={pathname.startsWith(item.href) ? "primary" : "default"}
+                        startContent={item.icon}
+                        className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
                         />
                     )}
                 </ListboxSection>
             ) : null}
         </Listbox>
-    )
+    </>
 }
