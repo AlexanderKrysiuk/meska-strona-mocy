@@ -1,10 +1,11 @@
 "use client"
 
 import { clientAuth } from "@/hooks/auth"
-import { faGears, faUser } from "@fortawesome/free-solid-svg-icons"
+import { faArrowRightFromBracket, faGears, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Listbox, ListboxItem, ListboxSection } from "@heroui/react"
+import { DropdownItem, DropdownMenu, DropdownSection, Listbox, ListboxItem, ListboxSection } from "@heroui/react"
 import { Role } from "@prisma/client"
+import { signOut } from "next-auth/react"
 import { usePathname } from "next/navigation"
 
 export const AllItems = [
@@ -118,4 +119,60 @@ export const KokpitMenu = () => {
             ) : null}
         </Listbox>
     </>
+}
+
+export const DropMenu = () => {
+    const user = clientAuth()
+    const pathname = usePathname()
+
+    return <DropdownMenu>
+        {user ? (
+            <DropdownSection
+                title="Użytkownik"
+                showDivider
+                items={userItems}
+            >
+                {(item) => (
+                    <DropdownItem
+                        key={item.title}
+                        href={item.href}
+                        title={item.title}
+                        variant="light"
+                        color="primary"
+                        startContent={item.icon}
+                        className={`${pathname.startsWith(item.href) && "text-primary"}`}
+                    />
+                )}
+            </DropdownSection>
+        ) : null}
+        {user?.roles.includes(Role.Moderator) ? (
+            <DropdownSection
+                title="Moderator"
+                showDivider
+                items={ModeratorItems}
+            >
+                {(item) => (
+                    <DropdownItem
+                        key={item.title}
+                        href={item.href}
+                        title={item.title}
+                        variant="light"
+                        color="primary"
+                        startContent={item.icon}
+                        className={`${pathname.startsWith(item.href) && "text-primary"}`}
+                    />
+                )}
+            </DropdownSection>
+        ) : null}
+        <DropdownItem
+            key="Logout"
+            color="danger"
+            variant="light"
+            startContent={<FontAwesomeIcon icon={faArrowRightFromBracket}/>}
+            onPress={()=>{signOut()}}
+            className="rounded-none"
+        >
+            Wyloguj
+        </DropdownItem>
+    </DropdownMenu>
 }
