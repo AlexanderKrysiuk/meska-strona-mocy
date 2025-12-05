@@ -1,14 +1,9 @@
 "use client"
-import { Avatar, Button, Divider, Dropdown, DropdownTrigger, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenu, NavbarMenuItem, NavbarMenuToggle } from "@heroui/react";
+import { Avatar, Button, Dropdown, DropdownTrigger, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle } from "@heroui/react";
 import { ThemeSwitcher } from "./theme-switcher";
 import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
-import { Role } from "@prisma/client";
-import { AllItems, DropMenu, ModeratorItems } from "./user-menu";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
-import { signOut } from "next-auth/react";
-import { PermissionGate } from "@/utils/gate";
+import { AllItems, DropMenu, MobileMenu } from "./user-menu";
 
 
 const Header = () => {
@@ -142,8 +137,8 @@ const Header = () => {
                 </NavbarItem>
                 <NavbarMenuToggle className="lg:hidden"/>
             </NavbarContent>
-            <NavbarMenu>
-                {auth && (
+                <MobileMenu/>
+                {/* {auth && (
                     <NavbarMenuItem>
                         <div className="flex justify-between items-center mb-1">
                             Witaj {auth?.name}
@@ -155,26 +150,9 @@ const Header = () => {
                         </div>
                         <Divider/>
                     </NavbarMenuItem>
-                )}
-                {auth && <div>
-                    <span className="text-sm text-foreground-500">
-                        Użytkownik    
-                    </span>
-                    <div className="space-y-4">
-                        {/* {userItems.map((item)=><NavbarMenuItem
-                            key={item.title}
-                        >
-                            <Link
-                                href={item.href}
-                                color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                                className="flex gap-2 hover:primary transition-colors duration-400"
-                            >
-                                {item.icon} {item.title}
-                            </Link>
-                        </NavbarMenuItem>)} */}
-                    </div>
-                </div>}
-                {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) && (
+                )} */}
+                
+                {/* {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) && (
                     <div>
                         <span className="text-sm text-foreground-500">
                             Moderator
@@ -196,31 +174,9 @@ const Header = () => {
                         </div>
                         <Divider/>
                     </div>
-                )}
-                {(auth?.roles?.length ?? 0) > 0 &&
-                    <div>
-                        <span className="text-sm text-foreground-500">
-                            Partner
-                        </span>
-                        <div className="space-y-4">
-                            {/* {PartnerItems.map((item)=>(
-                                <NavbarMenuItem
-                                    key={item.title}
-                                >
-                                    <Link
-                                        href={item.href}
-                                        color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                                        className="flex gap-2 hover:primary transition-colors duration-400"
-                                    >
-                                        {item.icon} {item.title}
-                                    </Link>
-                                </NavbarMenuItem>
-                            ))} */}
-                        </div>
-                        <Divider/>
-                    </div>
-                }
-                {AllItems.map((item)=>(
+                )} */}
+                
+                {/* {AllItems.map((item)=>(
                     <NavbarMenuItem
                         isActive={pathname.startsWith(item.href)}
                         key={item.title}
@@ -249,8 +205,7 @@ const Header = () => {
                             <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
                         </Link>
                     }
-                </NavbarMenuItem>
-            </NavbarMenu>
+                </NavbarMenuItem> */}
         </Navbar>
      );
 }

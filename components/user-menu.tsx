@@ -1,9 +1,9 @@
 "use client"
 
 import { clientAuth } from "@/hooks/auth"
-import { faArrowRightFromBracket, faGears, faUser } from "@fortawesome/free-solid-svg-icons"
+import { faArrowRightFromBracket, faArrowRightToBracket, faGears, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { DropdownItem, DropdownMenu, DropdownSection, Listbox, ListboxItem, ListboxSection } from "@heroui/react"
+import { Avatar, Divider, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
 import { Role } from "@prisma/client"
 import { signOut } from "next-auth/react"
 import { usePathname } from "next/navigation"
@@ -175,4 +175,92 @@ export const DropMenu = () => {
             Wyloguj
         </DropdownItem>
     </DropdownMenu>
+}
+
+export const MobileMenu = () => {
+    const user = clientAuth()
+    const pathname = usePathname()
+
+    return <NavbarMenu>
+        {user && <>
+            <NavbarMenuItem>
+                <div className="flex justify-between items-center mb-1">
+                    Witaj {user.name}
+                    <Avatar
+                        size="sm"
+                        showFallback
+                        src={user.image ?? undefined}
+                    />
+                </div>
+            </NavbarMenuItem>
+            <span className="text-sm text-foreground-500">
+                Użytkownik
+            </span>
+            <div className="space-y-4">
+                {userItems.map((item) => 
+                    <NavbarMenuItem
+                        key={item.title}
+                    >
+                        <Link
+                            href={item.href}
+                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            className="flex gap-2 hover:primary transition-colors duration-400"
+                        >
+                            {item.icon} {item.title}
+                        </Link>
+                    </NavbarMenuItem>
+                )}
+                <Divider/>
+                {user.roles.includes(Role.Moderator) && <>
+                    <span className="text-sm text-foreground-500">
+                        Moderator
+                    </span>
+                    {ModeratorItems.map((item) => 
+                        <NavbarMenuItem
+                            key={item.title}
+                        >
+                            <Link
+                                href={item.href}
+                                color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                                className="flex gap-2 hover:primary transition-colors duration-400"
+                            >
+                                {item.icon} {item.title}
+                            </Link>
+                        </NavbarMenuItem>
+                    )}
+                    <Divider/>
+                </>}
+                {AllItems.map((item) =>
+                    <NavbarMenuItem
+                        isActive={pathname.startsWith(item.href)}
+                        key={item.title}
+                    >
+                        <Link
+                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            href={item.href}
+                        >
+                            {item.title}
+                        </Link>
+                    </NavbarMenuItem>
+                )}
+                <NavbarMenuItem>
+                    {user ?
+                        <Link
+                            onPress={()=>signOut()}
+                            color="danger"
+                            className="cursor-pointer"
+                        >
+                            <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2"/> Wyloguj
+                        </Link>
+                        :
+                        <Link
+                            href="/auth/start"
+                        >
+                            <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
+                        </Link>
+                    }
+                </NavbarMenuItem>
+            </div>
+        </>}
+    </NavbarMenu>
 }
