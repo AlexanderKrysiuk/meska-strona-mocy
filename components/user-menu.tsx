@@ -186,6 +186,13 @@ export const MobileMenu = () => {
     if (status === "loading") return null
 
     return <NavbarMenu>
+        <NavbarMenuItem>
+            <Link
+                href="/auth/start"
+            >
+                <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
+            </Link>
+        </NavbarMenuItem>
         {user && <>
             <NavbarMenuItem>
                 <div className="flex justify-between items-center mb-1">
