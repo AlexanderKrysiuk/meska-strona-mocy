@@ -8,12 +8,8 @@ import bcrypt from "bcryptjs"
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { GenerateVerificationToken } from "./tokens";
-import { SendResetPasswordEmail } from "./resend";
 import { GetUserByEmail } from "./user";
-
-export const NEWRegisterNewUser = async (data: z.infer<typeof RegisterSchema>) => {
-    
-}
+import { SendResetPasswordEmail } from "./resend";
 
 export async function RegisterNewUser(data: z.infer<typeof RegisterSchema>) {
     let existingUser;
@@ -90,22 +86,6 @@ export const ResetPassword = async (data: z.infer<typeof ResetPasswordSchema>) =
     }
 }
 
-export const GetUserByID = async () => {
-    const session = await auth()
-
-    if (!session?.user.id) throw new Error("Nie jesteś zalogowany")
-
-    try {
-        const user = await prisma.user.findUnique({
-            where: {id: session.user.id}
-        })
-
-        if (!user) throw new Error("Użytkownik nie istnieje.")
-        return user
-    } catch(error) {
-        throw new Error("Błąd połączenia z bazą danych")
-    }
-}
 
 export const CheckLoginOrRedirect = async () => {
     const session = await auth()
@@ -118,4 +98,10 @@ export const CheckLoginOrRedirect = async () => {
 export const CheckLoginReturnUser = async () => {
     const session = await auth()
     return session?.user
+}
+
+export const ServerAuth = async () => {
+    const session = await auth()
+    if (!session?.user) return redirect("/auth/start")
+    return session.user
 }

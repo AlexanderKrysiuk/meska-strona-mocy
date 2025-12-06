@@ -1,299 +1,370 @@
 "use server"
 
-import { CompleteMeetingSchema, CreateMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
+import { CompleteMeetingSchema, EditMeetingSchema } from "@/schema/meeting"
 import { z } from "zod"
-import { CheckLoginReturnUser } from "./auth"
-import { CircleMeetingStatus, Role } from "@prisma/client"
+import { ServerAuth } from "./auth"
+import { MeetingStatus, Role } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { GetCircleById } from "./circle"
+//import { GetCircleByID } from "./circle"
+//import { sendEmail } from "@/lib/resend"
+//import { MeetingInvite } from "@/components/emails/Meeting-Invite"
+//import { GetMembersByCircleIdAndStatus } from "./membership"
+//import { MeetingUpdatedEmail } from "@/components/emails/Meeting-Update"
+//import { MeetingAction, moderatorMeetingActions } from "@/utils/meeting"
 
-export const CreateMeeting = async (data: z.infer<typeof CreateMeetingSchema>) => {    
-    const user = await CheckLoginReturnUser()
+// const MODERATOR_SHARE = parseFloat(process.env.MODERATOR_SHARE!);
 
-    if (!user) return {
-        success: false,
-        message: "Musisz być zalogowanym by utworzyć spotkanie"
-    }
-
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
-        success: false,
-        message: "Brak uprawnień do dodania spotkania"
-    }
-
-    const circle = await GetCircleById(data.circleId)
-
-    if (!circle) return {
-        success: false,
-        message: "Dana grupa nie istnieje"
-    }
-
-    if (user.role === Role.Moderator && user.id !== circle.moderatorId) return {
-        success: false,
-        message: "Brak uprawień do dodania spotkania"
-    }
-
-    try {
-        const overlapingMeetings = await prisma.circleMeeting.findFirst({
-            where: {
-                moderatorId: user.id,
-                AND: [
-                    {
-                        startTime: { lt: data.endTime }
-                    },
-                    {
-                        endTime: { gt: data.startTime }
-                    }
-                ]
-            }
-        })
-
-        if (overlapingMeetings) {
-            //addActionError(errors, "startTime", "W tym czasie masz już inne spotkanie") 
-            
-            return {
-                success: false,
-                message: "Nie udało się dodać spotkania",
-                errors: {
-                    startTime: ["W tym dniu masz już inne spotkanie"]
-                }
-            }
-        }
-
-        // Policz ile spotkań już było w tej grupie
-        const existingMeetings = await prisma.circleMeeting.count({
-            where: { circleId: data.circleId },
-        })
+export const CreateMeeting = async (
+    //data: z.infer<ReturnType<typeof CreateMeetingSchema>>
+) => {
+    // try {
+    //     const auth = await ServerAuth()
+      
+    //     const circle = await GetCircleByID(data.circleId)
+    //     if (!circle) return { success: false, message: "Brak danych o kręgu" }
+      
+    //     if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderator.id || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień do dodania spotkania" }
+  
+    //     const overlappingMeeting = await CheckOverlapingMeeting(
+    //         auth.id,
+    //         data.TimeRangeSchema.startTime,
+    //         data.TimeRangeSchema.endTime
+    //     )
         
-        await prisma.circleMeeting.create({
-            data: {
-                status: CircleMeetingStatus.Scheduled,
-                startTime: data.startTime,
-                endTime: data.endTime,
-                street: data.street,
-                cityId: data.cityId,
-                price: data.price,
-                circleId: data.circleId,
-                moderatorId: user.id,
-                number: existingMeetings + 1,
-            }
-        })
-    } catch {
-        return {
-            success: false,
-            message: "Błąd połączenia z bazą danych"
-        }
-    }
+    //     if (overlappingMeeting) return {
+    //         success: false,
+    //         message: "Nie udało się utworzyć spotkania",
+    //         fieldErrors: { date: "W tym dniu masz już inne spotkanie" },
+    //     }
+        
+    //     const activeMembers = await GetMembersByCircleIdAndStatus({
+    //         circleId: circle.id, 
+    //         status: MembershipStatus.Active
+    //     })
 
-    //TODO podepnij resendera i dodaj wysyłkę maili informującą o nowych spotkaniach
+    //     //const existingMeetings = await prisma.meeting.count({ where: { circleId: data.circleId } })
 
-    return {
-        success: true,
-        message: "Pomyślnie dodano nowe spotkanie"
-    }
+    //     const meeting = await prisma.$transaction(async (tx) => {
+    //         const meeting = await tx.meeting.create({
+    //             data: {
+    //                 status: MeetingStatus.Scheduled,
+    //                 startTime: data.TimeRangeSchema.startTime,
+    //                 endTime: data.TimeRangeSchema.endTime,
+    //                 circleId: data.circleId,
+    //                 moderatorId: circle.moderator.id,
+    //             },
+    //             select: {
+    //                 id: true,
+    //                 startTime: true,
+    //                 endTime: true,
+    //                 circle: { select: {
+    //                     name: true,
+    //                     street: true,
+    //                     price: true,
+    //                     currency: true,
+    //                     city: { select: {
+    //                         name: true,
+    //                         region: { select: {
+    //                             country: { select: {
+    //                                 timeZone: true,
+    //                             }}
+    //                         }}
+    //                     }}
+    //                 }},
+    //                 moderator: { select: {
+    //                     name: true,
+    //                     image: true,
+    //                     title: true,
+    //                 }}
+    //             }
+    //         })
+
+    //         if (activeMembers.length > 0) {
+    //             await tx.participation.createMany({
+    //                 data: activeMembers.map((membership) => ({
+    //                     membershipId: membership.id,
+    //                     meetingId: meeting.id
+    //                 }))
+    //             })
+    //         }
+
+    //         return meeting
+    //     })
+
+    //     for (const member of activeMembers) {
+    //         try {
+    //             await sendEmail({
+    //                 to: member.user.email,
+    //                 subject: `Nowe spotkanie ${circle.name}`,
+    //                 react: MeetingInvite({
+    //                     participant: member.user,
+    //                     circle: meeting.circle,
+    //                     city: meeting.circle.city ?? undefined,
+    //                     country: meeting.circle.city?.region.country ?? { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+    //                     meeting: meeting,
+    //                     moderator: meeting.moderator
+    //                 })
+    //             })
+    //         } catch (error) {
+    //             console.error(error)
+    //         }
+    //     }
+        
+    //     return { success: true, message: "Spotkanie utworzone pomyślnie" }
+    // } catch (error) {
+    //     console.error(error)
+    //     return { success: false, message: "Błąd serwera lub połączenia z bazą danych" }
+    // }
+}  
+
+export const EditMeeting = async (
+    //data: z.infer<ReturnType<typeof EditMeetingSchema>>
+) => {
+    // try {
+    //     const auth = await ServerAuth();
+  
+    //     const meeting = await GetMeeting(data.meetingId);
+    //     if (!meeting) return {
+    //         success: false,
+    //         message: "Dane spotkanie nie istnieje"
+    //     }
+
+    //     if (!moderatorMeetingActions[meeting.status]?.includes(MeetingAction.Edit)) return {
+    //         success: false,
+    //         message: "Akcja niedozwolona"
+    //     }    
+  
+    //     if (!auth.roles.includes(Role.Admin) && (auth.id !== meeting.moderatorId || !auth.roles.includes(Role.Moderator))) return {
+    //         success: false,
+    //         message: "Brak uprawnień do edycji spotkania"
+    //     }
+  
+    //     // if (data.priceCurrency.currency === meeting.currency && data.priceCurrency.price > meeting.price && data.priceCurrency.price < meeting.price + 10) return {
+    //     //     success: false,
+    //     //     message: `Minimalna podwyżka ceny to 10 ${meeting.currency} (obecnie ${meeting.price} ${meeting.currency})`
+    //     // }
+  
+    //     const overlappingMeeting = await CheckOverlapingMeeting(auth.id, data.TimeRangeSchema.startTime, data.TimeRangeSchema.endTime, meeting.id);
+    //     if (overlappingMeeting) {
+    //         return {
+    //             success: false,
+    //             message: "Nie udało się edytować spotkania",
+    //             fieldErrors: { date: "W tym dniu masz już inne spotkanie" }
+    //         };
+    //     }
+  
+    //     const activeMembers = await GetMembersByCircleIdAndStatus({
+    //         circleId: meeting.circleId,
+    //         status: MembershipStatus.Active
+    //     });
+  
+    //     const updatedMeeting = await prisma.$transaction(async (tx) => {
+    //         if (data.TimeRangeSchema.startTime > new Date()) {
+    //             // 1️⃣ Upsert aktywnych członków
+    //             await tx.participation.createMany({
+    //                 data: activeMembers.map((member) => ({
+    //                     meetingId: meeting.id,
+    //                     membershipId: member.id,
+    //                 })),
+    //                 skipDuplicates: true
+    //             })
+    //         }
+
+    //         // 2️⃣ Aktualizacja spotkania i pobranie uczestników
+    //         const updated = await tx.meeting.update({
+    //             where: { id: data.meetingId },
+    //             data: {
+    //                 startTime: data.TimeRangeSchema.startTime,
+    //                 endTime: data.TimeRangeSchema.endTime,
+    //             },
+    //             select: {
+    //                 startTime: true,
+    //                 endTime: true,
+    //                 circle: { select: { 
+    //                     name: true,
+    //                     street: true,
+    //                     price: true,
+    //                     currency: true,
+    //                     city: {
+    //                         select: {
+    //                             name: true,
+    //                         }
+    //                     }
+    //                 }},
+    //                 moderator: { select: { 
+    //                     name: true, 
+    //                     image: true, 
+    //                     title: true 
+    //                 }},
+    //                 participants: { select: {
+    //                     id: true,
+    //                     status: true,
+    //                     membership: { select: {
+    //                         id: true,
+    //                         user: { select: {
+    //                             name: true,
+    //                             email: true,
+    //                         }}
+    //                     }},
+    //                 }}
+    //             }
+    //         });
+    //         return updated
+    //     })
+
+    //     // 4️⃣ Wysyłka maili poza transakcją
+    //     if (updatedMeeting.startTime > new Date()) {
+    //         for (const participant of updatedMeeting.participants) {
+    //             if (participant.status === ParticipationStatus.Active) {
+    //                 try {
+    //                     await sendEmail({
+    //                         to: participant.membership.user.email,
+    //                         subject: `Zmiana spotkania w kręgu ${updatedMeeting.circle.name}`,
+    //                         react: MeetingUpdatedEmail({
+    //                             participant: participant.membership.user,
+    //                             oldMeeting: meeting,
+    //                             newMeeting: updatedMeeting,
+    //                             circle: updatedMeeting.circle,
+    //                             city: updatedMeeting.circle.city ?? undefined,
+    //                             timeZone: data.timeZone,
+    //                             moderator: updatedMeeting.moderator
+    //                         })
+    //                     });
+    //                 } catch (error) {
+    //                     console.error("Błąd wysyłki maila:", error);
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     return { success: true, message: "Pomyślnie zmieniono dane spotkania" };
+    // } catch (error) {
+    //     console.error(error);
+    //     return { success: false, message: "Błąd połączenia z bazą danych" };
+    // }
 }
-
-async function RefreshMeetingsNumbering (circleId: string) {
-    const meetings = await prisma.circleMeeting.findMany({
-        where: {circleId: circleId},
-        orderBy: {startTime: "asc"}
+  
+export const GetMeeting = async (id: string) => {
+    return await prisma.meeting.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            circleId: true,
+            status: true,
+            moderatorId: true,
+            //startTime: true,
+            //endTime: true,
+        }
     })
-
-    for (let i = 0; i < meetings.length ; i++) {
-        await prisma.circleMeeting.update({
-            where: {id: meetings[i].id },
-            data: { number: i+1 }
-        })
-    }
-    return meetings.length
-}
-
-export const EditMeeting = async (data: z.infer<typeof EditMeetingSchema>) => {
-    const user = await CheckLoginReturnUser()
-
-    if (!user) return {
-        success: false,
-        message: "Musisz być zalogowanym by utworzyć spotkanie"
-    }
-
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
-        success: false,
-        message: "Brak uprawnień do edycji spotkania"
-    }
-
-    const meeting = await GetMeetingById(data.meetingId)
-
-    if (!meeting) return {
-        success: false,
-        message: "Dane spotkanie nie istnieje"
-    }
-
-    if (user.role === Role.Moderator && user.id !== meeting.moderatorId) return {
-        success: false,
-        message: "Brak uprawień do edycji spotkania"
-    }
-
-    try {
-        const overlapingMeetings = await prisma.circleMeeting.findFirst({
-            where: {
-                moderatorId: user.id,
-                AND: [
-                    {
-                        startTime: { lt: data.endTime }
-                    },
-                    {
-                        endTime: { gt: data.startTime }
-                    }
-                ]
-            }
-        })
-
-        if (overlapingMeetings) return {
-            success: false,
-            message: "Nie udało się edytować spotkania",
-            errors: {
-                startTime: ["W tym dniu masz już inne spotkanie"]
-            }
-        }
-
-        await prisma.circleMeeting.update({
-            where: { id: data.meetingId },
-            data: {
-                startTime: data.startTime,
-                endTime: data.endTime,
-                price: data.price,
-                street: data.street,
-                cityId: data.cityId
-            }
-        })
-
-        await sortMeetings(meeting.circleId)
-
-    } catch {
-        return {
-            success: false,
-            message: "Błąd połączenia z bazą danych"
-        }
-    }
-
-    return {
-        success: true,
-        message: "Pomyślnie zmieniono dane spotkania"
-    }
-}
-
-// export const RegisterToMeeting = async (data: z.infer<typeof RegisterToMeetingSchema>) => {
-//     let circle
-
-//     try {
-//         circle = await prisma.circle.findUnique({
-//             where: {
-//                 id: data.circleId
-//             },
-//             include: {
-//                 _count: {
-//                     select: {
-//                         members: true
-//                     }
-//                 }
-//             }
-//         })
-//     } catch (error) {
-//         throw new Error("Błąd połączenia z bazą danych.");
-//     }
-
-//     if (!circle) throw new Error("Nie znaleziono grupy.")    
-//     if (circle._count.members >= circle.maxMembers) throw new Error("Brak wolnych miejsc w tej grupie.");
-    
-//     let user
-
-//     try {
-//         user = await prisma.user.findUnique({
-//             where: { email: data.email}
-//         })
-//     } catch (error) {
-//         throw new Error("Błąd połączenia z bazą danych.");
-//     }
-
-//     if (!user) {
-//         try {
-//             user = await prisma.user.create({ data })
-//         } catch (error) {
-//             throw new Error("Rejestracja nie powiodła się. Spróbuj ponownie.")
-//         }
-
-//         try {
-//             const verificationToken = await GenerateVerificationToken(data.email)
-//             await sendVerificationEmail(verificationToken)
-//         } catch (error) {
-//             throw new Error("Nie udało się wysłać e-maila weryfikacyjnego.")
-//         }
-//     }
-
-
-// }
-
-export const GetMeetingById = async (id: string) => {
-    try {
-        return await prisma.circleMeeting.findUnique({ where: {id}})
-    } catch (error) {
-        return null
-    }
-}
-
-export const sortMeetings = async (circleId: string) => {
-    const meetings = await prisma.circleMeeting.findMany({
-        where: {circleId: circleId},
-        orderBy: { startTime: "asc"}
-    })
-
-    for (let i = 0; i < meetings.length; i++) {
-        const meeting = meetings[i];
-        await prisma.circleMeeting.update({
-          where: { id: meeting.id },
-          data: { number: i + 1 } // najstarszy = 1
-        });
-      }
 }
 
 export const CompleteMeeting = async (data: z.infer<typeof CompleteMeetingSchema>) => {
-    const user = await CheckLoginReturnUser()
-
-    if (!user) return {
-        success: false,
-        message: "Musisz być zalogowanym by zatwierdzić spotkanie"
-    }
-
-    if (![Role.Admin, Role.Moderator].includes(user.role as Role)) return {
-        success: false,
-        message: "Brak uprawnień do zatwierdzenia spotkania"
-    }
-
-    const meeting = await GetMeetingById(data.meetingId)
-
-    if (!meeting) return {
-        success: false,
-        message: "Dana spotkanie nie istnieje"
-    }
-
-    if (user.role === Role.Moderator && user.id !== meeting.moderatorId) return {
-        success: false,
-        message: "Brak uprawień do zatwierdzenia spotkania"
-    }
-
     try {
-        await prisma.circleMeeting.update({
-            where: { id: data.meetingId },
-            data: { status: CircleMeetingStatus.Completed }
-        })
-    } catch {
-        return {
-            success: false,
-            message: "Błąd połączenia z bazą danych"
-        }
-    }
+        const auth = await ServerAuth()
 
-    return {
-        success: true,
-        message: "Pomyślnie zatwierdzono spotkanie"
+        const meeting = await GetMeeting(data.meetingId);
+        if (!meeting) return {
+            success: false,
+            message: "Dane spotkanie nie istnieje"
+        }
+
+        if (meeting.status !== MeetingStatus.Scheduled) return {
+            success: false,
+            message: "Nie możesz zakończyć tego spotkania"
+        }
+
+        if (!auth.roles.includes(Role.Admin) && (auth.id !== meeting.moderatorId || !auth.roles.includes(Role.Moderator))) return {
+            success: false,
+            message: "Brak uprawnień do edycji spotkania"
+        }
+
+        await prisma.meeting.update({
+            where: { id: meeting.id },
+            data: { status: MeetingStatus.Completed }
+        })
+
+        return {
+            success: true,
+            message: "Pomyślnie zakończono spotkanie"
+        }
+    } catch (error) {
+        console.error(error)
+        return { success: false, message: "Błąd połączenia z bazą danych" };
     }
+}
+
+export const GetModeratorMeetings = async (moderatorID: string, status?: MeetingStatus, year?: number) => {
+    return await prisma.meeting.findMany({
+        where: {
+            moderatorId: moderatorID,
+            status: status,
+            ...(year
+                ? {
+                    startTime: {
+                        gte: new Date(year, 0, 1),       // 1 stycznia o 00:00
+                        lt: new Date(year + 1, 0, 1),    // 1 stycznia następnego roku
+                    },
+                } : {}),
+        },
+        //orderBy: { startTime: "desc" },
+        select: {
+            id: true,
+            //startTime: true,
+            //endTime: true,
+            status: true,
+            circle: {
+                select: {
+                    id: true,
+                    name: true,
+                    
+                }
+            }
+        }
+    })
+}
+
+export const GetModeratorMeetingsDates = async (moderatorID: string) => {
+    // const meetings = await prisma.meeting.findMany({
+    //     where: { moderatorId: moderatorID },
+    //     select: { startTime: true },
+    //     orderBy: { startTime: "asc" }
+    // })
+
+    // return meetings.map(m => m.startTime)
+}
+
+
+export const CheckOverlapingMeeting = async(moderatorID: string, start: Date, end: Date, meetingID?: string) => {
+    const overlappingMeeting = await prisma.meeting.findFirst({
+        where: {
+            moderatorId: moderatorID,
+            id: meetingID ? { not: meetingID } : undefined,
+            // AND: [
+            //     { startTime: { lt: end }},
+            //     { endTime: { gt: start }}
+            // ]
+        }
+    })
+
+    return !!overlappingMeeting
+}
+
+export const GetModeratorMeetingsYears = async(moderatorID: string) => {
+    // const years = await prisma.meeting.groupBy({ by: ["startTime"] })
+    // const uniqueYears = Array.from(new Set(years.map(y => y.startTime.getFullYear()))).sort((a, b) => b - a)
+    // return uniqueYears
+}
+
+export const GetFutureMeetingsByCricleId = async(circleId: string, fromDate?: Date) => {
+    return await prisma.meeting.findMany({
+        where: {
+            circleId: circleId, 
+            //endTime: { gte: fromDate ?? new Date() }
+        },
+        select: {
+            id: true,
+            //startTime: true,
+            //endTime: true,
+        }
+    })
 }

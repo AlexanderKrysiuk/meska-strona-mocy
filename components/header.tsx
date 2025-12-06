@@ -1,16 +1,13 @@
 "use client"
-import { Avatar, Button, Divider, Dropdown, DropdownItem, DropdownMenu, DropdownSection, DropdownTrigger, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenu, NavbarMenuItem, NavbarMenuToggle } from "@heroui/react";
+import { Avatar, Button, Dropdown, DropdownTrigger, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle } from "@heroui/react";
 import { ThemeSwitcher } from "./theme-switcher";
-import { useCurrentUser } from "@/hooks/user";
+import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
-import { Role } from "@prisma/client";
-import { AllItems, ModeratorItems } from "./user-menu";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowRightFromBracket, faArrowRightToBracket } from "@fortawesome/free-solid-svg-icons";
-import { signOut } from "next-auth/react";
+import { AllItems, DropMenu, MobileMenu } from "./user-menu";
+
 
 const Header = () => {
-    const user = useCurrentUser()
+    const auth = clientAuth()
     const pathname = usePathname()
 
     return ( 
@@ -48,7 +45,7 @@ const Header = () => {
                     <ThemeSwitcher/>
                 </NavbarItem>
                 <NavbarItem className="hidden lg:block">
-                    {user ? 
+                    {auth ? 
                         <Dropdown
                             placement="bottom-end"
                             radius="none"
@@ -56,12 +53,28 @@ const Header = () => {
                             <DropdownTrigger>
                                 <Avatar
                                     showFallback
-                                    src={user.image!}
+                                    src={auth.image ?? undefined}
                                     className="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-400"
                                 />
                             </DropdownTrigger>
-                            <DropdownMenu>
-                                {user.role === Role.Moderator || user.role === Role.Admin ? (
+                                <DropMenu/>
+                            {/* <DropdownMenu> */}
+                                {/* {auth && <DropdownSection
+                                    title={"Użytkownik"}
+                                    showDivider
+                                    items={userItems}
+                                >
+                                    {(item) => <DropdownItem
+                                        key={item.title}
+                                        href={item.href}
+                                        title={item.title}
+                                        variant="light"
+                                        color="primary"
+                                        startContent={item.icon}
+                                        className={`${pathname.startsWith(item.href) && "text-primary"}`}
+                                    />}
+                                </DropdownSection>} */}
+                                {/* {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) ? (
                                     <DropdownSection
                                         title="Moderator"
                                         showDivider
@@ -79,8 +92,27 @@ const Header = () => {
                                             />
                                         )}
                                     </DropdownSection>
-                                ) : null}
-                                <DropdownItem
+                                ) : null} */}
+                                {/* {auth.roles?.length > 0 ? 
+                                    <DropdownSection
+                                        title={"Partner"}
+                                        showDivider
+                                        items={PartnerItems}
+                                    >
+                                        {(item) => (
+                                            <DropdownItem
+                                                key={item.title}
+                                                href={item.href}
+                                                title={item.title}
+                                                variant="light"
+                                                color="primary"
+                                                startContent={item.icon}
+                                                className={`${pathname.startsWith(item.href) && "text-primary"}`}
+                                            />
+                                        )}
+                                    </DropdownSection> : null
+                                } */}
+                                {/* <DropdownItem
                                     key="Logout"
                                     color="danger"
                                     variant="light"
@@ -90,7 +122,7 @@ const Header = () => {
                                 >
                                     Wyloguj
                                 </DropdownItem>
-                            </DropdownMenu>
+                            </DropdownMenu> */}
                         </Dropdown>
                         : 
                         <Button
@@ -105,21 +137,22 @@ const Header = () => {
                 </NavbarItem>
                 <NavbarMenuToggle className="lg:hidden"/>
             </NavbarContent>
-            <NavbarMenu>
-                {user && (
+                <MobileMenu/>
+                {/* {auth && (
                     <NavbarMenuItem>
                         <div className="flex justify-between items-center mb-1">
-                            Witaj {user.name}
+                            Witaj {auth?.name}
                             <Avatar
                                 size="sm"
                                 showFallback
-                                src={user.image!}
+                                src={auth.image ?? undefined}
                             />
                         </div>
                         <Divider/>
                     </NavbarMenuItem>
-                )}
-                {[Role.Admin, Role.Moderator].includes(user?.role as Role) && (
+                )} */}
+                
+                {/* {PermissionGate(auth?.roles, [Role.Moderator, Role.Admin]) && (
                     <div>
                         <span className="text-sm text-foreground-500">
                             Moderator
@@ -141,8 +174,9 @@ const Header = () => {
                         </div>
                         <Divider/>
                     </div>
-                )}
-                {AllItems.map((item)=>(
+                )} */}
+                
+                {/* {AllItems.map((item)=>(
                     <NavbarMenuItem
                         isActive={pathname.startsWith(item.href)}
                         key={item.title}
@@ -156,7 +190,7 @@ const Header = () => {
                     </NavbarMenuItem>
                 ))}
                 <NavbarMenuItem>
-                    {user ? 
+                    {auth ? 
                         <Link
                             onPress={()=>{signOut()}}
                             color="danger"
@@ -171,8 +205,7 @@ const Header = () => {
                             <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
                         </Link>
                     }
-                </NavbarMenuItem>
-            </NavbarMenu>
+                </NavbarMenuItem> */}
         </Navbar>
      );
 }

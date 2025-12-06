@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/header";
-import RootWrapper from "@/components/root-wraper";
 import Footer from "@/components/footer";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
+import { Providers } from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,18 +28,21 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth()
+
   return (
     <SessionProvider session={session}>
-      <html lang="en">
-        <RootWrapper>
-          <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
-            <main className="flex-grow">
+      <html lang="en" suppressHydrationWarning>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>          
+          <Providers>
+            <main className="flex flex-col min-h-screen">
               <Header/>
-              {children}
+              <div className="flex flex-col flex-1">
+                {children}
+              </div>
+              <Footer/>
             </main>
-            <Footer/>
-          </body>
-        </RootWrapper>
+          </Providers>
+        </body>
       </html>
     </SessionProvider>
   );

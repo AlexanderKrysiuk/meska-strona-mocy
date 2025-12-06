@@ -1,11 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* @import "cropperjs/dist/cropper.css"; */
+@import "tailwindcss";
+@plugin '../hero.ts';
+/* Note: You may need to change the path to fit your project structure */
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
+
 
 html, body, #__next {
   height: 100%;
   margin: 0;
   padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 :root {
@@ -87,7 +92,7 @@ h6 {
 
 /* Domyślne style dla paragrafów */
 p {
-  font-size: 1rem; /* Domyślnie dla urządzeń mobilnych */
+  font-size: 0.5rem; /* Domyślnie dla urządzeń mobilnych */
   line-height: 1.6;
   color: var(--foreground);
   margin-bottom: 1.5rem;

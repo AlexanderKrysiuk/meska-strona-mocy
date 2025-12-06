@@ -1,7 +1,9 @@
 "use server"
 
+import DeleteUserFromCircleEmail from "@/components/emails/Remove-Membership"
 import ResetPasswordEmail from "@/components/emails/ResetPassword"
 import WelcomeEmail from "@/components/emails/Welcome"
+import WelcomeToCircleEmail from "@/components/emails/WelcomeToCircle"
 import { resend } from "@/lib/resend"
 import { VerificationToken } from "@prisma/client"
 

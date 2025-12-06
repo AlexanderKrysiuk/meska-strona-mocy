@@ -20,9 +20,21 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
-  role          Role?
+  title         String?
+  description   String?
+  slug          String? @unique
+  phone         String? @unique
+
+  stripeAccountId String?
+
+  stripeCustomerId String?
+  subscriptionEndsAt DateTime?
+
+//  transactions  Transaction[]
+  roles           UserRole[]       // relacja do tabeli ról użytkownika
   accounts      Account[]
   sessions      Session[]
+  subscriptions Subscription[]
   // Optional for WebAuthn support
   Authenticator Authenticator[]
 
@@ -31,10 +43,72 @@ model User {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   
-  cicrleMembership CircleMembership[]
+  memberships Membership[]
 
-  meetings        CircleMeeting[]
-  moderatedMeetings CircleMeeting[] @relation("Moderator")
+  moderatedMeetings Meeting[] @relation("Moderator")
+}
+
+//model MembershipBalance {
+//  id String @id @default(uuid())
+//  membershipId String
+//  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+//  amount Int
+//  currency Currency
+//  stripePaymentId String?
+//  method PaymentMethod?
+
+//  createdAt DateTime  @default(now())
+//  updatedAt DateTime  @updatedAt
+//}
+
+model Subscription {
+  id  String  @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subscriptionKey String
+  period SubscriptionPeriod
+  endsAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, subscriptionKey])
+}
+
+enum SubscriptionPeriod {
+  Monthly
+  Yearly
+}
+
+
+
+// model Currency {
+//   id    String   @id @default(uuid())
+//   code  String   @unique   // np. "PLN", "EUR", "USD"
+//   name  String?              // np. "Polski złoty"
+//   symbol String?              // np. "zł", "$", "€"
+
+//   balances Balance[]
+//   circles Circle[]
+//   meetings CircleMeeting[]
+//   transactions Transaction[]
+// }
+
+enum Currency {
+  PLN
+  EUR
+  USD
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  role   Role   // enum
+
+  @@unique([userId, role]) // użytkownik nie może mieć tej samej roli dwa razy
 }
 
 enum Role {
@@ -100,40 +174,68 @@ model Authenticator {
 model Circle {
   id   String @id @default(uuid())
   name String
-  slug String @unique
+  slug String
 
   moderatorId String
   moderator   User   @relation("Moderator", fields: [moderatorId], references: [id]) // Dodajemy relację do moderatora
 
-  maxMembers Int
+  minMembers Int @default(1)
+  maxMembers Int @default(10)
 
   street String?
 
   cityId String?
   city   City? @relation(fields: [cityId], references: [id])
 
-  price Float?
+  price Int @default(150)
+  newUserPrice Int @default(150)
 
-  meetings CircleMeeting[]
-  members  CircleMembership[]
+  plannedWeekday WeekDay?
+  startHour String @default("18:00")
+  endHour String @default("21:00")
+  frequencyWeeks Int?
+
+  timeZone  String?
+
+  public Boolean @default(false)
+
+  currency Currency @default(PLN)
+
+  meetings Meeting[]
+  members  Membership[]
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  @@unique([slug, moderatorId])
 }
 
-model CircleMeeting {
-  id        String    @id @default(uuid())
-  startTime DateTime
-  endTime   DateTime
+enum WeekDay {
+  Monday
+  Tuesday
+  Wednesday
+  Thursday
+  Friday
+  Saturday
+  Sunday
+}
 
-  street String
-  status CircleMeetingStatus
+model Meeting {
+  id    String    @id @default(uuid())
+  date  DateTime
+//  startTime DateTime
+//  endTime   DateTime
+
+//  street String
+  status MeetingStatus
   
-  cityId String
-  city City @relation(fields: [cityId], references: [id])
+//  cityId String
+//  city City @relation(fields: [cityId], references: [id])
 
-  number Int
-  price  Float
+//  number Int
+  
+//  price  Int
+
+//  currency Currency 
 
   circleId      String
   circle        Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
@@ -141,21 +243,70 @@ model CircleMeeting {
   moderatorId String
   moderator User @relation("Moderator", fields: [moderatorId], references: [id])
 
-  participants User[]
+  participants Participation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-enum CircleMeetingStatus {
+enum MeetingStatus {
   Scheduled
   Completed
   Archived
 }
 
-model CircleMembership {
+model Participation {
+  id         String   @id @default(uuid())
+  
+  membershipId String
+  membership Membership @relation(fields: [membershipId], references: [id])
+
+  meetingId  String
+  meeting    Meeting @relation(fields: [meetingId], references: [id])
+
+  //onVacation Boolean @default(false)
+
+  status     ParticipationStatus @default(Active)
+//  payments  ParticipationPayment[]
+  stripePaymentIntentId String? @unique
+
+//  paymentDate DateTime?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([membershipId, meetingId])
+}
+
+enum ParticipationStatus {
+  Active
+  Vacation
+  Cancelled
+}
+
+//model ParticipationPayment {
+//  id  String  @id @default(uuid())
+//  participationId String
+//  participation Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+
+//  amount  Int
+//  currency  Currency
+//  stripePaymentId String?
+//  method PaymentMethod?
+
+//  createdAt DateTime @default(now())
+//  updatedAt DateTime @updatedAt
+//}
+
+// enum PaymentMethod {
+//   Stripe
+// }
+
+
+model Membership {
   id String @id @default(uuid())
-  status CircleMembershipStatus
+  status MembershipStatus
+  vacationDays  Int @default(2)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -163,22 +314,27 @@ model CircleMembership {
   circleId String
   circle   Circle  @relation(fields: [circleId], references: [id], onDelete: Cascade)
 
+//  balance MembershipBalance[]
+  participations Participation[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, circleId]) // Użytkownik może mieć tylko jedno zgłoszenie do danej grupy
 }
 
-enum CircleMembershipStatus {
-  Candidate
-  Member
+enum MembershipStatus {
+  Pending
+  Active
+  Left
+  Removed
 }
 
 model Country {
   id String @id @default(uuid())
   name String @unique
   code String?
-  timeZone String
+
   locale String
 
   regions Region[]
@@ -200,5 +356,49 @@ model City {
   region Region @relation(fields: [regionId], references: [id])
 
   circles Circle[]
-  circleMeetings CircleMeeting[]
+//  circleMeetings Meeting[]
 }
+
+model BusinessInfo {
+  id        String   @id @default(cuid())
+  name      String   // np. "Jan Kowalski" albo "Fundacja XYZ"
+  address   String?  // adres wystawcy (opcjonalny przy osobie prywatnej)
+  taxId     String?  // NIP jeśli dotyczy, null przy osobie prywatnej
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// model Transaction {
+//   id              String   @id @default(cuid())
+  
+//   userId          String   // klient (User.id)
+//   user            User  @relation(fields: [userId], references: [id])
+
+//   amount          Int      // kwota w najdrobniejszych jednostkach (np. grosze)
+  
+//   currency        Currency   // PLN, USD itd.
+//   status          TransactionStatus   // np. "succeeded", "failed", "pending"
+//   type            TransactionType
+//   paymentIntentId String?   // Stripe PaymentIntent.id
+//   createdAt       DateTime @default(now())
+
+//   // snapshot danych wystawcy w momencie transakcji
+//   businessName    String
+//   businessAddress String?
+//   businessTaxId   String?
+// }
+
+// enum TransactionStatus {
+//   Succeeded
+//   Failed
+//   Pending
+//   Refunded_to_wallet
+//   Used_from_wallet
+// }
+
+// enum TransactionType {
+//   Incoming   // wpłata od użytkownika
+//   Outgoing   // zwrot do portfela lub na kartę
+//   Internal   // operacje wewnętrzne (np. przeniesienie środków)
+// }

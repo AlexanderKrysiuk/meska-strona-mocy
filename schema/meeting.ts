@@ -1,56 +1,170 @@
+import { isSameDay, isBeforeDay } from '@/utils/date';
+import { Currency } from '@prisma/client';
 import * as z from 'zod'
 
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const meetingId = z.string().uuid()
-const circleId = z.string().uuid()
-const street = z.string({
-    required_error: "Pole nie może być puste",
-    invalid_type_error: "Pole nie może być puste"
-  }).min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi");
-const cityId = z.string().min(1, "Wybierz miasto")
+const circleId = z.string().uuid().nonempty("Wybierz krąg")
 
+const street = z.string({required_error: "Pole nie może być puste", invalid_type_error: "Pole nie może być puste"}).min(3, "Nazwa ulicy musi mieć co najmniej 3 znaki").trim().max(255, "Adres jest zbyt długi");
 
-const price = z.coerce.number({
-    required_error: "Pole nie może być puste",
-    invalid_type_error: "Pole nie moze być puste"
-}).refine(price => price === 0 || price >= 10, {
-    message: "spotkanie może być darmowe lub płatne co najmniej 10 zł",
+const cityId = z.string().min(1,"Wybierz miasto")
+
+const price = z.coerce.number({required_error: "Pole nie może być puste",invalid_type_error: "Pole nie moze być puste"}).refine(price => price === 0 || price >= 10, {message: "spotkanie może być darmowe lub płatne co najmniej 10 zł",});
+
+const timeZone = z.string()
+  .refine(val => Intl.supportedValuesOf('timeZone').includes(val), {
+    message: "Nieprawidłowa strefa czasowa",
   });
 
-//const startTime = z.string().datetime({message: "Nieprawidłowy format daty i godziny"})
-//    .refine((startTime) => new Date(startTime) > new Date(), { message: "Czas rozpoczęcia nie może być w przeszłości" })
-const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
-const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
 
-export const CreateMeetingSchema = z.object({
-    circleId,
-    startTime,
-    endTime,
-    street,
-    cityId,
-    price
-}).refine((data) => data.startTime > new Date(), {
-    path: ["startTime"],
-    message: "Czas rozpoczęcia nie może być w przeszłości",
-}).refine((data) => !data.endTime || data.endTime > data.startTime, {
-    path: ["endTime"],
-    message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
+//const date = z.date({ required_error: "Wybierz datę" })
+
+const currency = z.nativeEnum(Currency)
+
+// początek jutrzejszego dnia
+const tomorrow = new Date();
+tomorrow.setHours(0, 0, 0, 0);
+tomorrow.setDate(tomorrow.getDate() + 1);
+
+const CreateMeetingDateSchema = (unavailableDates: Date[]) => 
+  z.date()
+    .refine(date => !isBeforeDay(date, tomorrow), {message: "Najwcześniej możesz umówić spotkanie na jutro",})
+    .refine(date => !unavailableDates.some(d => isSameDay(d, date)), {message: "W tym dniu masz już inne spotkanie",});
+
+const EditMeetingDateSchema = (unavailableDates: Date[], startTime: Date) => {
+  const minDate = startTime > tomorrow ? tomorrow : startTime
+  return z.date()
+    .refine(date => !isBeforeDay(date, minDate), {message: `Najwcześniej możesz umówić spotkanie na ${minDate.toLocaleDateString()}`,})
+    //.refine(date => !unavailableDates.some(d => isSameDay(d, date)), {message: "W tym dniu masz już inne spotkanie",});
+    .refine(date => {
+      return !unavailableDates.some(d => isSameDay(d, date) && !isSameDay(d, startTime));
+    }, {
+      message: "W tym dniu masz już inne spotkanie",
+    });
+}
+
+export const TimeRangeSchema = z.object({
+  startTime: z.coerce.date({ message: "Nieprawidłowy format godziny rozpoczęcia" }),
+  endTime: z.coerce.date({ message: "Nieprawidłowy format godziny zakończenia" }),
+}).superRefine((data, ctx) => { 
+  if (data.endTime <= data.startTime) {ctx.addIssue({code: "custom",message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",path: ["endTime"],});} 
+  if (data.startTime >= data.endTime) {ctx.addIssue({code: "custom", message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",path: ["startTime"],});}
 });
 
-export const EditMeetingSchema = z.object({
-    meetingId,
-    startTime,
-    endTime,
-    street,
-    cityId,
-    price
-// }).refine((data) => data.startTime > new Date(), {
-//     path: ["startTime"],
-//     message: "Czas rozpoczęcia nie może być w przeszłości",
-}).refine((data) => !data.endTime || data.endTime > data.startTime, {
-    path: ["endTime"],
-    message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
+//const startTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
+
+//const endTime = z.coerce.date({ message: "Nieprawidłowy format daty i godziny" })
+
+export const EditPriceSchema = (
+  originalPrice: number,
+  originalCurrency: Currency
+) => z.object({
+  price,
+  currency
+}).superRefine((data, ctx) => {
+  if (data.currency === originalCurrency) {
+    if (data.price > originalPrice && data.price < originalPrice + 10) {
+      ctx.addIssue({
+        code: "custom",
+        message: `Minimalna podwyżka ceny to 10 (obecnie ${originalPrice})`,
+        path: ["price"],
+      });
+    }
+  }
 })
+
+
+export const CreateMeetingSchema = (unavailableDates: Date[]) => {
+  return z.object({
+    circleId,
+    date: CreateMeetingDateSchema(unavailableDates),
+            //street,
+            //cityId,
+            //price,
+            //currency,
+    TimeRangeSchema
+  })
+};
+
+export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {  
+  return z.object({
+    meetingId,
+    date: EditMeetingDateSchema(unavailableDates, originalStartTime),
+    TimeRangeSchema,
+    timeZone
+    //priceCurrency: EditPriceSchema(originalPrice, originalCurrency)
+  })
+};
+  
+
+// export const EditMeetingSchema = (unavailableDates: Date[], originalStartTime: Date) => {
+//     const minDate = originalStartTime > tomorrow ? originalStartTime : tomorrow;
+  
+//     return z
+//       .object({
+//         meetingId,
+//         circleId,
+//         date,
+//         startTime,
+//         endTime,
+//         street,
+//         cityId,
+//         price,
+//       })
+//       .superRefine((data, ctx) => {
+//         // 🔹 minimalna data nie zależy od data.startTime w formularzu
+//         if (
+//           data.date.getFullYear() < minDate.getFullYear() ||
+//           (data.date.getFullYear() === minDate.getFullYear() &&
+//             (data.date.getMonth() < minDate.getMonth() ||
+//               (data.date.getMonth() === minDate.getMonth() &&
+//                 data.date.getDate() < minDate.getDate())))
+//         ) {
+//           ctx.addIssue({
+//             code: "custom",
+//             message: `Najwcześniej możesz umówić spotkanie na ${minDate.toLocaleDateString("pl-PL")}`,
+//             path: ["date"],
+//           });
+//         }
+  
+//         // 🔹 walidacja niedostępnych dat (ignorujemy aktualną datę spotkania)
+//         if (
+//           unavailableDates.some(
+//             (d) =>
+//               d.getFullYear() === data.date.getFullYear() &&
+//               d.getMonth() === data.date.getMonth() &&
+//               d.getDate() === data.date.getDate() &&
+//               !(d.getFullYear() === originalStartTime.getFullYear() &&
+//                 d.getMonth() === originalStartTime.getMonth() &&
+//                 d.getDate() === originalStartTime.getDate())
+//           )
+//         ) {
+//           ctx.addIssue({
+//             code: "custom",
+//             message: "W tym dniu masz już inne spotkanie",
+//             path: ["date"],
+//           });
+//         }
+  
+//         // 🔹 czas zakończenia vs rozpoczęcia
+//         if (data.endTime <= data.startTime) {
+//           ctx.addIssue({
+//             code: "custom",
+//             message: "Czas zakończenia musi wystąpić po czasie rozpoczęcia",
+//             path: ["endTime"],
+//           });
+//         }
+  
+//         if (data.startTime >= data.endTime) {
+//           ctx.addIssue({
+//             code: "custom",
+//             message: "Czas rozpoczęcia musi wystąpić przed czasem zakończenia",
+//             path: ["startTime"],
+//           });
+//         }
+//       });
+//   };
 
 export const RegisterToMeetingSchema = z.object({
     email,

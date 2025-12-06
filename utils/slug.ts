@@ -10,6 +10,19 @@ export function liveSlugify(text: string): string {
         .replace(/^-+/, ""); // usuwa myślniki z początku
 }
 
+export function slugify(text?: string): string | undefined {
+    if (!text) return undefined
+    
+    return text
+        .toLowerCase()
+        .normalize("NFD") // rozkłada znaki diakrytyczne (np. ą → a + ogonek)
+        .replace(/[\u0300-\u036f]/g, "") // usuwa ogonki i akcenty
+        .replace(/[ł]/g, "l") // ł osobno, bo normalize nie ogarnia
+        .replace(/[^a-z0-9\s-]/g, "") // usuwa wszystko poza literami, cyframi, spacją i myślnikiem
+        .replace(/\s+/g, "-") // zamienia spacje na myślniki
+        .replace(/-+/g, "-") // usuwa podwójne/trójnasobne myślniki
+        .replace(/^-+/, ""); // usuwa myślniki z początku
+}
 export function finalSlugify(text: string): string {
     return liveSlugify(text).replace(/-+$/, ""); // dodaj usuwanie z końca    
 }

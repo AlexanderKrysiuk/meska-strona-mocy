@@ -1,6 +1,20 @@
+import { Role } from '@prisma/client'
 import * as z from 'zod'
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
-const name = z.string().optional().nullable()
+export const phone = z.string().refine((val) => {
+    const phone = parsePhoneNumberFromString(val);
+    if (!phone) return false; // niepoprawny format
+    return phone.isValid(); // sprawdza prefix i długość
+}, {
+    message: "Podaj poprawny numer telefonu z prefiksem",
+});
+
+const circleId = z.string().uuid()
+const userId = z.string().uuid()
+const membershipId = z.string().uuid()
+const reason = z.string().max(500).optional().nullable()
+const name = z.string()
 const email = z.string().email({ message: "Podaj poprawny e-mail" }).transform((val) => val.toLowerCase());
 const newPassword = z.string()
 .min(8, "Hasło musi mieć co najmniej 8 znaków" )
@@ -10,11 +24,24 @@ const newPassword = z.string()
 .regex(/[\W_]/, "Hasło musi zawierać co najmniej jeden znak specjalny" )
 const confirmPassword = z.string()
 const password = z.string().min(1)
-
+const description = z.string().nullable()
+const slug = z.string()
+    .min(1, "Unikalny odnośnik nie może być pusty")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Unikalny odnośnik może zawierać tylko małe litery, cyfry i myślniki")
+    .nullable()   
+ 
 export const RegisterSchema = z.object({
     name,
-    email
+    email,
+    phone
 })
+
+export const RegisterToCircle = z.object({
+    name,
+    email,
+    circleId,
+    phone,
+});  
 
 export const LoginSchema = z.object({
     email,
@@ -31,4 +58,14 @@ export const NewPasswordSchema = z.object({
 
 export const ResetPasswordSchema = z.object({
     email
+})
+
+export const AddUserToCircleSchema = RegisterSchema.extend({
+    circleId
+})
+
+export const EditUserSchema = z.object({
+    name,
+    description,
+    slug,
 })
