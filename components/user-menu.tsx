@@ -5,7 +5,7 @@ import { faArrowRightFromBracket, faArrowRightToBracket, faGears, faUser } from 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Avatar, Divider, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
 import { Role } from "@prisma/client"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import { usePathname } from "next/navigation"
 
 export const AllItems = [
@@ -178,8 +178,12 @@ export const DropMenu = () => {
 }
 
 export const MobileMenu = () => {
-    const user = clientAuth()
+    //const user = clientAuth()
+    const { data: session, status } = useSession();
+    const user = session?.user;
     const pathname = usePathname()
+
+    if (status === "loading") return null
 
     return <NavbarMenu>
         {user && <>

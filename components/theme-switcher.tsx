@@ -23,8 +23,9 @@ export function ThemeSwitcher() {
         radius="full"
         size="sm"
         isIconOnly
-        onPress={() => setTheme(theme === "light" ? "dark" : "light")}>
-        <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} size="lg" />
+        onPress={() => setTheme(theme === "light" ? "dark" : "light")}
+      >
+        <FontAwesomeIcon icon={theme === "light" ? faMoon : faSun} size="lg" className="text-foreground"/>
     </Button>
   )
 };
