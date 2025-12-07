@@ -3,7 +3,7 @@
 import { clientAuth } from "@/hooks/auth"
 import { faArrowRightFromBracket, faArrowRightToBracket, faGears, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Avatar, Divider, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
+import { Avatar, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
 import { Role } from "@prisma/client"
 import { signOut, useSession } from "next-auth/react"
 import { usePathname } from "next/navigation"
@@ -178,100 +178,195 @@ export const DropMenu = () => {
 }
 
 export const MobileMenu = () => {
-    //const user = clientAuth()
     const { data: session, status } = useSession();
     const user = session?.user;
-    const pathname = usePathname()
+    const pathname = usePathname();
 
-    if (status === "loading") return null
+    if (status === "loading") return null;
 
-    return <NavbarMenu>
-        <NavbarMenuItem>
-            <Link
-                href="/auth/start"
-            >
-                <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
-            </Link>
-        </NavbarMenuItem>
-        {user && <>
+    return (
+        <NavbarMenu>
+
+            {/* Zawsze */}
             <NavbarMenuItem>
-                <div className="flex justify-between items-center mb-1">
-                    Witaj {user.name}
-                    <Avatar
-                        size="sm"
-                        showFallback
-                        src={user.image ?? undefined}
-                    />
-                </div>
+                <Link href="/auth/start">
+                    <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
+                </Link>
             </NavbarMenuItem>
-            <span className="text-sm text-foreground-500">
-                Użytkownik
-            </span>
-            <div className="space-y-4">
-                {userItems.map((item) => 
-                    <NavbarMenuItem
-                        key={item.title}
-                    >
-                        <Link
-                            href={item.href}
-                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                            className="flex gap-2 hover:primary transition-colors duration-400"
-                        >
-                            {item.icon} {item.title}
-                        </Link>
+
+            {/* Użytkownik */}
+            {user && (
+                <>
+                    <NavbarMenuItem>
+                        <div className="flex justify-between items-center mb-1">
+                            Witaj {user.name}
+                            <Avatar size="sm" showFallback src={user.image ?? undefined} />
+                        </div>
                     </NavbarMenuItem>
-                )}
-                <Divider/>
-                {user.roles.includes(Role.Moderator) && <>
-                    <span className="text-sm text-foreground-500">
-                        Moderator
-                    </span>
-                    {ModeratorItems.map((item) => 
-                        <NavbarMenuItem
-                            key={item.title}
-                        >
+
+                    {/* Sekcja użytkownika */}
+                    <NavbarMenuItem>
+                        <span className="text-sm text-foreground-500">Użytkownik</span>
+                    </NavbarMenuItem>
+
+                    {userItems.map((item) => (
+                        <NavbarMenuItem key={item.title}>
                             <Link
                                 href={item.href}
                                 color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                                className="flex gap-2 hover:primary transition-colors duration-400"
+                                className="flex gap-2 transition-colors duration-400"
                             >
                                 {item.icon} {item.title}
                             </Link>
                         </NavbarMenuItem>
+                    ))}
+
+                    {/* Moderator */}
+                    {user.roles.includes(Role.Moderator) && (
+                        <>
+                            <NavbarMenuItem>
+                                <span className="text-sm text-foreground-500">Moderator</span>
+                            </NavbarMenuItem>
+
+                            {ModeratorItems.map((item) => (
+                                <NavbarMenuItem key={item.title}>
+                                    <Link
+                                        href={item.href}
+                                        color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                                        className="flex gap-2 transition-colors duration-400"
+                                    >
+                                        {item.icon} {item.title}
+                                    </Link>
+                                </NavbarMenuItem>
+                            ))}
+                        </>
                     )}
-                    <Divider/>
-                </>}
-                {AllItems.map((item) =>
-                    <NavbarMenuItem
-                        isActive={pathname.startsWith(item.href)}
-                        key={item.title}
-                    >
+
+                    {/* Ogólne */}
+                    {AllItems.map((item) => (
+                        <NavbarMenuItem key={item.title}>
+                            <Link
+                                href={item.href}
+                                color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+                            >
+                                {item.title}
+                            </Link>
+                        </NavbarMenuItem>
+                    ))}
+
+                    {/* Wyloguj */}
+                    <NavbarMenuItem>
                         <Link
-                            color={pathname.startsWith(item.href) ? "primary" : "foreground"}
-                            href={item.href}
-                        >
-                            {item.title}
-                        </Link>
-                    </NavbarMenuItem>
-                )}
-                <NavbarMenuItem>
-                    {user ?
-                        <Link
-                            onPress={()=>signOut()}
+                            onPress={() => signOut()}
                             color="danger"
                             className="cursor-pointer"
                         >
-                            <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2"/> Wyloguj
+                            <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2" /> Wyloguj
                         </Link>
-                        :
-                        <Link
-                            href="/auth/start"
-                        >
-                            <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
-                        </Link>
-                    }
-                </NavbarMenuItem>
-            </div>
-        </>}
-    </NavbarMenu>
-}
+                    </NavbarMenuItem>
+                </>
+            )}
+        </NavbarMenu>
+    );
+};
+
+
+
+// //export const MobileMenu = () => {
+//     //const user = clientAuth()
+//     const { data: session, status } = useSession();
+//     const user = session?.user;
+//     const pathname = usePathname()
+
+//     if (status === "loading") return null
+
+//     return <NavbarMenu>
+//         <NavbarMenuItem>
+//             <Link
+//                 href="/auth/start"
+//             >
+//                 <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
+//             </Link>
+//         </NavbarMenuItem>
+//         {user && <>
+//             <NavbarMenuItem>
+//                 <div className="flex justify-between items-center mb-1">
+//                     Witaj {user.name}
+//                     <Avatar
+//                         size="sm"
+//                         showFallback
+//                         src={user.image ?? undefined}
+//                     />
+//                 </div>
+//             </NavbarMenuItem>
+//             <span className="text-sm text-foreground-500">
+//                 Użytkownik
+//             </span>
+//             <div className="space-y-4">
+//                 {userItems.map((item) => 
+//                     <NavbarMenuItem
+//                         key={item.title}
+//                     >
+//                         <Link
+//                             href={item.href}
+//                             color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+//                             className="flex gap-2 hover:primary transition-colors duration-400"
+//                         >
+//                             {item.icon} {item.title}
+//                         </Link>
+//                     </NavbarMenuItem>
+//                 )}
+//                 <Divider/>
+//                 {user.roles.includes(Role.Moderator) && <>
+//                     <span className="text-sm text-foreground-500">
+//                         Moderator
+//                     </span>
+//                     {ModeratorItems.map((item) => 
+//                         <NavbarMenuItem
+//                             key={item.title}
+//                         >
+//                             <Link
+//                                 href={item.href}
+//                                 color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+//                                 className="flex gap-2 hover:primary transition-colors duration-400"
+//                             >
+//                                 {item.icon} {item.title}
+//                             </Link>
+//                         </NavbarMenuItem>
+//                     )}
+//                     <Divider/>
+//                 </>}
+//                 {AllItems.map((item) =>
+//                     <NavbarMenuItem
+//                         isActive={pathname.startsWith(item.href)}
+//                         key={item.title}
+//                     >
+//                         <Link
+//                             color={pathname.startsWith(item.href) ? "primary" : "foreground"}
+//                             href={item.href}
+//                         >
+//                             {item.title}
+//                         </Link>
+//                     </NavbarMenuItem>
+//                 )}
+//                 <NavbarMenuItem>
+//                     {user ?
+//                         <Link
+//                             onPress={()=>signOut()}
+//                             color="danger"
+//                             className="cursor-pointer"
+//                         >
+//                             <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2"/> Wyloguj
+//                         </Link>
+//                         :
+//                         <Link
+//                             href="/auth/start"
+//                         >
+//                             <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
+//                         </Link>
+//                     }
+//                 </NavbarMenuItem>
+//             </div>
+//         </>}
+//     </NavbarMenu>
+// //}
