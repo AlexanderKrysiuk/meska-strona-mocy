@@ -178,11 +178,12 @@ export const DropMenu = () => {
 }
 
 export const MobileMenu = () => {
-    const { data: session, status } = useSession();
-    const user = session?.user;
+    const user = clientAuth()
+    //const { data: session, status } = useSession();
+    //const user = session?.user;
     const pathname = usePathname();
 
-    if (status === "loading") return null;
+    //if (status === "loading") return null;
 
     return (
         <NavbarMenu>
