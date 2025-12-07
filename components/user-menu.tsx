@@ -5,7 +5,7 @@ import { faArrowRightFromBracket, faArrowRightToBracket, faGears, faUser } from 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Avatar, Divider, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
 import { Role } from "@prisma/client"
-import { signOut, useSession } from "next-auth/react"
+import { signOut } from "next-auth/react"
 import { usePathname } from "next/navigation"
 
 export const AllItems = [
