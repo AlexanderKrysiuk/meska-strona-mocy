@@ -54,7 +54,21 @@ export const authConfig: NextAuthConfig = {
   ],
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, trigger, user, session }) {
+      // if (trigger === "update") {
+      //   if (session.name) token.name = session.name
+      //   if (session.image) token.image = session.image
+      //   // Note, that `session` can be any arbitrary object, remember to validate it!
+      //   //token.name = session.name
+      // }
+      if (trigger === "update" && session) {
+        // aktualizujemy tylko pola, które przyszły
+        return {
+          ...token,
+          ...session, // UWAGA: Über ważne – dlatego trzeba walidować session po stronie serwera
+        };
+      }
+      
       if (user) {
         token.id = user.id;
         token.name = user.name;

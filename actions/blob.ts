@@ -5,6 +5,7 @@ import { CheckLoginReturnUser } from "./auth"
 import { put, del } from '@vercel/blob';
 
 export const QueryUploadAvatar = async (formData: FormData) => {
+
     const user = await CheckLoginReturnUser();
     if (!user) throw new Error("Musisz być zalogowany.");
 
@@ -30,14 +31,18 @@ export const QueryUploadAvatar = async (formData: FormData) => {
         // Usuwanie starego pliku: operacja nieblokująca.
         // Wykonujemy ją asynchronicznie i ignorujemy błędy,
         // ponieważ sukces tego kroku nie jest kluczowy dla odpowiedzi.
-        if (user.image && user.image.startsWith("https://meska-strona-mocy.pl/vercel.app/blobs/")) {
-            // del przyjmuje pełny URL pliku
-            del(user.image).catch(error => {
-                console.error("Błąd podczas usuwania starego awatara:", error);
+        // Usuwanie starego pliku tylko jeśli jest z naszego blob storage
+    if (user.image) {
+        const isOurAvatar = user.image.includes("/avatars/") && user.image.includes("vercel-storage.com");
+
+        if (isOurAvatar) {
+            del(user.image).catch(err => {
+                console.warn("Błąd przy usuwaniu starego awatara:", err);
             });
         }
+    }
 
-        return { message: "Zmieniono Avatara." };
+        return { message: "Zmieniono Avatara.", image: newBlob.url };
 
     } catch (error) {
         console.error(error);

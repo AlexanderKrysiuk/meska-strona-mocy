@@ -1,6 +1,5 @@
 "use client"
 
-import { clientAuth } from "@/hooks/auth";
 import { faArrowUp, faScissors } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Avatar, Button, Modal, ModalBody, ModalContent, ModalHeader, addToast, useDisclosure } from "@heroui/react";
@@ -8,21 +7,17 @@ import React, { useRef, useState } from "react";
 import { Cropper, ReactCropperElement } from "react-cropper"
 import "cropperjs/dist/cropper.css";
 import "@/utils/cropper-rounded.css"
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { QueryUploadAvatar } from "@/actions/blob";
-import { UserQueries } from "@/utils/query";
-import { User } from "@prisma/client";
+import { useSession } from "next-auth/react";
 
 
-const EditAvatarModal = ({
-    user
-} : {
-    user: Pick<User, "image">
-}) => {
+const EditAvatarModal = () => {
     const MAX_FILE_SIZE = 4 * 1024 * 1024; // 5MB
     const MIN_FILE_SIZE = 4 * 1024; // 5KB
 
-    const auth = clientAuth()
+    const {data: session, update } = useSession()
+
     const {isOpen, onOpen, onClose} = useDisclosure()
 
     // const { data: user } = useQuery({
@@ -82,16 +77,14 @@ const EditAvatarModal = ({
         event.target.value = ""
     }
 
-    const queryClient = useQueryClient()
-
     const mutation = useMutation({
         mutationFn: (formData: FormData) => QueryUploadAvatar(formData),
         onSuccess: (data) => {
             addToast({
                 title: data.message,
-                color: "success"
+                color: "success",
             });
-            queryClient.invalidateQueries({ queryKey: [UserQueries.User, auth?.id] });
+            update({ image: data.image })
             onClose();
         },
         onError: (error) => {
@@ -99,7 +92,6 @@ const EditAvatarModal = ({
                 title: error.message,
                 color: "danger"
             });
-            console.error(error);
         },
     })
 
@@ -130,7 +122,7 @@ const EditAvatarModal = ({
     return <main className="flex justify-center lg:justify-start items-center w-full">
         <div className="relative w-40 h-40 group" onClick={handleAvatarClick}>
             <Avatar
-                src={user?.image || undefined}
+                src={session?.user.image || undefined}
                 showFallback
                 className="w-40 h-40"
                 
