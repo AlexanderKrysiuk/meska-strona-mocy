@@ -249,16 +249,16 @@ export const MobileMenu = () => {
                     {/* Wyloguj */}
                     <NavbarMenuItem>
                         {user ? 
-                            <Link href="/auth/start">
-                                <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
-                            </Link>
-                            :
                             <Link
                                 onPress={() => signOut()}
                                 color="danger"
                                 className="cursor-pointer"
                             >
                                 <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2" /> Wyloguj
+                            </Link>
+                                :
+                            <Link href="/auth/start">
+                                <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
                             </Link>
                         }   
                     </NavbarMenuItem>
