@@ -3,7 +3,7 @@
 import { clientAuth } from "@/hooks/auth"
 import { faArrowRightFromBracket, faArrowRightToBracket, faGears, faUser } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { Avatar, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
+import { Avatar, Divider, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
 import { Role } from "@prisma/client"
 import { signOut, useSession } from "next-auth/react"
 import { usePathname } from "next/navigation"
@@ -186,14 +186,6 @@ export const MobileMenu = () => {
 
     return (
         <NavbarMenu>
-
-            {/* Zawsze */}
-            <NavbarMenuItem>
-                <Link href="/auth/start">
-                    <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
-                </Link>
-            </NavbarMenuItem>
-
             {/* Użytkownik */}
             {user && (
                 <>
@@ -203,7 +195,7 @@ export const MobileMenu = () => {
                             <Avatar size="sm" showFallback src={user.image ?? undefined} />
                         </div>
                     </NavbarMenuItem>
-
+                    <Divider/>
                     {/* Sekcja użytkownika */}
                     <NavbarMenuItem>
                         <span className="text-sm text-foreground-500">Użytkownik</span>
@@ -241,7 +233,7 @@ export const MobileMenu = () => {
                             ))}
                         </>
                     )}
-
+                    <Divider/>
                     {/* Ogólne */}
                     {AllItems.map((item) => (
                         <NavbarMenuItem key={item.title}>
@@ -256,13 +248,19 @@ export const MobileMenu = () => {
 
                     {/* Wyloguj */}
                     <NavbarMenuItem>
-                        <Link
-                            onPress={() => signOut()}
-                            color="danger"
-                            className="cursor-pointer"
-                        >
-                            <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2" /> Wyloguj
-                        </Link>
+                        {user ? 
+                            <Link href="/auth/start">
+                                <FontAwesomeIcon icon={faArrowRightToBracket} className="mr-2"/> Start
+                            </Link>
+                            :
+                            <Link
+                                onPress={() => signOut()}
+                                color="danger"
+                                className="cursor-pointer"
+                            >
+                                <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-2" /> Wyloguj
+                            </Link>
+                        }   
                     </NavbarMenuItem>
                 </>
             )}
