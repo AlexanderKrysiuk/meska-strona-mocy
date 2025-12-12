@@ -1,13 +1,14 @@
 "use client"
 import { Avatar, Button, Dropdown, DropdownTrigger, Link, Navbar, NavbarBrand, NavbarContent, NavbarItem, NavbarMenuToggle } from "@heroui/react";
 import { ThemeSwitcher } from "./theme-switcher";
-import { clientAuth } from "@/hooks/auth";
 import { usePathname } from "next/navigation";
 import { AllItems, DropMenu, MobileMenu } from "./user-menu";
+import { useSession } from "next-auth/react";
 
 
 const Header = () => {
-    const auth = clientAuth()
+    const { data: session } = useSession()
+    //const auth = clientAuth()
     const pathname = usePathname()
 
     return ( 
@@ -45,7 +46,7 @@ const Header = () => {
                     <ThemeSwitcher/>
                 </NavbarItem>
                 <NavbarItem className="hidden lg:block">
-                    {auth ? 
+                    {session?.user ? 
                         <Dropdown
                             placement="bottom-end"
                             radius="none"
@@ -53,7 +54,7 @@ const Header = () => {
                             <DropdownTrigger>
                                 <Avatar
                                     showFallback
-                                    src={auth.image ?? undefined}
+                                    src={session.user.image ?? undefined}
                                     className="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-400"
                                 />
                             </DropdownTrigger>

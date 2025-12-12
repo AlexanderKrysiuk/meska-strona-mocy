@@ -156,12 +156,12 @@ const CreateCircleModal = () => {
                                 label="Maksymalna liczba uczestników"
                                 labelPlacement="outside"
                                 variant="bordered"
-                                placeholder="11"
+                                placeholder="Podaj liczbę"
                                 minValue={1}
                                 formatOptions={{ maximumFractionDigits: 0 }}
                                 value={watch("members.max")}
                                 onValueChange={(value) => {
-                                    setValue("members.max", value, {shouldDirty:true, shouldValidate: true})
+                                    setValue("members.max", value, {shouldValidate: true})
                                     trigger("members.min")
                                 }}
                                 isClearable
@@ -174,12 +174,12 @@ const CreateCircleModal = () => {
                                 label="Minimalna liczba uczestników"
                                 labelPlacement="outside"
                                 variant="bordered"
-                                placeholder="1"
+                                placeholder="Podaj liczbę"
                                 minValue={1}
                                 formatOptions={{ maximumFractionDigits: 0 }}
                                 value={watch("members.min")}
                                 onValueChange={(value) => {
-                                    setValue("members.min", value, {shouldDirty:true, shouldValidate: true})
+                                    setValue("members.min", value, {shouldValidate: true, shouldDirty: true})
                                     trigger("members.max")
                                 }}
                                 isClearable
@@ -339,7 +339,7 @@ const CreateCircleModal = () => {
                                     hideEmptyContent        
                                     onSelectionChange={(keys) => {
                                         const cityId = Array.from(keys)[0]
-                                        setValue("cityId", cityId ? cityId.toString() : null, {shouldValidate: true, shouldDirty: true})
+                                        setValue("cityId", cityId ? cityId.toString() : null, {shouldValidate: true})
                                     }}
                                     isRequired
                                     isDisabled={!region || !country || isSubmitting || watch("isOnline")}
@@ -356,7 +356,7 @@ const CreateCircleModal = () => {
                                     variant="bordered"
                                     type="text"
                                     value={watch("street") ?? ""}
-                                    onValueChange={(value) => {setValue("street", value || null, {shouldDirty:true, shouldValidate: true})}}
+                                    onValueChange={(value) => {setValue("street", value || null, {shouldValidate: true})}}
                                     isClearable
                                     isDisabled={isSubmitting || watch("isOnline")}
                                     isInvalid={!!errors.street}
@@ -369,7 +369,7 @@ const CreateCircleModal = () => {
                             label="Planowany dzień tygodnia"
                             labelPlacement="outside"
                             variant="bordered"
-                            placeholder="Piątunio"
+                            placeholder="Wybierz planowany dzień spotkań"
                             selectedKeys={watch("plannedWeekday") ? [watch("plannedWeekday") as string] : []}
                             hideEmptyContent        
                             onSelectionChange={(keys) => {
@@ -380,7 +380,7 @@ const CreateCircleModal = () => {
                             isInvalid={!!errors.plannedWeekday}
                             errorMessage={errors.plannedWeekday?.message}
                             items={[
-                                { key: "null", label: "Nie wybrano" }, // opcja dla null
+                                { key: "null", label: "Brak planowanego dnia" }, // opcja dla null
                                 ...Object.values(WeekDay).map(day => ({
                                     key: day,
                                     label: {
@@ -439,11 +439,11 @@ const CreateCircleModal = () => {
                             label="Cykliczność (tygodnie)"
                             labelPlacement="outside"
                             variant="bordered"
-                            placeholder="1"
+                            placeholder="Podaj cykliczność kręgu"
                             minValue={1}
                             formatOptions={{ maximumFractionDigits: 0 }}
                             value={watch("frequencyWeeks") || undefined}
-                            onValueChange={(value) => setValue("frequencyWeeks", value ?? null, { shouldValidate: true, shouldDirty: true })}
+                            onValueChange={(value) => setValue("frequencyWeeks", value ?? null, { shouldValidate: true })}
                             isClearable
                             isDisabled={isSubmitting}
                             isInvalid={!!errors.frequencyWeeks}

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { CreateCircleSchema, EditCircleSchema } from "@/schema/circle"
 import { TypeOf, object, string, z } from "zod"
 import { CheckLoginReturnUser, ServerAuth } from "./auth"
-import { Role } from "@prisma/client"
+import { MembershipStatus, Role } from "@prisma/client"
 import { ActionStatus } from "@/types/enums"
 import { parse } from "path"
 import { customAlphabet } from 'nanoid'
@@ -116,7 +116,13 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
                 price: data.price,
                 newUserPrice: data.newUserPrice,
                 currency: data.currency,
-                public: data.isPublic
+                public: data.isPublic,
+            
+                startHour: data.hours.start,
+                endHour: data.hours.end,
+                timeZone: data.timeZone,
+                plannedWeekday: data.plannedWeekday,
+                frequencyWeeks: data.frequencyWeeks
             },
             select: {
                 name: true,
@@ -190,8 +196,8 @@ const GetCircleBySlugAndModeratorID = async (slug: string, moderatorId: string) 
 }
 
 export const GetCircleByID = async (id: string) => {
-    return await prisma.circle.findUnique({ 
-        where: {id},
+    return await prisma.circle.findUnique({
+        where: { id },
         select: {
             id: true,
             name: true,
@@ -199,16 +205,25 @@ export const GetCircleByID = async (id: string) => {
             street: true,
             price: true,
             currency: true,
-            city: { select: {
-                id: true,
-                name: true
-            }},
-            moderator: { select: {
-                id: true,
-                name: true,
-                image: true,
-                title: true,
-            }}
+            startHour: true,
+            endHour: true,
+            timeZone: true,
+            plannedWeekday: true,
+            frequencyWeeks: true,
+            city: {
+                select: {
+                    id: true,
+                    name: true
+                }
+            },
+            moderator: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                    title: true,
+                }
+            }
         }
     })
 }
@@ -220,6 +235,9 @@ export const GetModeratorCircles = async (moderatorID:string) => {
             id: true,
             name: true,
             slug: true,
+            startHour: true,
+            endHour: true,
+            frequencyWeeks: true,
             maxMembers: true,
             minMembers: true,
             street: true,
@@ -227,6 +245,18 @@ export const GetModeratorCircles = async (moderatorID:string) => {
             price: true,
             newUserPrice: true,
             currency: true,
+            timeZone: true,
+            plannedWeekday: true,
+            _count: { select: {
+                members: {
+                    where: {
+                        status: {
+                            in: [MembershipStatus.Active, MembershipStatus.Pending]
+                        }
+                    }
+                }
+            }},
+            cityId: true,
             city: {
                 select: {
                     id: true,

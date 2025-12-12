@@ -259,3 +259,29 @@ export const isBeforeDay = (d1: Date, d2: Date) =>
   (d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() < d2.getDate());
+
+// export const StringtoTimeValue = (timeString: string | null): TimeInputValue | null => {
+//   if (!timeString) return null;
+//   const [h, m] = timeString.split(":").map(Number);
+//   return { hour: h, minute: m };
+// };
+
+export const StringToTimeValue = (timeString: string | null): TimeInputValue | null => {
+  if (!timeString) return null;
+  const [h, m] = timeString.split(":").map(Number);
+  return new Time(h, m);
+};
+   
+export const TimeValuetoString = (value: TimeInputValue | null): string => {
+  if (!value) return "";
+  const h = value.hour.toString().padStart(2, "0");
+  const m = value.minute.toString().padStart(2, "0");
+  return `${h}:${m}`;
+};
+
+// export const TimeValuetoString = (value: TimeInputValue): string | null => {
+//   if (!value) return null;
+//   const h = value.hour.toString().padStart(2, "0");
+//   const m = value.minute.toString().padStart(2, "0");
+//   return `${h}:${m}`;
+// };    

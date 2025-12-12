@@ -5,7 +5,7 @@ import { faArrowRightFromBracket, faArrowRightToBracket, faGears, faUser } from 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { Avatar, Divider, DropdownItem, DropdownMenu, DropdownSection, Link, Listbox, ListboxItem, ListboxSection, NavbarMenu, NavbarMenuItem } from "@heroui/react"
 import { Role } from "@prisma/client"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import { usePathname } from "next/navigation"
 
 export const AllItems = [
@@ -61,31 +61,38 @@ export const PartnerItems = [
 ]
 
 export const KokpitMenu = () => {
-    const user = clientAuth()
+    const { data: session } = useSession()
     const pathname = usePathname()
 
-    return <>
-        {/* {user?.roles.includes(Role.Moderator) && 
-            <Listbox
-                className="pr-0"
-            >
+
+    
+
+    return <Listbox
+        label="menu"
+        aria-label="KokpitMenu"
+        className="pr-0"
+    >
+        <ListboxSection
+            showDivider
+            title="Użytkownik"
+            items={userItems}
+        >
+            {(item) => (
+                <ListboxItem
+                    key={item.title}
+                    title={item.title}
+                    href={item.href}
+                    color={pathname.startsWith(item.href) ? "primary" : "default"}
+                    startContent={item.icon}
+                    className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"}`}
+                />
+            )}
+        </ListboxSection>
+            {session?.user.roles.includes(Role.Moderator) ? (
                 <ListboxSection
                     showDivider
                     title="Moderator"
                     items={ModeratorItems}
-                >
-                    {(item)}
-                </ListboxSection>
-            </Listbox>
-        } */}
-        <Listbox
-            className="pr-0"
-        >
-            {user ? (
-                <ListboxSection
-                    showDivider
-                    title="Użytkownik"
-                    items={userItems}
                 >
                     {(item) => (
                         <ListboxItem
@@ -94,31 +101,12 @@ export const KokpitMenu = () => {
                             href={item.href}
                             color={pathname.startsWith(item.href) ? "primary" : "default"}
                             startContent={item.icon}
-                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"}`}
-                        />
-                    )}
-                </ListboxSection>
-            ) : null}
-            {user?.roles.includes(Role.Moderator) ? (
-                <ListboxSection
-                showDivider
-                title="Moderator"
-                items={ModeratorItems}
-                >
-                    {(item) => (
-                        <ListboxItem
-                        key={item.title}
-                        title={item.title}
-                        href={item.href}
-                        color={pathname.startsWith(item.href) ? "primary" : "default"}
-                        startContent={item.icon}
-                        className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
+                            className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"} transition-colors duration-400`}
                         />
                     )}
                 </ListboxSection>
             ) : null}
         </Listbox>
-    </>
 }
 
 export const DropMenu = () => {
@@ -178,7 +166,8 @@ export const DropMenu = () => {
 }
 
 export const MobileMenu = () => {
-    const user = clientAuth()
+    //const user = clientAuth()
+    const { data: session } = useSession()
     //const { data: session, status } = useSession();
     //const user = session?.user;
     const pathname = usePathname();
@@ -188,12 +177,12 @@ export const MobileMenu = () => {
     return (
         <NavbarMenu>
             {/* Użytkownik */}
-            {user && (
+            {session?.user && (
                 <>
                     <NavbarMenuItem>
                         <div className="flex justify-between items-center mb-1">
-                            Witaj {user.name}
-                            <Avatar size="sm" showFallback src={user.image ?? undefined} />
+                            Witaj {session.user.name}
+                            <Avatar size="sm" showFallback src={session.user.image ?? undefined} />
                         </div>
                     </NavbarMenuItem>
                     <Divider/>
@@ -215,7 +204,7 @@ export const MobileMenu = () => {
                     ))}
 
                     {/* Moderator */}
-                    {user.roles.includes(Role.Moderator) && (
+                    {session.user.roles.includes(Role.Moderator) && (
                         <>
                             <NavbarMenuItem>
                                 <span className="text-sm text-foreground-500">Moderator</span>
@@ -249,7 +238,7 @@ export const MobileMenu = () => {
 
                     {/* Wyloguj */}
                     <NavbarMenuItem>
-                        {user ? 
+                        {session.user ? 
                             <Link
                                 onPress={() => signOut()}
                                 color="danger"

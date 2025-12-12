@@ -9,12 +9,12 @@ const KokpitClientLayout = ({
     children: React.ReactNode
 }) => {
     return <main className="flex flex-grow">
-        <aside className="hidden lg:block border-r border-foreground-200">
+        <div className="hidden lg:block border-r border-foreground-200" suppressHydrationWarning>
             <KokpitMenu/>
             <Divider
                 orientation="vertical"
             />
-        </aside>
+        </div>
         <section className="w-full">
             {children}
         </section>
