@@ -72,32 +72,34 @@ export const KokpitMenu = () => {
         aria-label="KokpitMenu"
         className="pr-0"
     >
+        {session?.user ? 
         <ListboxSection
-            showDivider
-            title="Użytkownik"
-            items={userItems}
+        showDivider
+        title="Użytkownik"
+        items={userItems}
         >
             {(item) => (
                 <ListboxItem
-                    key={item.title}
-                    title={item.title}
-                    href={item.href}
-                    color={pathname.startsWith(item.href) ? "primary" : "default"}
-                    startContent={item.icon}
-                    className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"}`}
+                key={item.title}
+                title={item.title}
+                href={item.href}
+                color={pathname.startsWith(item.href) ? "primary" : "default"}
+                startContent={item.icon}
+                className={`rounded-none ${pathname.startsWith(item.href) && "text-primary border-r-4 border-primary hover:text-white"}`}
                 />
             )}
         </ListboxSection>
+            : null}
             {session?.user.roles.includes(Role.Moderator) ? (
                 <ListboxSection
-                    showDivider
-                    title="Moderator"
-                    items={ModeratorItems}
+                showDivider
+                title="Moderator"
+                items={ModeratorItems}
                 >
-                    {(item) => (
-                        <ListboxItem
-                            key={item.title}
-                            title={item.title}
+                {(item) => (
+                    <ListboxItem
+                    key={item.title}
+                    title={item.title}
                             href={item.href}
                             color={pathname.startsWith(item.href) ? "primary" : "default"}
                             startContent={item.icon}

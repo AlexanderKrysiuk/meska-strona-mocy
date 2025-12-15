@@ -1,42 +1,72 @@
-import { Circle, City, User } from "@prisma/client";
+import { Circle, City, Currency, Meeting, User } from "@prisma/client";
 import { EmailLayout, Header, Sign, emailStyles } from "./Components";
 import { Preview, Section, Text } from "@react-email/components";
+import { WeekDayPL } from "@/utils/weekdays";
 
 export function CircleChangeEmail({
     oldCircle,
     newCircle,
     moderator,
     member,
+    meetings = []
 } : {
-    oldCircle: Pick<Circle, "name" | "street" | "price" | "currency"> & {
-        city: Pick<City, "name"> | null
-    }
-    newCircle: Pick<Circle, "name" | "street" | "price" | "currency"> & {
-        city: Pick<City, "name"> | null
-    }
+    oldCircle: Pick<Circle, "name" | "street" | "price" | "currency" | "startHour" | "endHour" | "plannedWeekday" | "frequencyWeeks" | "timeZone"> & { city: Pick<City, "name"> | null },
+    newCircle: Pick<Circle, "name" | "street" | "price" | "currency" | "startHour" | "endHour" | "plannedWeekday" | "frequencyWeeks" | "timeZone"> & { city: Pick<City, "name"> | null },
     moderator: Pick<User, "name" | "image" | "title">
     member: Pick<User, "name">
+    meetings?: Pick<Meeting, "id" | "date">[]
 }) {
     const oldStyle = { color: "#ff5555", textDecoration: "line-through" };
     const newStyle = { color: "#55ff55" };
     
+
     const formatAddress = (street?: string | null, cityName?: string | null) => {
-        if (!cityName) return "spotykamy się online 🌐";
-        if (!street) return `ulica nie została jeszcze ustalona, ${cityName}`;
+        if (!cityName) return "spotkania odbywają się online 🌐";
+        if (!street) return `miasto: ${cityName} (dokładny adres wkrótce)`;
         return `${street}, ${cityName}`;
     };
     
-    const formatPrice = (price?: number | null, currency?: string | null) => {
-        if (price == null || !currency) return "bezpłatne";
+    const formatPrice = (price: number | null, currency: Currency) => {
+        if (!price) return "spotkanie bezpłatne";
         return `${price} ${currency}`;
-    };
+    };    
 
-    const oldAddress = formatAddress(oldCircle.street, oldCircle.city?.name);
-    const newAddress = formatAddress(newCircle.street, newCircle.city?.name);
+    const formatTime = (
+        startHour: string,
+        endHour: string,
+        weekday: string | null,
+        frequencyWeeks: number | null,
+        timeZone: string | null
+      ) => {
+        const weekdayPL = weekday ? (WeekDayPL[weekday] || weekday) : "termin do ustalenia";
+        const every = frequencyWeeks ? (frequencyWeeks === 1 ? "co tydzień" : `co ${frequencyWeeks} tygodnie`) : "";
+      
+        return `${weekdayPL}${every ? ", " + every : ""}, ${startHour}–${endHour}${timeZone ? ` (${timeZone})` : ""}`;
+      };
 
-    const oldPrice = formatPrice(oldCircle.price, oldCircle.currency)
-    const newPrice = formatPrice(newCircle.price, newCircle.currency)
-  
+    // Porównania
+    const nameChanged = oldCircle.name !== newCircle.name;
+    const addressChanged =
+        oldCircle.street !== newCircle.street ||
+        oldCircle.city?.name !== newCircle.city?.name;
+    const priceChanged =
+        oldCircle.price !== newCircle.price ||
+        oldCircle.currency !== newCircle.currency;
+    const timeChanged =
+        oldCircle.startHour !== newCircle.startHour ||
+        oldCircle.endHour !== newCircle.endHour ||
+        oldCircle.plannedWeekday !== newCircle.plannedWeekday ||
+        oldCircle.frequencyWeeks !== newCircle.frequencyWeeks ||
+        oldCircle.timeZone !== newCircle.timeZone;  
+
+    function formatDateOnly(date: Date): string {
+        const day = String(date.getUTCDate()).padStart(2, "0");
+        const month = String(date.getUTCMonth() + 1).padStart(2, "0"); // miesiące od 0
+        const year = date.getUTCFullYear();
+        return `${day}.${month}.${year}`;
+    }
+    
+
     return <EmailLayout
         sign={<Sign 
             name={moderator.name}
@@ -44,49 +74,78 @@ export function CircleChangeEmail({
             title={moderator.title}
         />}
     >
-        <Preview>Zmiany w kręgu {oldCircle.name}</Preview>
-        <Header title={`Zmiany w kręgu ${oldCircle.name}`}/>
+        <Preview>Aktualizacja informacji o kręgu {newCircle.name}</Preview>
+        <Header title={`Zmiany w kręgu ${newCircle.name}`} />
 
         <Section>
             <Text style={{ ...emailStyles.paragraph }}>
-                {`Cześć${" " + member.name}, Od dzisiaj dane kręgu ${oldCircle.name} zostały zaktualizowane:`}
+                Cześć <strong>{member.name}</strong>, dane kręgu {oldCircle.name} zostały zaktualizowane:
             </Text>
 
-            <Text style={{ ...emailStyles.paragraph }}>
+            {/* Nazwa */}
+            <Text style={emailStyles.paragraph}>
                 <strong>🔖 Nazwa: </strong>
-                {oldCircle.name !== newCircle.name ? 
+                {nameChanged ? (
                     <>
-                        <br/><span style={oldStyle}>❌ {oldCircle.name}</span>
-                        <br/><span style={newStyle}>✅ {newCircle.name}</span>
-                    </> 
-                    : 
-                    <span>{oldCircle.name}</span>
-                } 
+                        <br /><span style={oldStyle}>❌ {oldCircle.name}</span>
+                        <br /><span style={newStyle}>✅ {newCircle.name}</span>
+                    </>
+                ) : (
+                    <span> {oldCircle.name}</span>
+                )}
             </Text>
 
-            <Text style={{ ...emailStyles.paragraph }}>
-                <strong>🏠 Adres:</strong>
-                {oldAddress !== newAddress ?
+            {/* Adres / online */}
+            <Text style={emailStyles.paragraph}>
+                <strong>🏠 Forma i miejsce spotkań:</strong>
+                {addressChanged ? (
                     <>
-                        <br/><span style={oldStyle}>❌ {oldAddress}</span>
-                        <br/><span style={newStyle}>✅ {newAddress}</span>
+                        <br /><span style={oldStyle}>❌ {formatAddress(oldCircle.street, oldCircle.city?.name)}</span>
+                        <br /><span style={newStyle}>✅ {formatAddress(newCircle.street, newCircle.city?.name)}</span>
                     </>
-                    :
-                    <span>{oldAddress}</span>
-                }
+                ) : (
+                    <span> {formatAddress(oldCircle.street, oldCircle.city?.name)}</span>
+                )}
             </Text>
-            
-            <Text style={{ ...emailStyles.paragraph }}>
+
+            {/* Czas spotkań */}
+            <Text style={emailStyles.paragraph}>
+                <strong>⏰ Czas spotkań:</strong>
+                {timeChanged ? (
+                    <>
+                        <br /><span style={oldStyle}>❌ {formatTime(oldCircle.startHour, oldCircle.endHour, oldCircle.plannedWeekday, oldCircle.frequencyWeeks, oldCircle.timeZone)}</span>
+                        <br /><span style={newStyle}>✅ {formatTime(newCircle.startHour, newCircle.endHour, newCircle.plannedWeekday, newCircle.frequencyWeeks, newCircle.timeZone)}</span>
+                    </>
+                ) : (
+                    <span> {formatTime(oldCircle.startHour, oldCircle.endHour, oldCircle.plannedWeekday, oldCircle.frequencyWeeks, oldCircle.timeZone)}</span>
+                )}
+            </Text>
+
+            {/* Cena */}
+            <Text style={emailStyles.paragraph}>
                 <strong>🎫 Wkład energetyczny:</strong>
-                {oldPrice !== newPrice ?
+                {priceChanged ? (
                     <>
-                        <br/><span style={oldStyle}>❌ {oldPrice}</span>
-                        <br/><span style={newStyle}>✅ {newPrice}</span>
+                        <br /><span style={oldStyle}>❌ {formatPrice(oldCircle.price, oldCircle.currency)}</span>
+                        <br /><span style={newStyle}>✅ {formatPrice(newCircle.price, newCircle.currency)}</span>
                     </>
-                    :
-                    <span>{oldPrice}</span>
-                }
+                ) : (
+                    <span> {formatPrice(oldCircle.price, oldCircle.currency)}</span>
+                )}
             </Text>
+
+            {/* Najbliższe spotkania */}
+            <Text style={{ ...emailStyles.paragraph }}>
+                <strong>🗓 Najbliższe terminy spotkań:</strong>
+                {meetings.length > 0 ? (meetings.map(m => (
+                    <span key={m.id} style={{ display: "block" }}>
+                        {formatDateOnly(new Date(m.date))}
+                    </span>))
+                ) : (
+                    <span>Brak zaplanowanych spotkań</span>
+                )}
+            </Text>
+
         </Section>
     </EmailLayout>
 }
@@ -98,14 +157,24 @@ export default function CircleChangeEmailPreview() {
             street: "Tortuga 21/37",
             price: 150,
             currency: "PLN",
-            city: { name: "Isla De Muerta"}
+            plannedWeekday: "Monday",
+            frequencyWeeks: 1,
+            startHour: "18:00",
+            endHour: "20:00",
+            timeZone: null,
+            city: { name: "Isla De Muerta" }
         }}
         newCircle={{
             name: "Latający Holender",
-            street: "Tortuga 420",
-            price: 150,
-            currency: "PLN",
-            city: { name: "Port Royal"}
+            street: null,
+            price: 0,
+            currency: "EUR",
+            plannedWeekday: "Tuesday",
+            frequencyWeeks: 2,
+            startHour: "19:00",
+            endHour: "21:00",
+            timeZone: "Europe/Warsaw",
+            city: null
         }}
         moderator={{
             name: "Jack Sparrow",
@@ -115,5 +184,9 @@ export default function CircleChangeEmailPreview() {
         member={{
             name: "Joshamee Gibbs"
         }}
+        meetings={[
+            { id: "1", date: new Date("2025-12-20T18:00:00Z") },
+            { id: "2", date: new Date("2025-12-27T18:00:00Z") }
+        ]}        
     />
 }

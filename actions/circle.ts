@@ -81,7 +81,31 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
         message: "Musisz być zalogowanym aby edytować krąg"
     }
 
-    const circle = await GetCircleByID(data.circleId)
+    const circle = await prisma.circle.findUnique({
+        where: { id: data.circleId },
+        select: {
+            moderator: { select: {
+                id: true,
+                name: true,
+                title: true,
+                image: true,
+            }},
+            slug: true,
+            name: true,
+            street: true,
+            city: { select: {
+                id: true,
+                name: true
+            }},
+            startHour: true,
+            endHour: true,
+            timeZone: true,
+            plannedWeekday: true,
+            frequencyWeeks: true,
+            price: true,
+            currency: true
+        }
+    })
 
     if (!circle) return {
         success: false,
@@ -109,50 +133,75 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
             data: {
                 name: data.name,
                 slug: data.slug,
-                maxMembers: data.members.max,
-                minMembers: data.members.min,
                 street: data.street,
                 cityId: data.cityId,
+                maxMembers: data.members.max,
+                minMembers: data.members.min,
                 price: data.price,
                 newUserPrice: data.newUserPrice,
                 currency: data.currency,
                 public: data.isPublic,
-            
+                plannedWeekday: data.plannedWeekday,
+                frequencyWeeks: data.frequencyWeeks,
                 startHour: data.hours.start,
                 endHour: data.hours.end,
                 timeZone: data.timeZone,
-                plannedWeekday: data.plannedWeekday,
-                frequencyWeeks: data.frequencyWeeks
             },
             select: {
                 name: true,
                 street: true,
-                price: true,
-                currency: true,
                 city: { select:{
                     id: true,
                     name: true,
                 }},
+                startHour: true,
+                endHour: true,
+                timeZone: true,
+                plannedWeekday: true,
+                frequencyWeeks: true,
+                price: true,
+                currency: true,
                 members: { 
                     where: {
-                        status: "Active"
+                        status: { in: [MembershipStatus.Active]}
                     },
                     select: { 
                         user: { select: {
                             name: true,
                             email: true,
                     }}
-                }}
+                }},
+                meetings: { 
+                    where: { date: { gte: new Date()} },
+                    orderBy: { date: "asc" },
+                    take: 3,
+                    select: { 
+                        id: true,
+                        date: true 
+                    }}
             }
         })
 
-        if (
-            circle.name !== updated.name ||
-            circle.street !== updated.street ||
-            circle.city?.id !== updated.city?.id ||
-            circle.price !== updated.price ||
-            circle.currency !== updated.currency
-        ) {
+        const changes = {
+            name: circle.name !== updated.name,
+            address:
+                circle.street !== updated.street ||
+                circle.city?.id !== updated.city?.id,
+            time:
+                circle.startHour !== updated.startHour ||
+                circle.endHour !== updated.endHour ||
+                circle.timeZone !== updated.timeZone ||
+                circle.plannedWeekday !== updated.plannedWeekday ||
+                circle.frequencyWeeks !== updated.frequencyWeeks,
+            price:
+                circle.price !== updated.price ||
+                circle.currency !== updated.currency,
+        }
+        
+        const shouldNotify = Object.values(changes).some(Boolean)
+        
+
+        if (shouldNotify) {
             try {
                 for (const member of updated.members) {
                     await sendEmail({
@@ -163,9 +212,13 @@ export const EditCircle = async (data: z.infer<typeof EditCircleSchema>) => {
                             newCircle: updated,
                             member: member.user,
                             moderator: circle.moderator,
-                            
+                            meetings: updated.meetings.map((m) => ({
+                                id: m.id,
+                                date: m.date
+                            }))
                         })
                     })
+                    
                 }
             } catch(error) {
                 console.error(error)
