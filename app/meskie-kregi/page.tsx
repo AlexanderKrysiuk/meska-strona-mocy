@@ -34,9 +34,8 @@ const MensCirclePage = () => {
     return <main className="flex-col flex-grow lg:px-[20vw] p-4">
         <div className="py-4 space-y-4 grid gap-4 lg:grid-cols-3">
             {circles?.map((circle) => (
-                
-                <Card key={circle.id} className="relative">
-                    <CardHeader className="bg-emerald-800 relative">
+                <Card key={circle.id}>
+                    <CardHeader className="bg-emerald-800 flex justify-between">
                         <h6 className="text-white">
                             {circle.name}
                         </h6>
@@ -45,7 +44,7 @@ const MensCirclePage = () => {
                             src={circle.moderator.image!}
                             showFallback
                             isBordered
-                            className="absolute top-3 right-3"
+                            radius="full"
                         />
                     </CardHeader>
                     <CardBody>
