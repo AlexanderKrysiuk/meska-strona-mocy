@@ -63,10 +63,10 @@ const CirclesTable = () => {
                 }
             </TableBody>
         </Table>
-        <pre>
+        {/* <pre>
 
         {JSON.stringify(circles,null,2)}
-        </pre>
+        </pre> */}
     </main>;
 }
  
