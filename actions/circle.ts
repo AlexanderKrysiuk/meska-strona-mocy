@@ -13,6 +13,7 @@ import { PermissionGate } from "@/utils/gate"
 import { setTimeout } from "timers"
 import { sendEmail } from "@/lib/resend"
 import { CircleChangeEmail } from "@/components/emails/Circle-Change"
+import { auth } from "@/auth"
 
 export const CreateCircle = async (data: z.infer<typeof CreateCircleSchema>) => {
     const auth = await ServerAuth()
@@ -304,7 +305,7 @@ export const GetModeratorCircles = async (moderatorID:string) => {
                 members: {
                     where: {
                         status: {
-                            in: [MembershipStatus.Active, MembershipStatus.Pending]
+                            in: [MembershipStatus.Active]
                         }
                     }
                 }
@@ -331,7 +332,8 @@ export const GetModeratorCircles = async (moderatorID:string) => {
 
 export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
     //const PAGE_SIZE = 1
-   //const page = 0
+    //const page = 0
+    const session = await auth()
 
     const circles = await prisma.circle.findMany({
         where: { public: true },
@@ -354,7 +356,7 @@ export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
 
             timeZone: true,
 
-            _count: { select: { members: { where: { status: {in: ["Active", "Pending"]} }}}},
+            _count: { select: { members: { where: { status: {in: [MembershipStatus.Active]} }}}},
             moderator: { select: {
                 name: true,
                 image: true
@@ -367,12 +369,19 @@ export const GetCirclesForLandingPage = async (page = 0, PAGE_SIZE = 1) => {
                     }}
                 }}
             }},
+            // members: user ? {
+            //     where: { userId: user.id },
+            //     select: {
+            //         id: true,
+            //         status: true,
+            //     }
+            // } : false,
             meetings: { 
                 select: {
                     id: true,
                 },
                 take: 3
-            }
+            },
         },
         skip: page * PAGE_SIZE,
         take: PAGE_SIZE

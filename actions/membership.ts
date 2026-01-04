@@ -84,179 +84,179 @@ export const GetMembershipByID = async (membershipID: string) => {
     })
 }
 
-export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershipByModeratorSchema>) => {
-    try {
-        const auth = await ServerAuth()
+// export const AddMembershipByModerator = async (data: z.infer<typeof AddMembershipByModeratorSchema>) => {
+//     try {
+//         const auth = await ServerAuth()
 
-        const circle = await GetCircleByID(data.circleId)
-        if (!circle) return { success: false, message: "Brak danych o kręgu" }
+//         const circle = await GetCircleByID(data.circleId)
+//         if (!circle) return { success: false, message: "Brak danych o kręgu" }
 
-        if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderator.id || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
+//         if (!auth.roles.includes(Role.Admin) && (auth.id !== circle.moderator.id || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
     
-        // Spróbuj pobrać użytkownika
-        let user = await GetUserByEmail(data.email)
+//         // Spróbuj pobrać użytkownika
+//         let user = await GetUserByEmail(data.email)
 
-        // Jeśli nie istnieje, od razu zarejestruj
-        // if (!user) {
-        //     await RegisterNewUser({ email: data.email, name: data.name}) 
-        //     user = await GetUserByEmail(data.email) // odświeżamy userId
-        // }
+//         // Jeśli nie istnieje, od razu zarejestruj
+//         // if (!user) {
+//         //     await RegisterNewUser({ email: data.email, name: data.name}) 
+//         //     user = await GetUserByEmail(data.email) // odświeżamy userId
+//         // }
 
-        if (!user) return { success: false, message: "Brak danych o użytkowniku"}
+//         if (!user) return { success: false, message: "Brak danych o użytkowniku"}
 
-        await prisma.membership.create({
-            data: {
-                userId: user.id,
-                circleId: circle.id,
-                status: MembershipStatus.Pending
-            }
-        }) 
+//         await prisma.membership.create({
+//             data: {
+//                 userId: user.id,
+//                 circleId: circle.id,
+//                 status: MembershipStatus.Pending
+//             }
+//         }) 
 
-        try {
-            await sendEmail({
-                to: user.email,
-                subject: `Dołączenie do kręgu - ${circle.name}`,
-                react: MembershipInvitationEmail({
-                    member: user,
-                    circle: circle,
-                    moderator: circle.moderator,
-                })
-            })
-        } catch (error) {
-            console.error(error)
-        }
+//         try {
+//             await sendEmail({
+//                 to: user.email,
+//                 subject: `Dołączenie do kręgu - ${circle.name}`,
+//                 react: MembershipInvitationEmail({
+//                     member: user,
+//                     circle: circle,
+//                     moderator: circle.moderator,
+//                 })
+//             })
+//         } catch (error) {
+//             console.error(error)
+//         }
         
-        return { success: true, message: "Użytkownik dodany do kręgu (oczekuje na akceptację)" }
-    } catch (error) {
-        console.error(error)
-        return { success: false, message: "Wystąpił błąd podczas dodawania użytkownika do kręgu" }
-    }
-}
+//         return { success: true, message: "Użytkownik dodany do kręgu (oczekuje na akceptację)" }
+//     } catch (error) {
+//         console.error(error)
+//         return { success: false, message: "Wystąpił błąd podczas dodawania użytkownika do kręgu" }
+//     }
+// }
 
-export const RemoveMembershipByModerator  = async (data: z.infer<typeof RemoveMembershipSchema>) => {
-    try {
-        const auth = await ServerAuth()
+// export const RemoveMembershipByModerator  = async (data: z.infer<typeof RemoveMembershipSchema>) => {
+//     try {
+//         const auth = await ServerAuth()
 
-        const membership = await GetMembershipByID(data.membershipId)
-        if (!membership) return { success: false, message: "Brak danych o członkostwie"}
+//         const membership = await GetMembershipByID(data.membershipId)
+//         if (!membership) return { success: false, message: "Brak danych o członkostwie"}
         
-        if (!auth.roles.includes(Role.Admin) && (auth.id !== membership.circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
+//         if (!auth.roles.includes(Role.Admin) && (auth.id !== membership.circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
 
-        await prisma.$transaction(async (tx) => {
-            // 1. Zmień status członkostwa
-            await tx.membership.update({
-                where: { id: membership.id },
-                data: { status: MembershipStatus.Removed },
-            });
+//         await prisma.$transaction(async (tx) => {
+//             // 1. Zmień status członkostwa
+//             await tx.membership.update({
+//                 where: { id: membership.id },
+//                 data: { status: MembershipStatus.Removed },
+//             });
 
-            // 2. Anuluj wszystkie przyszłe participations
-            await tx.participation.updateMany({
-                where: { id: { in: membership.participations.map((p) => p.id) } },
-                data: { status: ParticipationStatus.Cancelled },
-            });
-        })
-        //const participations = await GetFutureParticipationsByUserIDAndCircleID(membership.user.id, membership.circle.id)
+//             // 2. Anuluj wszystkie przyszłe participations
+//             await tx.participation.updateMany({
+//                 where: { id: { in: membership.participations.map((p) => p.id) } },
+//                 data: { status: ParticipationStatus.Cancelled },
+//             });
+//         })
+//         //const participations = await GetFutureParticipationsByUserIDAndCircleID(membership.user.id, membership.circle.id)
 
-        // await prisma.$transaction(async (tx) => {
-        //     await tx.membership.update({
-        //         where: { id: membership.id },
-        //         data: { status: MembershipStatus.Removed }
-        //     })
+//         // await prisma.$transaction(async (tx) => {
+//         //     await tx.membership.update({
+//         //         where: { id: membership.id },
+//         //         data: { status: MembershipStatus.Removed }
+//         //     })
             
-        //     if (participations.length > 0) {
-        //         for (const participation of participations) {
-        //             if (participation.amountPaid > 0) {
-        //                 await tx.membershipBalance.upsert({
-        //                     where: { membershipId_currency: {
-        //                         membershipId: membership.id,
-        //                         currency: participation.meeting.currency
-        //                     }},
-        //                     update: {
-        //                         amount: { increment: participation.amountPaid }
-        //                     },
-        //                     create: {
-        //                         membershipId: membership.id,
-        //                         currency: participation.meeting.currency,
-        //                         amount: participation.amountPaid
-        //                     }
-        //                 })
-        //                 await tx.participation.update({
-        //                     where: { id: participation.id },
-        //                     data: { 
-        //                         amountPaid: 0,
-        //                         status: ParticipationStatus.Cancelled
-        //                     }
-        //                 })
-        //             }
-        //         }
-        //     }
-        // })
+//         //     if (participations.length > 0) {
+//         //         for (const participation of participations) {
+//         //             if (participation.amountPaid > 0) {
+//         //                 await tx.membershipBalance.upsert({
+//         //                     where: { membershipId_currency: {
+//         //                         membershipId: membership.id,
+//         //                         currency: participation.meeting.currency
+//         //                     }},
+//         //                     update: {
+//         //                         amount: { increment: participation.amountPaid }
+//         //                     },
+//         //                     create: {
+//         //                         membershipId: membership.id,
+//         //                         currency: participation.meeting.currency,
+//         //                         amount: participation.amountPaid
+//         //                     }
+//         //                 })
+//         //                 await tx.participation.update({
+//         //                     where: { id: participation.id },
+//         //                     data: { 
+//         //                         amountPaid: 0,
+//         //                         status: ParticipationStatus.Cancelled
+//         //                     }
+//         //                 })
+//         //             }
+//         //         }
+//         //     }
+//         // })
 
-        try {
-            await sendEmail({
-                to: membership.user.email,
-                subject: `Usunięcie z kręgu - ${membership.circle.name}`,
-                react: RemoveMembershipEmail({
-                    member: membership.user,
-                    circle: membership.circle,
-                    moderator: membership.circle.moderator,
-                    reason: data.reason
-                })
-            })
-        } catch (error) {
-            console.error(error)
-        }
+//         try {
+//             await sendEmail({
+//                 to: membership.user.email,
+//                 subject: `Usunięcie z kręgu - ${membership.circle.name}`,
+//                 react: RemoveMembershipEmail({
+//                     member: membership.user,
+//                     circle: membership.circle,
+//                     moderator: membership.circle.moderator,
+//                     reason: data.reason
+//                 })
+//             })
+//         } catch (error) {
+//             console.error(error)
+//         }
             
-        return {
-            success: true,
-            message: "Użytkownik został usunięty z kręgu"
-        }
-    } catch(error) {
-        console.error(error)
-        return {
-            success: false,
-            message: "Wystąpił błąd podczas usuwania użytkownika z kręgu"
-        }
-    }
-}
+//         return {
+//             success: true,
+//             message: "Użytkownik został usunięty z kręgu"
+//         }
+//     } catch(error) {
+//         console.error(error)
+//         return {
+//             success: false,
+//             message: "Wystąpił błąd podczas usuwania użytkownika z kręgu"
+//         }
+//     }
+// }
 
-export const RestoreMembership = async (data: z.infer<typeof RestoreMembershipSchema>) => {
-    try {
-        const auth = await ServerAuth()
+// export const RestoreMembership = async (data: z.infer<typeof RestoreMembershipSchema>) => {
+//     try {
+//         const auth = await ServerAuth()
 
-        const membership = await GetMembershipByID(data.membershipId)
-        if (!membership) return { success: false, message: "Brak danych o członkostwie"}
+//         const membership = await GetMembershipByID(data.membershipId)
+//         if (!membership) return { success: false, message: "Brak danych o członkostwie"}
         
-        if (!auth.roles.includes(Role.Admin) && (auth.id !== membership.circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
+//         if (!auth.roles.includes(Role.Admin) && (auth.id !== membership.circle.moderatorId || !auth.roles.includes(Role.Moderator))) return { success: false, message: "Brak uprawnień" }
     
-        await prisma.membership.update({
-            where: { id: membership.id },
-            data: { status: MembershipStatus.Pending }
-        })
+//         await prisma.membership.update({
+//             where: { id: membership.id },
+//             data: { status: MembershipStatus.Pending }
+//         })
 
-        try {
-            await sendEmail({
-                to: membership.user.email,
-                subject: `Dołączenie do kręgu - ${membership.circle.name}`,
-                react: MembershipInvitationEmail({
-                    member: membership.user,
-                    circle: membership.circle,
-                    moderator: membership.circle.moderator,
-                })
-            })
-        } catch (error) {
-            console.error(error)
-        }
+//         try {
+//             await sendEmail({
+//                 to: membership.user.email,
+//                 subject: `Dołączenie do kręgu - ${membership.circle.name}`,
+//                 react: MembershipInvitationEmail({
+//                     member: membership.user,
+//                     circle: membership.circle,
+//                     moderator: membership.circle.moderator,
+//                 })
+//             })
+//         } catch (error) {
+//             console.error(error)
+//         }
 
-        return { success: true, message: "Użytkownik przywrócony do kręgu (oczekuje na akceptację)" }
-    } catch (error) {
-        console.error(error)
-        return {
-            success: false,
-            message: "Wystąpił błąd podczas przywracania użytkownika do kręgu"
-        }
-    }
-}
+//         return { success: true, message: "Użytkownik przywrócony do kręgu (oczekuje na akceptację)" }
+//     } catch (error) {
+//         console.error(error)
+//         return {
+//             success: false,
+//             message: "Wystąpił błąd podczas przywracania użytkownika do kręgu"
+//         }
+//     }
+// }
 
 export const GetMembersByCircleIdAndStatus = async ({
     circleId,

@@ -2,7 +2,7 @@
 
 import { GetMyMemberships } from "@/actions/membership";
 import Loader from "@/components/loader";
-import MembershipCardInside from "@/components/user/my-circles/membership-card-inside";
+//import MembershipCardInside from "@/components/user/my-circles/membership-card-inside";
 //import UnpaidMeetingsTable from "@/components/user/my-circles/unpaid-participations-table";
 import { clientAuth } from "@/hooks/auth";
 import { CircleQueries } from "@/utils/query";
@@ -37,10 +37,10 @@ const MyCirclesPage = () => {
                     //isPressable
                     //onPress={() => setSelectedCircle(membership.id)}
                 >
-                    <MembershipCardInside
+                    {/* <MembershipCardInside
                         circle={membership.circle}
                         membership={membership}
-                    />
+                    /> */}
                 </Card>
             ))}
         </div>

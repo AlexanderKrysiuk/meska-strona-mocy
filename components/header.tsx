@@ -41,6 +41,7 @@ const Header = () => {
                 </NavbarItem>
                 ))}
             </NavbarContent>
+            
             <NavbarContent justify="end">
                 <NavbarItem>
                     <ThemeSwitcher/>
@@ -53,7 +54,7 @@ const Header = () => {
                         >
                             <DropdownTrigger>
                                 <Avatar
-                                    showFallback
+                                    
                                     src={session.user.image ?? undefined}
                                     className="cursor-pointer hover:ring-2 hover:ring-primary transition-all duration-400"
                                 />

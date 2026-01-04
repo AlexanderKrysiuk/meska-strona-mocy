@@ -1,6 +1,7 @@
 "use client"
 
 import { GetCirclesForLandingPage } from "@/actions/circle";
+import JoinCircleModal from "@/components/landing-pages/join-circle-modal";
 //import JoinCircleModal from "@/components/landing-pages/join-circle-modal";
 import Loader from "@/components/loader";
 import { formatTimeOnly } from "@/utils/date";
@@ -123,6 +124,9 @@ const MensCirclePage = () => {
                         </p> */}
                     </CardBody>
                     <CardFooter>
+                        <JoinCircleModal 
+                            circle={circle}
+                        />
                         {/* <JoinCircleModal
                             circle={circle}
                         >
@@ -150,9 +154,9 @@ const MensCirclePage = () => {
             }
         </Button>
             </div>
-        {/* <pre>
+        <pre>
             {JSON.stringify(data,null,2)}
-        </pre> */}
+        </pre>
     </main>
 }
  

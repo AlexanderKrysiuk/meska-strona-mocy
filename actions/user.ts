@@ -25,7 +25,9 @@ export const GetUserByID = async (id:string) => {
             phone: true,
             memberships: {
                 select: {
-                    id: true
+                    id: true,
+                    status: true,
+                    circleId: true
                 }
             },
             moderatedCircles: {
