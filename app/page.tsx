@@ -1,6 +1,6 @@
 const Home = () => {
   return ( 
-    <div className="border-4 border-red-500"> aplikacja w buowie </div>
+    <div className=""> aplikacja w buowie </div>
    );
 }
  
