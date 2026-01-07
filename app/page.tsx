@@ -1,6 +1,6 @@
 const Home = () => {
   return ( 
-    <div className=""> aplikacja w buowie </div>
+    <div className=""> Lorem ipsum dolor sit amet consectetur adipisicing elit. In ex, nulla minus fugit, ut esse molestiae animi illum voluptate nam blanditiis consectetur debitis. Eius aspernatur velit porro repellat dolor totam? Lorem ipsum, dolor sit amet consectetur adipisicing elit. Voluptatum nesciunt molestiae iure inventore ratione nostrum eveniet ea id reiciendis, explicabo odit laudantium corrupti. Corporis enim deleniti culpa accusantium maiores tempore! Lorem ipsum dolor sit amet consectetur, adipisicing elit. Commodi quae temporibus quia voluptatum atque! Obcaecati iste explicabo commodi dolores voluptates numquam ab amet quo. Temporibus harum distinctio dolorem voluptas dolorum! Lorem ipsum dolor sit amet consectetur adipisicing elit. Quam est ad autem? Atque in aperiam animi omnis itaque quisquam est quod? Eveniet maiores quia, consequuntur alias quibusdam omnis totam dolores? </div>
    );
 }
  
