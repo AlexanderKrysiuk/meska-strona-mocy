@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ModeToggle } from "../theme-toggle";
 import { Button } from "../ui/button";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { LogIn, Menu, X } from "lucide-react";
+import { Separator } from "../ui/separator";
 
 const Header = () => {
     const [open, setOpen] = useState(false)
@@ -39,8 +40,14 @@ const Header = () => {
                 </Button>
             </div>
         </header>
-        <div className={`fixed z-40 lg:hidden h-full w-full bg-background/60 backdrop-blur-sm p-4 transition-all duration-300 ease-out ${open ? "max-h-screen opacity-100" : "max-h-0 opacity-0 pointer-events-none overflow-hidden"}`}>
-            Jakiś kontentąć
+        <div className={`fixed z-40 lg:hidden h-full w-full bg-background/80 backdrop-blur-sm p-4  space-y-2 transition-all duration-300 ease-out ${open ? "max-h-screen opacity-100" : "max-h-0 opacity-0 pointer-events-none overflow-hidden"}`}>
+            <Separator/>
+            <Link
+                href="/auth/start"
+                className="flex text-blue-600 hover:text-blue-700"
+                >
+                <LogIn className="mr-1"/> Start
+            </Link>
         </div>
     </main>
 
