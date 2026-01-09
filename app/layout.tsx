@@ -36,7 +36,9 @@ export default function RootLayout({
           enableSystem
         >
           <Header/>
-          {children}
+          <div className="flex flex-1">
+            {children}
+          </div>
         </ThemeProvider>
       </body>
     </html>
