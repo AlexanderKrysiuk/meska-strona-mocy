@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
+import { toast } from "sonner"
 
 export function RegisterForm() {
     const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -22,10 +23,14 @@ export function RegisterForm() {
         }
     })
 
-    const {formState:{isValid,isSubmitting}} = form 
+    const { watch, handleSubmit, formState:{ isValid, isSubmitting }} = form
+
+    function onSubmit(data: z.infer<typeof RegisterSchema>) {
+        toast(JSON.stringify(watch(),null,2))
+    }
 
     return <Form {...form}>
-        <form className="space-y-4" onSubmit={() => {}}>
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
                 control={form.control}
                 name="name"
