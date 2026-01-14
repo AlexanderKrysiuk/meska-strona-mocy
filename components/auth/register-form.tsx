@@ -9,7 +9,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
-import { toast } from "sonner"
 
 export function RegisterForm() {
     const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -17,19 +16,30 @@ export function RegisterForm() {
         mode: "all",
         shouldUnregister: false,
         defaultValues: {
-            name: "",
-            email: "",
-            phone: ""
+             name: "",
+             email: "",
+             phone: ""
         }
     })
 
-    const { watch, handleSubmit, formState:{ isValid, isSubmitting }} = form
+    const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
-    function onSubmit(data: z.infer<typeof RegisterSchema>) {
-        toast(JSON.stringify(watch(),null,2))
+    async function onSubmit(data: z.infer<typeof RegisterSchema>) {
+        // const results = await RegisterUser(data)
+        
+        // if (results?.error) { 
+        //     toast.error(JSON.stringify(results.error))
+        //     return
+        // }
+
+        // toast.success("Użytkownik został dodany")
+        // form.reset()
     }
 
-    return <Form {...form}>
+    return <Form 
+        schema={RegisterSchema}
+        form={form}
+    >
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
                 control={form.control}
