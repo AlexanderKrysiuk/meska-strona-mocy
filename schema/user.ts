@@ -18,7 +18,7 @@ const phone = z
     }, "Podaj prawidłowy numer telefonu");
 
 export const RegisterSchema = z.object({
-    name: name.optional(),
+    name,
     email,
     phone: phone.optional()
 })

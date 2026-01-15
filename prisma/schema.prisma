@@ -21,6 +21,7 @@ model User {
   emailVerified DateTime?
   phone         String?
   image         String?
+  title         String?
   accounts      Account[]
   sessions      Session[]
   // Optional for WebAuthn support

@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
+import { RegisterUser } from "@/actions/user"
+import { toast } from "sonner"
 
 export function RegisterForm() {
     const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -25,15 +27,16 @@ export function RegisterForm() {
     const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
     async function onSubmit(data: z.infer<typeof RegisterSchema>) {
-        // const results = await RegisterUser(data)
+        const results = await RegisterUser(data)
         
-        // if (results?.error) { 
-        //     toast.error(JSON.stringify(results.error))
-        //     return
-        // }
+        if (results?.error) { 
+            toast.error(JSON.stringify(results.error))
+        } else {
+            toast.success("Wysłano e-mail weryfikacyjny")
+            form.reset()
+        }
 
-        // toast.success("Użytkownik został dodany")
-        // form.reset()
+        return
     }
 
     return <Form 
