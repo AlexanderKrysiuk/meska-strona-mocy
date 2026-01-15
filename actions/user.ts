@@ -33,13 +33,7 @@ export async function RegisterUser(values: z.infer<typeof RegisterSchema>) {
 
     if (!user.emailVerified) {
         const token = await GenerateVerificationToken(email)
-        await SendEmail(
-            email, 
-            "Witamy na Męskiej Stronie Mocy", 
-            WelcomeEmail({
-                name,
-                token: token.token
-            }))
+        await SendEmail(email, "Witamy na Męskiej Stronie Mocy", WelcomeEmail({name, token: token.token}))
     }
 }
 
