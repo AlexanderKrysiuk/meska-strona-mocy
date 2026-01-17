@@ -5,35 +5,46 @@ import z from "zod";
 import { GenerateVerificationToken } from "./token";
 import { SendEmail } from "./resend";
 import { WelcomeEmail } from "@/emails/Welcome-Email";
+import { GetVerifyURL } from "@/helpers/token";
 
-export async function RegisterUser(values: z.infer<typeof RegisterSchema>) {
+export const RegisterUser = async ({
+    values
+} : {
+    values: z.infer<typeof RegisterSchema>
+}) => {
     const parsed = RegisterSchema.safeParse(values)
 
     if (!parsed.success) return { error: parsed.error.format }
 
     const { name, email, phone } = parsed.data
 
-    let user = await prisma.user.findUnique({
-        where: { email },
-        select: { emailVerified: true }
+    const user = await prisma.user.upsert({
+        where: { email: email },
+        update: {},
+        create: {
+            name: name,
+            email: email,
+            phone: phone
+        },
+        select: {
+            emailVerified: true
+        }
     })
-
-    if (!user) {
-        user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                phone
-            },
-            select: {
-                emailVerified: true
-            }
-        })
-    }
 
     if (!user.emailVerified) {
         const token = await GenerateVerificationToken(email)
-        await SendEmail(email, "Witamy na Męskiej Stronie Mocy", WelcomeEmail({name, token: token.token}))
+        const verifyUrl = GetVerifyURL({
+            token: token.token,
+            identifier: token.identifier
+        })
+        await SendEmail({
+            to: token.identifier,
+            subject: "Witamy - Męska Strona Mocy",
+            react: WelcomeEmail({
+                name: name,
+                verifyURL: verifyUrl
+            })
+        })
     }
 }
 

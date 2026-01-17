@@ -2,7 +2,7 @@
 "use client"
 
 import { RegisterSchema } from "@/schema/user"
-import { useForm } from "react-hook-form"
+import { SubmitHandler, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import z from "zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form"
@@ -12,7 +12,7 @@ import { Spinner } from "../ui/spinner"
 import { RegisterUser } from "@/actions/user"
 import { toast } from "sonner"
 
-export function RegisterForm() {
+export const RegisterForm = () => {
     const form = useForm<z.infer<typeof RegisterSchema>>({
         resolver: zodResolver(RegisterSchema),
         mode: "all",
@@ -26,8 +26,10 @@ export function RegisterForm() {
 
     const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
-    async function onSubmit(data: z.infer<typeof RegisterSchema>) {
-        const results = await RegisterUser(data)
+    const onSubmit: SubmitHandler<z.infer<typeof RegisterSchema>> = async (data) => {
+        const results = await RegisterUser({
+            values: data
+        })
         
         if (results?.error) { 
             toast.error(JSON.stringify(results.error))
