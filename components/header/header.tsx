@@ -7,6 +7,7 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { LogIn, Menu, X } from "lucide-react";
 import { Separator } from "../ui/separator";
+import { ROUTES } from "@/lib/routes";
 
 const Header = () => {
     const [open, setOpen] = useState(false)
@@ -27,7 +28,7 @@ const Header = () => {
                     variant="outline"
                     className="hidden lg:block"
                 >
-                    Start
+                    <Link href={ROUTES.login}> Start </Link>
                 </Button>
                 <Button
                     size="icon-lg"
@@ -41,11 +42,11 @@ const Header = () => {
             </div>
         </header>
         <div className={`fixed z-40 lg:hidden h-full w-full bg-background/80 backdrop-blur-sm p-4  space-y-2 transition-all duration-300 ease-out ${open ? "max-h-screen opacity-100" : "max-h-0 opacity-0 pointer-events-none overflow-hidden"}`}>
-            <Separator/>
             <Link
-                href="/auth/start"
+                href={ROUTES.login}
                 className="flex text-blue-600 hover:text-blue-700"
-                >
+                onClick={() => setOpen(false)}
+            >
                 <LogIn className="mr-1"/> Start
             </Link>
         </div>
