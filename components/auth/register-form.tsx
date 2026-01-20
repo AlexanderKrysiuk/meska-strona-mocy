@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
-import { RegisterUser } from "@/actions/user"
+import { RegisterUserAction } from "@/actions/user"
 import { toast } from "sonner"
 
 export const RegisterForm = () => {
@@ -27,18 +27,23 @@ export const RegisterForm = () => {
     const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
     const onSubmit: SubmitHandler<z.infer<typeof RegisterSchema>> = async (data) => {
-        const results = await RegisterUser({
-            values: data
-        })
-        
-        if (results?.error) { 
-            toast.error(JSON.stringify(results.error))
-        } else {
-            toast.success("Wysłano e-mail weryfikacyjny")
-            form.reset()
+        try {
+            const parsed = RegisterSchema.safeParse(data)
+            if (!parsed.success) {
+                toast.error("Podano nieprawidłowe dane")
+            } else {
+                const results = await RegisterUserAction({values: data})
+                if (results?.error) { 
+                    toast.error(JSON.stringify(results.error))
+                } else {
+                    toast.success("Wysłano e-mail weryfikacyjny")
+                    form.reset()
+                }
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error("Wystąpił nieoczekiwany błąd")
         }
-
-        return
     }
 
     return <Form 

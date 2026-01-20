@@ -1,3 +1,5 @@
+"use server"
+
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
 import { SendEmail } from "./resend"
@@ -13,7 +15,6 @@ export async function GenerateVerificationToken(email: string) {
     await prisma.verificationToken.deleteMany({
         where: { identifier: email }
     })
-
     return await prisma.verificationToken.create({
         data: {
             identifier: email,
@@ -23,38 +24,58 @@ export async function GenerateVerificationToken(email: string) {
     })
 }
 
-export async function VerifyToken(
-    token:string,
-    identifier: string
-) {
-    const record = await prisma.verificationToken.findUnique({
-        where: { identifier_token: {
-            token,
-            identifier
-        }},
-        select: {
-            expires: true,
-            identifier: true
-        }
-    })
-    
-    if (!record) return {
-        success: false,
-        data: "Nie znaleziono tokenu"
-    }
+export const VerifyToken = async (
+  token: string,
+  identifier: string
+) => {
+  const record = await prisma.verificationToken.findUnique({
+    where: {
+      identifier_token: {
+        token,
+        identifier,
+      },
+    },
+    select: {
+      expires: true,
+      identifier: true,
+    },
+  })
 
-    if (record.expires < new Date()) {
-        const newToken = await GenerateVerificationToken(record.identifier)
-        const resetURL = GetVerifyURL({
-            token: newToken.token,
-            identifier: newToken.identifier
-        })
-        await SendEmail({
-            to: record.identifier,
-            subject: "Twój token został zresetowany",
-            react: TokenResetEmail({
-                resetURL: resetURL
-            })
-        })
+  if (!record) {
+    return {
+      success: false,
+      data: "Nie znaleziono tokenu",
     }
+  }
+
+  if (record.expires < new Date()) {
+    const newToken = await GenerateVerificationToken(record.identifier)
+
+    const resetURL = GetVerifyURL({
+      token: newToken.token,
+      identifier: newToken.identifier,
+    })
+
+    await SendEmail({
+      to: record.identifier,
+      subject: "Twój token został zresetowany",
+      react: TokenResetEmail({
+        resetURL,
+      }),
+    })
+
+    return {
+      success: false,
+      data: "Token wygasł, wysłano nowy",
+    }
+  }
+
+  await prisma.verificationToken.deleteMany({
+    where: { identifier },
+  })
+
+  return {
+    success: true,
+    data: record.identifier,
+  }
 }
