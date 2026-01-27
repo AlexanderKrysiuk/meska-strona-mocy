@@ -1,14 +1,14 @@
 "use server"
-import { prisma } from "@/lib/prisma";
-import { RegisterSchema, VerifySchema } from "@/schema/user";
-import z, { success } from "zod";
+import prisma from "@/lib/prisma";
+import { LoginSchema, RegisterSchema, VerifySchema } from "@/schema/user";
+import z from "zod";
 import { GenerateVerificationToken } from "./token";
 import { SendEmail } from "./resend";
 import { WelcomeEmail } from "@/emails/Welcome-Email";
 import { GetVerifyURL } from "@/helpers/token";
 import bcrypt from "bcryptjs"
-import { error } from "console";
-
+import { signIn } from "@/auth";
+import { ROUTES } from "@/lib/routes";
 
 export const RegisterUserAction = async ({
     values
@@ -17,6 +17,7 @@ export const RegisterUserAction = async ({
 }) => {
     try {
         const parsed = RegisterSchema.safeParse(values)
+        console.log(parsed)
         if (!parsed.success) return { error: "Podano nieprawidłowe dane" }
         
         const { name, email, phone } = parsed.data
@@ -33,15 +34,13 @@ export const RegisterUserAction = async ({
                 emailVerified: true
             }
         })
-    
+        //console.log(user)
+
         if (!user.emailVerified) {
             const token = await GenerateVerificationToken(email)
-            const verifyUrl = GetVerifyURL({
-                token: token.token,
-                identifier: token.identifier
-            })
+            const verifyUrl = GetVerifyURL(token.token, token.identifier)
             await SendEmail({
-                to: token.identifier,
+                to: email,
                 subject: "Witamy - Męska Strona Mocy",
                 react: WelcomeEmail({
                     name: name,
@@ -51,15 +50,9 @@ export const RegisterUserAction = async ({
         }
 
     } catch (error) {
+        console.error(error)
         return { error: "Wystąpił nieoczekiwany błąd"}
     }
-}
-
-export async function CheckIfUserExists (email: string) {
-    return !!await prisma.user.findUnique({ 
-        where: { email },
-        select: { id: true }
-    })
 }
 
 export const SetPasswordAction = async ({
@@ -83,6 +76,30 @@ export const SetPasswordAction = async ({
     
     } catch (error) {
         console.error(error)
-        return { error: "Wystąpił nieznany błąd" }
+        return { error: "Wystąpił nieoczekiwany błąd" }
+    }
+}
+
+export const LoginUserAction = async ({
+    values
+} : {
+    values: z.infer<typeof LoginSchema>
+}) => {
+    try {
+        const parsed = LoginSchema.safeParse(values)
+        if (!parsed.success) return { error: "Podano nieprawidłowe dane" }
+
+        const { email, password } = parsed.data
+
+        await signIn("credentials", {
+            email,
+            password,
+            redirect: true,
+            callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${ROUTES.kokpit}`, // <-- przekierowanie
+        })
+        
+    } catch(error) {
+        console.error(error)
+        return { error: "Wystąpił nieoczekiwany bła∂"}
     }
 }

@@ -18,23 +18,25 @@ export const RegisterForm = () => {
         mode: "all",
         shouldUnregister: false,
         defaultValues: {
-             name: "",
-             email: "",
-             phone: ""
+            name: "",
+            email: "",
+            //
         }
     })
 
-    const { handleSubmit, formState:{ isValid, isSubmitting }} = form
+    const { watch, handleSubmit, formState:{ isValid, isSubmitting }} = form
 
     const onSubmit: SubmitHandler<z.infer<typeof RegisterSchema>> = async (data) => {
         try {
+            console.log("SUCCESS")
             const parsed = RegisterSchema.safeParse(data)
             if (!parsed.success) {
                 toast.error("Podano nieprawidłowe dane")
             } else {
                 const results = await RegisterUserAction({values: data})
                 if (results?.error) { 
-                    toast.error(JSON.stringify(results.error))
+                    //toast.error(JSON.stringify(results.error))
+                    toast.error(results.error)
                 } else {
                     toast.success("Wysłano e-mail weryfikacyjny")
                     form.reset()
@@ -50,6 +52,7 @@ export const RegisterForm = () => {
         schema={RegisterSchema}
         form={form}
     >
+        {JSON.stringify(watch(),null,2)}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
                 control={form.control}
@@ -59,8 +62,8 @@ export const RegisterForm = () => {
                     <FormLabel>Imię i Nazwisko</FormLabel>
                     <FormControl>
                         <Input {...field}
-                            value={field.value}
                             autoComplete="name"
+                            disabled={isSubmitting}
                             // onChange={field.onChange}
                             // onBlur={field.onBlur}
                         />
@@ -76,8 +79,9 @@ export const RegisterForm = () => {
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                         <Input {...field}
-                            value={field.value}
+                            type="email"
                             autoComplete="email"
+                            disabled={isSubmitting}
                             // onChange={field.onChange}
                             // onBlur={field.onBlur}
                         />
@@ -93,8 +97,8 @@ export const RegisterForm = () => {
                     <FormLabel>Telefon</FormLabel>
                     <FormControl>
                         <Input {...field}
-                            value={field.value}
                             autoComplete="tel"
+                            disabled={isSubmitting}
                             // onChange={field.onChange}
                             // onBlur={field.onBlur}
                         />

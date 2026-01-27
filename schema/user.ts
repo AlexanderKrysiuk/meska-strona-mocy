@@ -56,8 +56,7 @@ export const VerifySchema = z.object({
     }
 )
 
-
-// export const VerifySchema = z.object({
-//     email,
-//     confirmPassword
-// })
+export const LoginSchema = z.object({
+    email,
+    password
+})

@@ -80,20 +80,12 @@ const VerificationForm = ({
                             <PasswordInput
                                 {...field}
                                 autoComplete="new-password"
+                                disabled={isSubmitting}
                                 onChange={(e) => {
                                     field.onChange(e)
                                     trigger("password")
                                 }}
                             />
-                            {/* <Input {...field}
-                                type="password"
-                                value={field.value}
-                                autoComplete="new-password"
-                                onChange={(e) => {
-                                    field.onChange(e)
-                                    trigger("password")
-                                }}
-                            /> */}
                         </FormControl>
                         <FormMessage/>
                     </FormItem>
@@ -109,20 +101,12 @@ const VerificationForm = ({
                             <PasswordInput
                                 {...field}
                                 autoComplete="new-password"
+                                disabled={isSubmitting}
                                 onChange={(e) => {
                                     field.onChange(e)
                                     trigger("newPassword")
                                 }}
                             />
-                            {/* <Input {...field}
-                                type="password"
-                                value={field.value}
-                                autoComplete="new-password"
-                                onChange={(e) => {
-                                    field.onChange(e)
-                                    trigger("newPassword")
-                                }}
-                            /> */}
                         </FormControl>
                         <FormMessage/>
                     </FormItem>

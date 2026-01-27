@@ -24,12 +24,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 7.2.0
- * Query Engine version: 0c8ef2ce45c83248ab3df073180d5eda9e8be7a3
+ * Prisma Client JS version: 7.3.0
+ * Query Engine version: 9d6ad21cbbceab97458517b147a6a09ff43aa735
  */
 Prisma.prismaVersion = {
-  client: "7.2.0",
-  engine: "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3"
+  client: "7.3.0",
+  engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -125,34 +125,9 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name',
   email: 'email',
   emailVerified: 'emailVerified',
-  phone: 'phone',
-  image: 'image',
-  title: 'title',
   password: 'password',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.AccountScalarFieldEnum = {
-  userId: 'userId',
-  type: 'type',
-  provider: 'provider',
-  providerAccountId: 'providerAccountId',
-  refresh_token: 'refresh_token',
-  access_token: 'access_token',
-  expires_at: 'expires_at',
-  token_type: 'token_type',
-  scope: 'scope',
-  id_token: 'id_token',
-  session_state: 'session_state',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
-exports.Prisma.SessionScalarFieldEnum = {
-  sessionToken: 'sessionToken',
-  userId: 'userId',
-  expires: 'expires',
+  image: 'image',
+  phone: 'phone',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -161,17 +136,6 @@ exports.Prisma.VerificationTokenScalarFieldEnum = {
   identifier: 'identifier',
   token: 'token',
   expires: 'expires'
-};
-
-exports.Prisma.AuthenticatorScalarFieldEnum = {
-  credentialID: 'credentialID',
-  userId: 'userId',
-  providerAccountId: 'providerAccountId',
-  credentialPublicKey: 'credentialPublicKey',
-  counter: 'counter',
-  credentialDeviceType: 'credentialDeviceType',
-  credentialBackedUp: 'credentialBackedUp',
-  transports: 'transports'
 };
 
 exports.Prisma.SortOrder = {
@@ -192,10 +156,7 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   User: 'User',
-  Account: 'Account',
-  Session: 'Session',
-  VerificationToken: 'VerificationToken',
-  Authenticator: 'Authenticator'
+  VerificationToken: 'VerificationToken'
 };
 
 /**

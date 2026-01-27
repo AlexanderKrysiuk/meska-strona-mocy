@@ -1,10 +1,10 @@
 //app/start/page.tsx
 "use client"
 
+import LoginForm from "@/components/auth/login-form"
 import { RegisterForm } from "@/components/auth/register-form"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TabsContent } from "@radix-ui/react-tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const StartPage = () => {
     return <main className="flex w-full justify-center py-[20vh]">
@@ -13,7 +13,7 @@ const StartPage = () => {
                 🔐 Autentykacja
             </CardHeader>
             <CardContent>
-                <Tabs className="space-y-4">
+                <Tabs className="space-y-4" defaultValue="Login">
                     <TabsList
                         className="space-x-4 w-full"
                     >
@@ -21,7 +21,7 @@ const StartPage = () => {
                         <TabsTrigger value="Register">Rejestracja</TabsTrigger>
                     </TabsList>
                     <TabsContent value="Login">
-                        
+                        <LoginForm/>
                     </TabsContent>
                     <TabsContent value="Register">
                         <RegisterForm/>

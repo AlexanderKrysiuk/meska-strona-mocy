@@ -15,18 +15,18 @@ const VerifyPage = () => {
     const token = searchParams.get("token")
     const identifier = searchParams.get("identifier")
 
-    const [data, setData] = useState<Awaited<ReturnType<typeof VerifyToken>> | null>(null)
+    const [result, setResult] = useState<Awaited<ReturnType<typeof VerifyToken>> | null>(null)
 
     useEffect(() => {
         if (!token || !identifier) {
-            setData({
+            setResult({
                 success: false,
-                data: "Brak tokenu lub identyfikatora w URL."
+                data: "Brak tokenu"
             })
         } else {
             const run = async () => {
-                const result = await VerifyToken(token, identifier)
-                setData(result)
+                const result = await VerifyToken(identifier, token)
+                setResult(result)
             }
 
             run()
@@ -34,16 +34,18 @@ const VerifyPage = () => {
 
         return 
 
-    }, [token, identifier])
+    }, [token])
 
-    if (!data) return
+    console.log(identifier)
 
-    if (data.success) {
+    if (!result) return
+
+    if (result.success) {
         return <Card>
             <CardHeader>🔐 Weryfikacja</CardHeader>
                 <CardContent>
                     <VerificationForm 
-                        email={data.data}    
+                        email={result.data}    
                     />
                 </CardContent>
         </Card>
@@ -53,7 +55,7 @@ const VerifyPage = () => {
                 size="lg"
                 variant="destructive"
             >
-                <TriangleAlert/> {data.data}
+                <TriangleAlert/> {result.data}
             </Button>
         )
     }

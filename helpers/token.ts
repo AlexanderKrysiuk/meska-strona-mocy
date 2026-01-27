@@ -1,10 +1,6 @@
-export const GetVerifyURL = ({
-    token, 
-    identifier
-} : {
+export const GetVerifyURL = (
     token: string,
-    identifier: string
-}) => {
-  const baseURL = process.env.NEXT_PUBLIC_APP_URL;
-  return `${baseURL}/verify?token=${token}&identifier=${encodeURIComponent(identifier)}`;
-};
+    email: string
+) => {
+  return `${process.env.NEXT_PUBLIC_APP_URL}/verify?token=${encodeURIComponent(token)}&identifier=${encodeURIComponent(email)}`
+}

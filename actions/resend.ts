@@ -33,7 +33,7 @@ export const SendEmail = async ({
 }) => {
     try {
         await resend.emails.send({
-            from: "info@meska-strona-mocy.pl",
+            from: "info@meskastronamocy.org",
             to,
             subject,
             react

@@ -1,4 +1,4 @@
-import { User } from "@/generated/prisma"
+import { User } from "@/generated/prisma/client"
 import { Body, Head, Hr, Html, Preview, Section, Text } from "@react-email/components"
 
 export const styles = {
