@@ -9,8 +9,9 @@ import { PasswordInput } from "./password-input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
 import { toast } from "sonner"
-//import { signIn } from "@/auth"
 import { ROUTES } from "@/lib/routes"
+import { signIn } from "next-auth/react"
+
 
 const LoginForm = () => {
     const form = useForm<z.infer<typeof LoginSchema>>({
@@ -25,12 +26,12 @@ const LoginForm = () => {
 
     const onSubmit: SubmitHandler<z.infer<typeof LoginSchema>> = async (data) => {
         try {
-            // await signIn("credentials", {
-            //     redirect: true,
-            //     callbackUrl: ROUTES.kokpit,  // gdzie po zalogowaniu
-            //     email: data.email,
-            //     password: data.password
-            // })
+            await signIn("credentials", {
+                redirect: true,
+                callbackUrl: ROUTES.kokpit,  // gdzie po zalogowaniu
+                email: data.email,
+                password: data.password
+            })
         } catch(error) {
             console.error(error);
             toast.error("Wystąpił nieoczekiwany błą∂")
