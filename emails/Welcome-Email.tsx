@@ -13,7 +13,7 @@ export const WelcomeEmail = ({
       Cześć <strong>{name ?? "Użytkowniku"}</strong>,
     </Text>
     <Text style={styles.paragraph}>
-      Witamy na naszej stronie! Cieszymy się, że do nas dołączyłeś. Aby zakończyć rejestrację i ustawić swoje hasło, kliknij w link poniżej.
+      Witamy na naszej stronie! Cieszymy się, że do nas dołączyłeś. Aby zakończyć rejestrację, kliknij w link poniżej.
     </Text>
     <Button
       style={styles.button}

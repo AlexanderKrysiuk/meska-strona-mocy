@@ -9,8 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
-import { RegisterUserAction } from "@/actions/user"
 import { toast } from "sonner"
+import { signUp } from "@/lib/auth-client"
+import { PasswordInput } from "./password-input"
 
 export const RegisterForm = () => {
     const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -20,39 +21,50 @@ export const RegisterForm = () => {
         defaultValues: {
             name: "",
             email: "",
-            //
+            password: "",
+            phone: ""
         }
     })
 
-    const { watch, handleSubmit, formState:{ isValid, isSubmitting }} = form
+    const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
     const onSubmit: SubmitHandler<z.infer<typeof RegisterSchema>> = async (data) => {
-        try {
-            console.log("SUCCESS")
-            const parsed = RegisterSchema.safeParse(data)
-            if (!parsed.success) {
-                toast.error("Podano nieprawidłowe dane")
-            } else {
-                const results = await RegisterUserAction({values: data})
-                if (results?.error) { 
-                    //toast.error(JSON.stringify(results.error))
-                    toast.error(results.error)
-                } else {
-                    toast.success("Wysłano e-mail weryfikacyjny")
-                    form.reset()
-                }
+        await signUp.email({
+            email: data.email,
+            name: data.name,
+            phone: data.phone,
+            password: data.password,
+        }, {
+            onResponse: () => {
+                toast.success("Jeśli konto zostało utworzone, wysłaliśmy e-mail weryfikacyjny.")
             }
-        } catch (error) {
-            console.error(error)
-            toast.error("Wystąpił nieoczekiwany błąd")
-        }
+        })
+        
+        // try {
+        //     console.log("SUCCESS")
+        //     const parsed = RegisterSchema.safeParse(data)
+        //     if (!parsed.success) {
+        //         toast.error("Podano nieprawidłowe dane")
+        //     } else {
+        //         const results = await RegisterUserAction({values: data})
+        //         if (results?.error) { 
+        //             //toast.error(JSON.stringify(results.error))
+        //             toast.error(results.error)
+        //         } else {
+        //             toast.success("Wysłano e-mail weryfikacyjny")
+        //             form.reset()
+        //         }
+        //     }
+        // } catch (error) {
+        //     console.error(error)
+        //     toast.error("Wystąpił nieoczekiwany błąd")
+        // }
     }
 
     return <Form 
         schema={RegisterSchema}
         form={form}
     >
-        {JSON.stringify(watch(),null,2)}
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <FormField
                 control={form.control}
@@ -62,6 +74,7 @@ export const RegisterForm = () => {
                     <FormLabel>Imię i Nazwisko</FormLabel>
                     <FormControl>
                         <Input {...field}
+                            placeholder="Jack Sparrow"
                             autoComplete="name"
                             disabled={isSubmitting}
                             // onChange={field.onChange}
@@ -79,6 +92,7 @@ export const RegisterForm = () => {
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                         <Input {...field}
+                            placeholder="jack.sparrow@piratebay.co.uk"
                             type="email"
                             autoComplete="email"
                             disabled={isSubmitting}
@@ -91,12 +105,28 @@ export const RegisterForm = () => {
             }/>
             <FormField
                 control={form.control}
+                name="password"
+                render={({field}) =>
+                    <FormItem>
+                        <FormLabel>Hasło</FormLabel>
+                        <FormControl>
+                            <PasswordInput {...field}
+                                autoComplete="new-password"
+                                disabled={isSubmitting}
+                            />
+                        </FormControl>
+                    </FormItem>
+                }
+            />
+            <FormField
+                control={form.control}
                 name="phone"
                 render={({field}) => 
                 <FormItem>
                     <FormLabel>Telefon</FormLabel>
                     <FormControl>
                         <Input {...field}
+                            placeholder="+48500600700"
                             autoComplete="tel"
                             disabled={isSubmitting}
                             // onChange={field.onChange}

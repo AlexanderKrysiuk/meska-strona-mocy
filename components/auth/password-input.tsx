@@ -21,6 +21,7 @@ export const PasswordInput = React.forwardRef<
         key={visible ? "text" : "password"}
         type={visible ? "text" : "password"}
         className={cn("pr-10", className)}
+        placeholder="********"
       />
 
       <button

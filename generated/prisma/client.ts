@@ -45,7 +45,17 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
- * Model VerificationToken
+ * Model Session
  * 
  */
-export type VerificationToken = Prisma.VerificationTokenModel
+export type Session = Prisma.SessionModel
+/**
+ * Model Account
+ * 
+ */
+export type Account = Prisma.AccountModel
+/**
+ * Model Verification
+ * 
+ */
+export type Verification = Prisma.VerificationModel
