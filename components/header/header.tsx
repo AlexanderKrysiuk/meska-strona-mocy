@@ -12,12 +12,10 @@ import { signOut, useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import { useRouter } from "next/navigation";
 
 const Header = () => {
     const [open, setOpen] = useState(false)
     const { data: session } = useSession()
-    const router = useRouter()
 
     return <main>
         <header className="sticky z-50 inset-0 flex items-center justify-between lg:px-[20vw] p-4 border-b">

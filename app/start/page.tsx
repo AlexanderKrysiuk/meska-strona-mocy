@@ -5,8 +5,24 @@ import LoginForm from "@/components/auth/login-form"
 import { RegisterForm } from "@/components/auth/register-form"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useSession } from "@/lib/auth-client"
+import { ROUTES } from "@/lib/routes"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 const StartPage = () => {
+    const router = useRouter()
+    const { data: session } = useSession()
+
+// 🔹 redirect jeśli user już zalogowany
+    useEffect(() => {
+        if (session) {
+            router.push(ROUTES.signInRoute)
+        }
+    }, [session, router])
+
+    if (session === undefined) return
+    
     return <main className="flex w-full justify-center py-[20vh]">
         <Card className="self-start max-w-xs w-full">            
             <CardHeader className="justify-center">
