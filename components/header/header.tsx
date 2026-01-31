@@ -82,6 +82,21 @@ const Header = () => {
             </div>
         </header>
         <div className={`fixed z-40 lg:hidden h-full w-full bg-background/80 backdrop-blur-sm p-4  space-y-2 transition-all duration-300 ease-out ${open ? "max-h-screen opacity-100" : "max-h-0 opacity-0 pointer-events-none overflow-hidden"}`}>
+            {session?.user && <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                    Witaj, {session.user.name}
+                    <Avatar
+                        size="lg"
+                    >
+                        <AvatarImage src={session.user.image ?? undefined} />
+                        <AvatarFallback className="bg-transparent">
+                            <User className="text-primary"/>
+                        </AvatarFallback>
+                    </Avatar>
+                </div>
+                <Separator/>
+            </div>}
+            
             {session?.user ?
                 <Link
                     href={ROUTES.signOutRoute}
