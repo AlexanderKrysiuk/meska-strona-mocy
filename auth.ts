@@ -12,7 +12,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./lib/prisma";
-import { SendEmail } from "./actions/resend";
 import { WelcomeEmail } from "./emails/Welcome-Email";
 import { resend } from "./lib/resend";
 
@@ -39,6 +38,7 @@ export const auth = betterAuth({
         sendOnSignIn: true,
         autoSignInAfterVerification: true
     },
+    
     user: {
         additionalFields: {
             phone: {

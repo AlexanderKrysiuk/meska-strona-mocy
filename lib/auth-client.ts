@@ -10,14 +10,3 @@ const authClient = createAuthClient({
 })
 
 export const { signIn, signOut, signUp, useSession } = authClient
-
-export const User = () => {
-    const {
-        data: session,
-        isPending,
-        error,
-        refetch
-    } = authClient.useSession()
-
-    return 
-}

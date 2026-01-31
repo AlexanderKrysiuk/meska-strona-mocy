@@ -5,12 +5,19 @@ import Link from "next/link";
 import { ModeToggle } from "../theme-toggle";
 import { Button } from "../ui/button";
 import { useState } from "react";
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn, LogOut, Menu, Moon, User, X } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { ROUTES } from "@/lib/routes";
+import { signOut, useSession } from "@/lib/auth-client";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
     const [open, setOpen] = useState(false)
+    const { data: session } = useSession()
+    const router = useRouter()
 
     return <main>
         <header className="sticky z-50 inset-0 flex items-center justify-between lg:px-[20vw] p-4 border-b">
@@ -24,12 +31,45 @@ const Header = () => {
             </div>
             <div className="flex items-center space-x-1">
                 <ModeToggle/>
-                <Button
-                    variant="outline"
-                    className="hidden lg:block"
-                >
-                    <Link href={ROUTES.login}> Start </Link>
-                </Button>
+                <div className="hidden lg:block">
+                    {session?.user ?
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full cursor-pointer"
+                                >
+                                    <Avatar>
+                                        <AvatarImage src={session.user.image ?? undefined} />
+                                        <AvatarFallback className="bg-transparent">
+                                            <User className="text-primary"/>
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuGroup>
+                                    <DropdownMenuItem>
+                                        <Link
+                                            href={ROUTES.signOutRoute}
+                                            className="flex text-red-600 hover:text-red-700"
+                                            onClick={async () => await signOut()}
+                                        >
+                                            <LogOut className="mr-1"/> Wyloguj
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    :
+                        <Button
+                            variant="outline"
+                        >
+                            <Link href={ROUTES.login}> Start </Link>
+                        </Button>
+                    }
+                </div>
                 <Button
                     size="icon-lg"
                     variant="ghost"
@@ -42,13 +82,33 @@ const Header = () => {
             </div>
         </header>
         <div className={`fixed z-40 lg:hidden h-full w-full bg-background/80 backdrop-blur-sm p-4  space-y-2 transition-all duration-300 ease-out ${open ? "max-h-screen opacity-100" : "max-h-0 opacity-0 pointer-events-none overflow-hidden"}`}>
-            <Link
+            {session?.user ?
+                <Link
+                    href={ROUTES.signOutRoute}
+                    className="flex text-red-600 hover:text-red-700"
+                    onClick={async () => {
+                        await signOut()
+                        setOpen(false)
+                    }}
+                >
+                    <LogOut className="mr-1"/> Wyloguj
+                </Link>
+                :
+                <Link
+                    href={ROUTES.login}
+                    className="flex text-blue-600 hover:text-blue-700"
+                    onClick={() => setOpen(false)}
+                >
+                    <LogIn className="mr-1"/> Start
+                </Link>
+            }
+            {/* <Link
                 href={ROUTES.login}
                 className="flex text-blue-600 hover:text-blue-700"
                 onClick={() => setOpen(false)}
             >
                 <LogIn className="mr-1"/> Start
-            </Link>
+            </Link> */}
         </div>
     </main>
 

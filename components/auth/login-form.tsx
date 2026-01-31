@@ -11,6 +11,7 @@ import { Spinner } from "../ui/spinner"
 import { toast } from "sonner"
 import { ROUTES } from "@/lib/routes"
 import { signInEmail } from "better-auth/api"
+import { signIn } from "@/lib/auth-client"
 
 const LoginForm = () => {
     const form = useForm<z.infer<typeof LoginSchema>>({
@@ -24,18 +25,11 @@ const LoginForm = () => {
     const { handleSubmit, formState: { isValid, isSubmitting }} = form
 
     const onSubmit: SubmitHandler<z.infer<typeof LoginSchema>> = async (data) => {
-        try {
-            await signInEmail
-            // await signIn("credentials", {
-            //     redirect: true,
-            //     callbackUrl: ROUTES.kokpit,  // gdzie po zalogowaniu
-            //     email: data.email,
-            //     password: data.password
-            // })
-        } catch(error) {
-            console.error(error);
-            toast.error("Wystąpił nieoczekiwany błą∂")
-        }
+        await signIn.email({
+            email: data.email,
+            password: data.password,
+            callbackURL: ROUTES.signInRoute
+        })
     }
 
     return (

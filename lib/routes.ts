@@ -1,5 +1,7 @@
 export const ROUTES = {
     login: "/start",
     kokpit: "/kokpit",
-    verify: "/verify"
+    verify: "/verify",
+    signOutRoute: "/",
+    signInRoute: "/"
 }
