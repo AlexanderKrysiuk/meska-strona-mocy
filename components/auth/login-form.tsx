@@ -8,13 +8,14 @@ import { Input } from "../ui/input"
 import { PasswordInput } from "./password-input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
-import { toast } from "sonner"
-import { ROUTES } from "@/lib/routes"
-import { signInEmail } from "better-auth/api"
 import { signIn } from "@/lib/auth-client"
+import Link from "next/link"
+import { routes } from "@/lib/routes"
+import { zodResolver } from "@hookform/resolvers/zod"
 
 const LoginForm = () => {
     const form = useForm<z.infer<typeof LoginSchema>>({
+        resolver: zodResolver(LoginSchema),
         mode: "all",
         defaultValues: {
             email: "",
@@ -28,7 +29,7 @@ const LoginForm = () => {
         await signIn.email({
             email: data.email,
             password: data.password,
-            callbackURL: ROUTES.signInRoute
+            callbackURL: routes.signInRedirect
         })
     }
 
@@ -60,7 +61,20 @@ const LoginForm = () => {
                     name="password"
                     render={({field}) => (
                         <FormItem>
-                            <FormLabel>Hasło</FormLabel>
+                            <div className="flex justify-between">
+                                <FormLabel>Hasło</FormLabel>
+                                <Button 
+                                    asChild
+                                    variant="link"
+                                    className="text-blue-600 hover:text-blue-700"
+                                >
+                                    <Link
+                                        href={routes.resetPassword}
+                                    >
+                                        Nie pamiętasz hasła?
+                                    </Link>
+                                </Button>
+                            </div>
                             <FormControl>
                                 <PasswordInput {...field}
                                     autoComplete="current-password"
@@ -77,8 +91,15 @@ const LoginForm = () => {
                     className="w-full"
                     size="lg"
                 >
-                    {isSubmitting && <Spinner/>}
-                    Zaloguj się
+                    {isSubmitting ?
+                        <div className="flex items-center">
+                            <Spinner className="mr-2"/>Logowanie...
+                        </div>
+                        :
+                        <div>
+                            Zaloguj się
+                        </div>
+                    }
                 </Button>
             </form>
         </Form>

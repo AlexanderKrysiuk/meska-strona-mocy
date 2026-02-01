@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { LogIn, LogOut, Menu, Moon, User, X } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { ROUTES } from "@/lib/routes";
+import { routes } from "@/lib/routes";
 import { signOut, useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuTrigger } from "../ui/dropdown-menu";
@@ -50,7 +50,7 @@ const Header = () => {
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem>
                                         <Link
-                                            href={ROUTES.signOutRoute}
+                                            href={routes.signOutRedirect}
                                             className="flex text-red-600 hover:text-red-700"
                                             onClick={async () => await signOut()}
                                         >
@@ -64,7 +64,7 @@ const Header = () => {
                         <Button
                             variant="outline"
                         >
-                            <Link href={ROUTES.login}> Start </Link>
+                            <Link href={routes.start}> Start </Link>
                         </Button>
                     }
                 </div>
@@ -97,7 +97,7 @@ const Header = () => {
             
             {session?.user ?
                 <Link
-                    href={ROUTES.signOutRoute}
+                    href={routes.signOutRedirect}
                     className="flex text-red-600 hover:text-red-700"
                     onClick={async () => {
                         await signOut()
@@ -108,7 +108,7 @@ const Header = () => {
                 </Link>
                 :
                 <Link
-                    href={ROUTES.login}
+                    href={routes.start}
                     className="flex text-blue-600 hover:text-blue-700"
                     onClick={() => setOpen(false)}
                 >

@@ -21,7 +21,7 @@ export const RegisterForm = () => {
         defaultValues: {
             name: "",
             email: "",
-            password: "",
+            newPassword: "",
             phone: ""
         }
     })
@@ -33,32 +33,12 @@ export const RegisterForm = () => {
             email: data.email,
             name: data.name,
             phone: data.phone,
-            password: data.password,
+            password: data.newPassword,
         }, {
             onResponse: () => {
                 toast.success("Jeśli konto zostało utworzone, wysłaliśmy e-mail weryfikacyjny.")
             }
         })
-        
-        // try {
-        //     console.log("SUCCESS")
-        //     const parsed = RegisterSchema.safeParse(data)
-        //     if (!parsed.success) {
-        //         toast.error("Podano nieprawidłowe dane")
-        //     } else {
-        //         const results = await RegisterUserAction({values: data})
-        //         if (results?.error) { 
-        //             //toast.error(JSON.stringify(results.error))
-        //             toast.error(results.error)
-        //         } else {
-        //             toast.success("Wysłano e-mail weryfikacyjny")
-        //             form.reset()
-        //         }
-        //     }
-        // } catch (error) {
-        //     console.error(error)
-        //     toast.error("Wystąpił nieoczekiwany błąd")
-        // }
     }
 
     return <Form 
@@ -77,8 +57,6 @@ export const RegisterForm = () => {
                             placeholder="Jack Sparrow"
                             autoComplete="name"
                             disabled={isSubmitting}
-                            // onChange={field.onChange}
-                            // onBlur={field.onBlur}
                         />
                     </FormControl>
                     <FormMessage/>
@@ -96,8 +74,6 @@ export const RegisterForm = () => {
                             type="email"
                             autoComplete="email"
                             disabled={isSubmitting}
-                            // onChange={field.onChange}
-                            // onBlur={field.onBlur}
                         />
                     </FormControl>
                     <FormMessage/>
@@ -105,7 +81,7 @@ export const RegisterForm = () => {
             }/>
             <FormField
                 control={form.control}
-                name="password"
+                name="newPassword"
                 render={({field}) =>
                     <FormItem>
                         <FormLabel>Hasło</FormLabel>
@@ -129,8 +105,6 @@ export const RegisterForm = () => {
                             placeholder="+48500600700"
                             autoComplete="tel"
                             disabled={isSubmitting}
-                            // onChange={field.onChange}
-                            // onBlur={field.onBlur}
                         />
                     </FormControl>
                     <FormMessage/>
@@ -142,9 +116,15 @@ export const RegisterForm = () => {
                 className="w-full"
                 size="lg"
             >
-                
-                {isSubmitting && <Spinner/>}
-                Zarejestruj się
+                {isSubmitting ? 
+                    <div className="flex items-center">
+                        <Spinner className="mr-2"/>Przetwarzanie...
+                    </div>
+                    :
+                    <div>
+                        Zarejestruj się
+                    </div>
+                }
             </Button>
         </form>
     </Form>
