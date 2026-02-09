@@ -8,7 +8,7 @@ export const UpsertAvatarAction = async (file: Blob) => {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session) return { error: "Brak zalogowanego użytkownika" }
 
-    const path = `avatars/${session.user.id}}`
+    const path = `avatars/${session.user.id}}.jpeg`
 
     // 🔥 USUŃ STARY AVATAR – TYLKO JEŚLI JEST NASZ
     if (session.user.image?.includes("vercel-storage.com")) {
