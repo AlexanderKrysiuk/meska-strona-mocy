@@ -5,6 +5,7 @@ import "./globals.css";
 import Header from "@/components/header/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import "react-cropper/node_modules/cropperjs/dist/cropper.css"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

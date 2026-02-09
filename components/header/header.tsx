@@ -40,7 +40,10 @@ const Header = () => {
                                     className="rounded-full cursor-pointer"
                                 >
                                     <Avatar>
-                                        <AvatarImage src={session.user.image ?? undefined} />
+                                        <AvatarImage
+                                            src={session.user.image ?? undefined}
+                                            //src={session?.user.image ? `${session.user.image}?v=${Date.now()}` : undefined}
+                                        />
                                         <AvatarFallback className="bg-transparent">
                                             <User className="text-primary"/>
                                         </AvatarFallback>
@@ -49,7 +52,7 @@ const Header = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
                                 {UserMenu.map((section) => (
-                                    <DropdownMenuGroup>
+                                    <DropdownMenuGroup key={section.label}>
                                         <DropdownMenuLabel>{section.label}</DropdownMenuLabel>
                                         {section.items.map((item) => (
                                             <DropdownMenuItem 
@@ -112,7 +115,10 @@ const Header = () => {
                     <Avatar
                         size="lg"
                     >
-                        <AvatarImage src={session.user.image ?? undefined} />
+                        <AvatarImage 
+                            src={session.user.image ?? undefined}
+                            //src={session?.user.image ? `${session.user.image}?v=${Date.now()}` : undefined}
+                        />
                         <AvatarFallback className="bg-transparent">
                             <User className="text-primary"/>
                         </AvatarFallback>
