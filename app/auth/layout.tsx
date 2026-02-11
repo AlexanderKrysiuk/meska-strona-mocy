@@ -1,7 +1,7 @@
 //app/auth/layout.tsx
 "use client"
 
-import { useSession } from "@/lib/auth-client"
+import { useSession } from "@/auth/auth-client"
 import { routes } from "@/lib/routes"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"

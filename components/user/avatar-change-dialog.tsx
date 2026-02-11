@@ -2,7 +2,7 @@
 
 import { Upload, User } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { updateUser, useSession } from "@/lib/auth-client"
+import { updateUser, useSession } from "@/auth/auth-client"
 import { Dialog, DialogContent, DialogFooter, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Button } from "../ui/button"
 import { useRef, useState } from "react"
@@ -92,7 +92,7 @@ export const AvatarChangeDialog = () => {
 
 
     
-    return <main>
+    return <main className="flex justify-center">
 
         <input
             ref={inputRef}

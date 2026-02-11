@@ -1,6 +1,6 @@
 "use client"
 
-import { useSession } from "@/lib/auth-client";
+import { useSession } from "@/auth/auth-client";
 
 const Home = () => {
 
@@ -14,7 +14,14 @@ const Home = () => {
     <div>
 
       
+      <pre>
+
       {JSON.stringify(session?.user,null,2)}
+      </pre>
+      <pre>
+
+      {JSON.stringify(session?.user.title,null,2)}
+      </pre>
     </div>
     </div> 
   );

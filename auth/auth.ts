@@ -11,10 +11,11 @@
 
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import prisma from "./lib/prisma";
-import { WelcomeEmail } from "./emails/Welcome-Email";
-import { resend } from "./lib/resend";
-import { ResetPasswordEmail } from "./emails/Reset-Password-Email";
+import prisma from "../lib/prisma";
+import { WelcomeEmail } from "../emails/Welcome-Email";
+import { resend } from "../lib/resend";
+import { ResetPasswordEmail } from "../emails/Reset-Password-Email";
+import { admin } from "better-auth/plugins";
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -55,9 +56,21 @@ export const auth = betterAuth({
         additionalFields: {
             phone: {
                 type: "string",
+            },
+            title: {
+                type: "string",
+                required: false
+            },
+            description: {
+                type: "string",
+                required: false
             }
         }
-    }
+    },
+    plugins: [
+        admin(),
+        
+    ]
 });
 
 type Session = typeof auth.$Infer.Session

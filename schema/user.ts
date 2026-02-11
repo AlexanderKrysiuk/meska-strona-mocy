@@ -9,12 +9,33 @@ const name = z
 const email = z
     .string()
     .email("Podaj prawidłowy adres email")
-const phone = z
+
+    const phoneRequired = z
   .string()
+  .min(1, "Telefon jest wymagany")
   .refine((val) => {
     const phoneNumber = parsePhoneNumberFromString(val);
     return phoneNumber?.isValid() ?? false;
   }, "Podaj prawidłowy numer telefonu");
+
+const phoneOptional = z
+  .string()
+  .optional()
+  .refine((val) => {
+    if (!val) return true; // jeśli pusty → ok
+    const phoneNumber = parsePhoneNumberFromString(val);
+    return phoneNumber?.isValid() ?? false;
+  }, "Podaj prawidłowy numer telefonu");
+
+
+const title = z.string().optional()
+
+const description = z
+    .string()
+    .trim()
+    .max(500, "Opis może mieć maksymalnie 500 znaków")
+    .optional()
+
 
 const newPassword = z
     .string()
@@ -29,7 +50,7 @@ export const RegisterSchema = z.object({
     name,
     email,
     newPassword,
-    phone
+    phoneOptional
 })
 
 export const PasswordResetSchema = z.object({
@@ -62,4 +83,10 @@ export const NewPasswordSchema = z.object({
 export const LoginSchema = z.object({
     email,
     password
+})
+
+export const UpdateUserPersonalDataSchema = z.object({
+    name,
+    title,
+    description
 })

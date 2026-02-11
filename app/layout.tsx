@@ -6,6 +6,8 @@ import Header from "@/components/header/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "react-cropper/node_modules/cropperjs/dist/cropper.css"
+import { ClientWrapper } from "./wrapper";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,14 +38,16 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="dark"
           enableSystem
-        >
+          >
           <Header/>
           <div className="flex flex-1">
-            {children}
+            <ClientWrapper>
+              {children}
+            </ClientWrapper>
           </div>
           <Toaster
             position="top-center"
-          />
+            />
         </ThemeProvider>
       </body>
     </html>

@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button"
 import { NavigationMenu, NavigationMenuContent } from "@/components/ui/navigation-menu"
 import { Sidebar, SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { useSession } from "@/lib/auth-client"
+import { useSession } from "@/auth/auth-client"
 import { routes, UserMenu } from "@/lib/routes"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"

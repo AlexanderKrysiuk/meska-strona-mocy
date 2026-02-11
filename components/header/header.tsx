@@ -8,7 +8,7 @@ import { useState } from "react";
 import { LogIn, LogOut, Menu, Moon, User, X } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { routes, UserMenu } from "@/lib/routes";
-import { signOut, useSession } from "@/lib/auth-client";
+import { signOut, useSession } from "@/auth/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { usePathname } from "next/navigation";

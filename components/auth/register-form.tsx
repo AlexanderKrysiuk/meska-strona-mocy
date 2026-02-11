@@ -10,7 +10,7 @@ import { Input } from "../ui/input"
 import { Button } from "../ui/button"
 import { Spinner } from "../ui/spinner"
 import { toast } from "sonner"
-import { signUp } from "@/lib/auth-client"
+import { signUp } from "@/auth/auth-client"
 import { PasswordInput } from "./password-input"
 
 export const RegisterForm = () => {
@@ -22,7 +22,7 @@ export const RegisterForm = () => {
             name: "",
             email: "",
             newPassword: "",
-            phone: ""
+            phoneOptional: ""
         }
     })
 
@@ -32,11 +32,12 @@ export const RegisterForm = () => {
         await signUp.email({
             email: data.email,
             name: data.name,
-            phone: data.phone,
+            phone: data.phoneOptional ?? "",
             password: data.newPassword,
         }, {
             onResponse: () => {
                 toast.success("Jeśli konto zostało utworzone, wysłaliśmy e-mail weryfikacyjny.")
+
             }
         })
     }
@@ -96,7 +97,7 @@ export const RegisterForm = () => {
             />
             <FormField
                 control={form.control}
-                name="phone"
+                name="phoneOptional"
                 render={({field}) => 
                 <FormItem>
                     <FormLabel>Telefon</FormLabel>

@@ -1,14 +1,15 @@
 "use server"
 
-import { auth } from "@/auth"
+import { auth } from "@/auth/auth"
 import { headers } from "next/headers"
 import { del, put } from "@vercel/blob"
 
 export const UpsertAvatarAction = async (file: Blob) => {
     const session = await auth.api.getSession({ headers: await headers() })
+    console.log(session?.user)
     if (!session) return { error: "Brak zalogowanego użytkownika" }
 
-    const path = `avatars/${session.user.id}}.jpeg`
+    const path = `avatars/${session.user.id}.jpeg`
 
     // 🔥 USUŃ STARY AVATAR – TYLKO JEŚLI JEST NASZ
     if (session.user.image?.includes("vercel-storage.com")) {
