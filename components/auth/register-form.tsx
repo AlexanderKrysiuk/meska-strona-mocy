@@ -29,20 +29,20 @@ export const RegisterForm = () => {
     const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
     const onSubmit: SubmitHandler<z.infer<typeof RegisterSchema>> = async (data) => {
-        console.log("Próba rejestracji")
-        toast.error("ERROR")
-        // await signUp.email({
-        //     email: data.email,
-        //     name: data.name,
-        //     phone: data.phoneOptional ?? "",
-        //     password: data.newPassword,
-        // }, {
-        //     onResponse: () => {
-        //         toast.success("Jeśli konto zostało utworzone, wysłaliśmy e-mail weryfikacyjny.")
+        await signUp.email({
+            email: data.email,
+            name: data.name,
+            phone: data.phoneOptional ?? "",
+            password: data.newPassword,
+        }, {
+            onResponse: () => {
+                toast.success("Jeśli konto zostało utworzone, wysłaliśmy e-mail weryfikacyjny.")
 
-        //     }
-        // })
-        console.log("Próba udana")
+            },
+            onError:(e) => {
+                toast.error(e.response.json)
+            }
+        })
     }
 
     return <Form 
