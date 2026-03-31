@@ -37,7 +37,6 @@ export const RegisterForm = () => {
         }, {
             onResponse: () => {
                 toast.success("Jeśli konto zostało utworzone, wysłaliśmy e-mail weryfikacyjny.")
-
             }
         })
     }

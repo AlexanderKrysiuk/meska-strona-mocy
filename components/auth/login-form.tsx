@@ -12,6 +12,7 @@ import { signIn } from "@/auth/auth-client"
 import Link from "next/link"
 import { routes } from "@/lib/routes"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { toast } from "sonner"
 
 const LoginForm = () => {
     const form = useForm<z.infer<typeof LoginSchema>>({
@@ -30,6 +31,8 @@ const LoginForm = () => {
             email: data.email,
             password: data.password,
             callbackURL: routes.signInRedirect
+        },{
+            onError: () => {toast.error("Logowanie nieudane")}
         })
     }
 
