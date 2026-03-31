@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const StartPage = () => {
 
-    return <Card className="self-start max-w-xs w-full">            
+    return <Card className="self-start max-w-xs w-full m-4">            
         <CardHeader className="justify-center">
             🔐 Autentykacja
         </CardHeader>
