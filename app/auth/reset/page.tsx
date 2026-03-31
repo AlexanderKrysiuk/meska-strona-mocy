@@ -5,7 +5,7 @@ import { PasswordResetForm } from "@/components/auth/password-reset-form"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 
 const ResetPasswordPage = () => {
-    return <Card className="self-start max-w-xs w-full">
+    return <Card className="self-start max-w-xs w-full m-4">
         <CardHeader className="justify-center">
             🔐 Resetowania hasła
         </CardHeader>

@@ -12,7 +12,7 @@ const NewPasswordPage = () => {
             <Spinner className="mr-2"/>Ładowanie...
         </div>}
     >
-        <Card className="self-start max-w-xs w-full">
+        <Card className="self-start max-w-xs w-full m-4">
             <CardHeader className="justify-center">🔐 Podaj nowe hasło</CardHeader>
             <CardContent>
                 <NewPasswordForm/>
