@@ -15,7 +15,8 @@ import prisma from "../lib/prisma";
 import { WelcomeEmail } from "../emails/Welcome-Email";
 import { resend } from "../lib/resend";
 import { ResetPasswordEmail } from "../emails/Reset-Password-Email";
-import { admin } from "better-auth/plugins";
+import { admin as adminPlugin } from "better-auth/plugins";
+import { ac, admin, moderator } from "./permissions";
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -64,11 +65,21 @@ export const auth = betterAuth({
             description: {
                 type: "string",
                 required: false
+            },
+            stripeAccountId: {
+                type: "string",
+                required: false
             }
         }
     },
     plugins: [
-        admin(),
+        adminPlugin({
+            ac,
+            roles: {
+                admin,
+                moderator
+            }
+        }),
         
     ]
 });

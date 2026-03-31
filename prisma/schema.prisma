@@ -29,6 +29,8 @@ model User {
 
   description String? @db.Text
 
+  stripeAccountId String?
+
   @@map("user")
 }
 

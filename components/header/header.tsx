@@ -51,19 +51,19 @@ const Header = () => {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                {UserMenu.map((section) => (
+                                {UserMenu
+                                    .filter(section => !section.roles || (session?.user?.role && section.roles.includes(session.user.role)))
+                                    .map((section) => (
                                     <DropdownMenuGroup key={section.label}>
                                         <DropdownMenuLabel>{section.label}</DropdownMenuLabel>
                                         {section.items.map((item) => (
                                             <DropdownMenuItem 
                                                 key={item.label} 
                                                 asChild
-                                                className={`cursor-pointer ${pathname === item.href && "text-blue-600"}`}
+                                                className={`cursor-pointer ${pathname === `${section.prefix}${item.href}` ? "text-blue-600" : ""}`}
                                             >
-                                                <Link                                                    
-                                                    href={item.href}
-                                                >    
-                                                    <item.icon className="text-current"/> {item.label}
+                                                <Link href={`${section.prefix}${item.href}`}>
+                                                    <item.icon className="text-current mr-2"/> {item.label}
                                                 </Link>
                                             </DropdownMenuItem>
                                         ))}
@@ -125,7 +125,9 @@ const Header = () => {
                     </Avatar>
                 </div>
                 <Separator/>
-                {UserMenu.map((section) => (
+                {UserMenu
+                    .filter(section => !section.roles || (session?.user?.role && section.roles.includes(session.user.role)))
+                    .map((section) => (
                     <div key={section.label}
                         className="flex flex-col space-y-2"
                     >
@@ -135,8 +137,8 @@ const Header = () => {
                         {section.items.map((item) => (
                             <Link
                                 key={item.label}
-                                href={item.href}
-                                className={`flex font-medium ${pathname === item.href && "text-blue-600 hover:text-blue-700"}`}
+                                href={`${section.prefix}${item.href}`}
+                                className={`flex font-medium ${pathname === `${section.prefix}${item.href}` && "text-blue-600 hover:text-blue-700"}`}
                                 onClick={() => setOpen(false)}
                             >
                                 <item.icon className="mr-2"/> {item.label}

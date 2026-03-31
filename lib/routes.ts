@@ -1,4 +1,4 @@
-import { User } from "lucide-react"
+import { CirclePile, User } from "lucide-react"
 
 export const routes = {
     start: "/auth/start",
@@ -13,17 +13,21 @@ export const routes = {
 type UserMenuItem = {
     label: string,
     href: string,
-    icon: React.ElementType
+    icon: React.ElementType,
 }
 
 type UserMenuSection = {
     label: string,
-    items: UserMenuItem[]
+    items: UserMenuItem[],
+    prefix: string
+    roles?: string[]
 }
+
 
 export const UserMenu: UserMenuSection[] = [
     {
         label: "Użytkownik",
+        prefix: "",
         items: [
             {
                 label: "Profil",
@@ -31,5 +35,17 @@ export const UserMenu: UserMenuSection[] = [
                 icon: User
             }
         ] 
+    },
+    {
+        label: "Moderator",
+        prefix: "/moderator",
+        roles:["moderator"],
+        items: [
+            {
+                label: "Moje kręgi",
+                href: "/moje-kregi",
+                icon: CirclePile,
+            }
+        ]
     }
 ]

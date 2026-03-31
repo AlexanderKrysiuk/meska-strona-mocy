@@ -27,7 +27,9 @@ const KokpitLayout = ({
 
     return <main className="flex flex-1">
         <nav className="border-r hidden lg:block">
-            {UserMenu.map((section) => (
+            {UserMenu
+                .filter(section => !section.roles || (session?.user?.role && section.roles.includes(session.user.role)))
+                .map((section) => (
                 <div key={section.label}>
 
                     <span className="px-2 text-xs font-medium text-muted-foreground">
@@ -38,11 +40,11 @@ const KokpitLayout = ({
                             <Button key={item.label}
                                 asChild
                                 size="sm"
-                                variant={pathname === item.href ? "default" : "ghost"}
+                                variant={pathname === `${section.prefix}${item.href}` ? "default" : "ghost"}
                                 //variant="ghost"
                                 className="rounded-none w-full justify-start cursor-pointer"
                             >
-                                <Link href={item.href}>
+                                <Link href={`${section.prefix}${item.href}`}>
                                     <item.icon/> {item.label}
                                 </Link>
                             </Button>
