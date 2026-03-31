@@ -29,6 +29,7 @@ export const RegisterForm = () => {
     const { handleSubmit, formState:{ isValid, isSubmitting }} = form
 
     const onSubmit: SubmitHandler<z.infer<typeof RegisterSchema>> = async (data) => {
+        console.log("Próba rejestracji")
         await signUp.email({
             email: data.email,
             name: data.name,
@@ -40,6 +41,7 @@ export const RegisterForm = () => {
 
             }
         })
+        console.log("Próba udana")
     }
 
     return <Form 
