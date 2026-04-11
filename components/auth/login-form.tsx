@@ -80,7 +80,7 @@ const LoginForm = () => {
                             </div>
                             <FormControl>
                                 <PasswordInput {...field}
-                                    autoComplete="current-password"
+                                    autoComplete="password"
                                     disabled={isSubmitting}
                                 />
                             </FormControl>

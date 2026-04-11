@@ -15,7 +15,7 @@ const ModeratorLayout = ({
 
     useEffect(() => {
         if (!isPending && !session ) router.push(routes.start)
-        
+        if (!session?.user.role?.includes("moderator")) router.push(routes.kokpit)
     })
     return <main>
         {children}

@@ -7,16 +7,20 @@ import { Button } from "../ui/button";
 import { useState } from "react";
 import { LogIn, LogOut, Menu, Moon, User, X } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { routes, UserMenu } from "@/lib/routes";
+import { routes } from "@/lib/routes";
 import { signOut, useSession } from "@/auth/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import { usePathname } from "next/navigation";
+import { getUserMenu, UserMenu } from "../user/user-menu";
 
 const Header = () => {
     const [open, setOpen] = useState(false)
     const pathname = usePathname()
     const { data: session } = useSession()
+
+    const menu = getUserMenu(session?.user.role ?? "")
+    
 
     return <main>
         <header className="sticky z-50 inset-0 flex items-center justify-between lg:px-[20vw] p-4 border-b">
@@ -51,23 +55,23 @@ const Header = () => {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                {UserMenu
-                                    .filter(section => !section.roles || (session?.user?.role && section.roles.includes(session.user.role)))
-                                    .map((section) => (
+                                {menu.map((section) => (
                                     <DropdownMenuGroup key={section.label}>
                                         <DropdownMenuLabel>{section.label}</DropdownMenuLabel>
                                         {section.items.map((item) => (
-                                            <DropdownMenuItem 
-                                                key={item.label} 
+                                            <DropdownMenuItem
+                                                key={item.label}
                                                 asChild
-                                                className={`cursor-pointer ${pathname === `${section.prefix}${item.href}` ? "text-blue-600" : ""}`}
+                                                className={`cursor-pointer ${
+                                                pathname === `${section.prefix}${item.href}` ? "text-blue-600" : ""}`}
                                             >
                                                 <Link href={`${section.prefix}${item.href}`}>
-                                                    <item.icon className="text-current mr-2"/> {item.label}
+                                                    <item.icon className="text-current mr-2" />
+                                                    {item.label}
                                                 </Link>
                                             </DropdownMenuItem>
                                         ))}
-                                        <DropdownMenuSeparator/>
+                                        <DropdownMenuSeparator />
                                     </DropdownMenuGroup>
                                 ))}
                                 <DropdownMenuGroup>
@@ -125,9 +129,7 @@ const Header = () => {
                     </Avatar>
                 </div>
                 <Separator/>
-                {UserMenu
-                    .filter(section => !section.roles || (session?.user?.role && section.roles.includes(session.user.role)))
-                    .map((section) => (
+                {menu.map((section) => (
                     <div key={section.label}
                         className="flex flex-col space-y-2"
                     >

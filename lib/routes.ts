@@ -1,4 +1,8 @@
-import { CirclePile, User } from "lucide-react"
+//lib/routes.ts
+import { ac } from "@/auth/permissions"
+import { Session, User } from "better-auth"
+import { CirclePile, User as UserIcon, Wallet } from "lucide-react"
+import { authClient } from "@/auth/auth-client"
 
 export const routes = {
     start: "/auth/start",
@@ -9,43 +13,3 @@ export const routes = {
     signOutRedirect: "/",
     signInRedirect: "/"
 }
-
-type UserMenuItem = {
-    label: string,
-    href: string,
-    icon: React.ElementType,
-}
-
-type UserMenuSection = {
-    label: string,
-    items: UserMenuItem[],
-    prefix: string
-    roles?: string[]
-}
-
-
-export const UserMenu: UserMenuSection[] = [
-    {
-        label: "Użytkownik",
-        prefix: "",
-        items: [
-            {
-                label: "Profil",
-                href: "/profil",
-                icon: User
-            }
-        ] 
-    },
-    {
-        label: "Moderator",
-        prefix: "/moderator",
-        roles:["moderator"],
-        items: [
-            {
-                label: "Moje kręgi",
-                href: "/moje-kregi",
-                icon: CirclePile,
-            }
-        ]
-    }
-]

@@ -77,7 +77,7 @@ export const auth = betterAuth({
             ac,
             roles: {
                 admin,
-                moderator
+                moderator,
             }
         }),
         

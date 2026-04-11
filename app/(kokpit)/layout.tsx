@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button"
 import { NavigationMenu, NavigationMenuContent } from "@/components/ui/navigation-menu"
 import { Sidebar, SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useSession } from "@/auth/auth-client"
-import { routes, UserMenu } from "@/lib/routes"
+import { routes } from "@/lib/routes"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { auth } from "@/auth/auth"
+import { getUserMenu } from "@/components/user/user-menu"
 
 const KokpitLayout = ({
     children
@@ -20,15 +22,16 @@ const KokpitLayout = ({
     const { data: session, isPending } = useSession()
 
     useEffect(() => {
-        if (!isPending && !session) router.push(routes.start)
+        if (!isPending && !session ) router.push(routes.start)
     }, [isPending, session, router])
 
-    if (isPending) return null // albo loader
+    if (isPending || !session) return null
+
+    const menu = getUserMenu(session.user.role ?? "")
 
     return <main className="flex flex-1">
         <nav className="border-r hidden lg:block">
-            {UserMenu
-                .filter(section => !section.roles || (session?.user?.role && section.roles.includes(session.user.role)))
+            {menu
                 .map((section) => (
                 <div key={section.label}>
 
