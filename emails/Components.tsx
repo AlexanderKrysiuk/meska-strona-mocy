@@ -1,5 +1,5 @@
-import { User } from "@/generated/prisma/client"
 import { Body, Head, Hr, Html, Preview, Section, Text } from "@react-email/components"
+import { User } from "better-auth"
 
 export const styles = {
     button: {
